@@ -889,10 +889,10 @@ def _serve_file(filepath: str, build_dir: Path) -> Response:
         filepath = "index.html"
     full = build_dir / filepath
     if full.exists() and full.is_file():
-        return FileResponse(str(full), media_type=guess_ct(str(full)), filename=filepath)
+        return FileResponse(str(full), media_type=guess_ct(str(full)))
     idx = build_dir / "index.html"
     if idx.exists():
-        return FileResponse(str(idx), media_type="text/html", filename="index.html")
+        return FileResponse(str(idx), media_type="text/html")
     raise HTTPException(404)
 
 @app.get("/assets/{filepath:path}")

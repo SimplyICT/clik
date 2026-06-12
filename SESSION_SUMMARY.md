@@ -28,6 +28,7 @@ Complete rebuild of the SimplyClik maintenance platform from Firebase to a stand
 | **Portal** | http://208.87.135.84:3002 | cont2@simplyclik.testinator.com / Temp123! |
 | **Tracker** | http://208.87.135.84:3003 | Project management for all sub-projects |
 | **API** | POST /api/login | Returns {token, user, is_admin, customer_id} |
+| **Mobile** | http://208.87.135.84:3004 | contractor@simplyclik.local / Temp123! or manager@simplyclik.local / Temp123! |
 
 ## Data Source
 Supabase project `imkkhzxeggjxepbisoyy` — migrated from Firebase with 14 users, 2 customers, 4 contractors, 9 locations, 25 requests, 42 notes, 8 invoices.
@@ -76,6 +77,8 @@ systemctl --user restart simplyclik-tracker      # Tracker (port 3003)
 | Portal Manager | cont2@simplyclik.testinator.com | Temp123! | Crypto Central |
 | Portal Manager | grapes@simplyclik.testinator.com | Temp123! | zepto |
 | Portal Operator | cont4@simplyclik.testinator.com | Temp123! | Crypto Central (limited) |
+| Mobile Contractor | contractor@simplyclik.local | Temp123! | Mobile PWA — job dashboard, quotes, invoices |
+| Mobile Manager | manager@simplyclik.local | Temp123! | Mobile PWA — locations, requests |
 
 ## Known Issues
 1. Portal Manage page not built
