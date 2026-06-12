@@ -33,7 +33,7 @@ export default function LoginPage() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a2e' }}>
-      <form onSubmit={submit} style={{ background: '#16213e', padding: 40, borderRadius: 8, width: 360 }}>
+      <form onSubmit={submit} style={{ background: '#16213e', padding: 40, borderRadius: 8, width: 'min(360px, 90vw)' }}>
         <h1 style={{ color: '#fff', marginBottom: 24, fontSize: 22 }}>Simplyclik Portal</h1>
         {error && <div style={{ background: '#ff4444', color: '#fff', padding: '8px 12px', borderRadius: 4, marginBottom: 16, fontSize: 13 }}>{error}</div>}
         <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}

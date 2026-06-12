@@ -10,8 +10,8 @@ const SECTIONS = [
 
 export default function HelpPage() {
   return (
-    <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
-      <div style={{ width: 220, flexShrink: 0, background: '#fff', borderRadius: 8, border: '1px solid #e0e0e0', padding: '16px 0', position: 'sticky', top: 20 }}>
+    <div className="two-panel" style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+      <div className="desktop-only" style={{ width: 220, flexShrink: 0, background: '#fff', borderRadius: 8, border: '1px solid #e0e0e0', padding: '16px 0', position: 'sticky', top: 20 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', padding: '0 16px 10px', borderBottom: '1px solid #f0f0f0', marginBottom: 8 }}>Help Topics</div>
         {SECTIONS.map(s => (
           <a key={s.id} href={`#${s.id}`}

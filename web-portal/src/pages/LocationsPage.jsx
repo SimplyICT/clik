@@ -22,7 +22,7 @@ export default function LocationsPage() {
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Loading...</div>;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+    <div className="two-panel" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       <div>
         <h2 style={{ fontSize: 20, marginBottom: 16 }}>Service Locations ({locs.length})</h2>
         {locs.length === 0 ? (

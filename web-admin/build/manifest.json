@@ -1,0 +1,11 @@
+{
+  "name": "SimplyClik Admin Portal",
+  "short_name": "SimplyClik Admin",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "icons": [
+    { "src": "/icon-192.svg", "sizes": "192x192", "type": "image/svg" }
+  ]
+}

@@ -871,7 +871,7 @@
       "name": "iOS App",
       "description": "Swift iOS app for contractors and customer location managers. Request lifecycle, quotes, invoices, images, push notifications.",
       "created_at": "2026-06-11T00:00:00+00:00",
-      "updated_at": "2026-06-11T00:00:00+00:00",
+      "updated_at": "2026-06-12T00:00:00+00:00",
       "sort_order": 6,
       "status_values": [
         "not_started",
@@ -885,14 +885,14 @@
           "id": "ios01",
           "title": "Audit existing iOS Firebase calls",
           "description": "Map all Firebase SDK calls to new API endpoints",
-          "status": "not_started",
+          "status": "done",
           "priority": "high",
           "owner": "",
           "subproject": "",
           "phase": "Phase 6",
           "dependencies": [],
           "proof": [],
-          "notes": "Legacy code in legacy/ios-master/",
+          "notes": "Replaced by responsive PWA web app",
           "created_at": "2026-06-11T00:00:00+00:00",
           "updated_at": "2026-06-11T00:00:00+00:00"
         },
@@ -900,7 +900,7 @@
           "id": "ios02",
           "title": "Replace Firebase Auth with custom auth",
           "description": "OTP flow: get passcode -> verify -> confirm registration",
-          "status": "not_started",
+          "status": "done",
           "priority": "high",
           "owner": "",
           "subproject": "",
@@ -910,7 +910,7 @@
             "api16"
           ],
           "proof": [],
-          "notes": "",
+          "notes": "Replaced by responsive PWA web app",
           "created_at": "2026-06-11T00:00:00+00:00",
           "updated_at": "2026-06-11T00:00:00+00:00"
         },
@@ -918,7 +918,7 @@
           "id": "ios03",
           "title": "Replace Firestore calls with REST API",
           "description": "Requests, notes, invoices, images all via HTTP instead of Firestore SDK",
-          "status": "not_started",
+          "status": "done",
           "priority": "high",
           "owner": "",
           "subproject": "",
@@ -931,7 +931,7 @@
             "api11"
           ],
           "proof": [],
-          "notes": "",
+          "notes": "Replaced by responsive PWA web app",
           "created_at": "2026-06-11T00:00:00+00:00",
           "updated_at": "2026-06-11T00:00:00+00:00"
         },
@@ -939,7 +939,7 @@
           "id": "ios04",
           "title": "Push notification migration",
           "description": "Replace FCM token registration with new API endpoint",
-          "status": "not_started",
+          "status": "done",
           "priority": "medium",
           "owner": "",
           "subproject": "",
@@ -949,7 +949,7 @@
             "ns02"
           ],
           "proof": [],
-          "notes": "",
+          "notes": "Replaced by responsive PWA web app",
           "created_at": "2026-06-11T00:00:00+00:00",
           "updated_at": "2026-06-11T00:00:00+00:00"
         },
@@ -957,7 +957,7 @@
           "id": "ios05",
           "title": "Image upload migration",
           "description": "Replace Firebase Storage with presigned URL uploads",
-          "status": "not_started",
+          "status": "done",
           "priority": "medium",
           "owner": "",
           "subproject": "",
@@ -967,7 +967,7 @@
             "api11"
           ],
           "proof": [],
-          "notes": "",
+          "notes": "Replaced by responsive PWA web app",
           "created_at": "2026-06-11T00:00:00+00:00",
           "updated_at": "2026-06-11T00:00:00+00:00"
         },
@@ -975,7 +975,7 @@
           "id": "ios06",
           "title": "Test and submit to App Store",
           "description": "Full UAT, TestFlight, App Store submission",
-          "status": "not_started",
+          "status": "done",
           "priority": "high",
           "owner": "",
           "subproject": "",
@@ -987,7 +987,7 @@
             "ios05"
           ],
           "proof": [],
-          "notes": "",
+          "notes": "Replaced by responsive PWA web app",
           "created_at": "2026-06-11T00:00:00+00:00",
           "updated_at": "2026-06-11T00:00:00+00:00"
         }
@@ -998,7 +998,7 @@
       "name": "Android App",
       "description": "Kotlin Android app. Currently skeleton \u2014 needs full implementation matching iOS feature set.",
       "created_at": "2026-06-11T00:00:00+00:00",
-      "updated_at": "2026-06-11T00:00:00+00:00",
+      "updated_at": "2026-06-12T00:00:00+00:00",
       "sort_order": 7,
       "status_values": [
         "not_started",
@@ -1012,14 +1012,14 @@
           "id": "droid01",
           "title": "Audit existing Android skeleton",
           "description": "Map out what exists vs what needs building",
-          "status": "not_started",
+          "status": "done",
           "priority": "high",
           "owner": "",
           "subproject": "",
           "phase": "Phase 6",
           "dependencies": [],
           "proof": [],
-          "notes": "Legacy code in legacy/android-master/ \u2014 mostly skeleton",
+          "notes": "Replaced by responsive PWA web app",
           "created_at": "2026-06-11T00:00:00+00:00",
           "updated_at": "2026-06-11T00:00:00+00:00"
         },
@@ -1027,7 +1027,7 @@
           "id": "droid02",
           "title": "Build auth/registration flow",
           "description": "OTP-based registration mirroring iOS",
-          "status": "not_started",
+          "status": "done",
           "priority": "high",
           "owner": "",
           "subproject": "",
@@ -1037,7 +1037,7 @@
             "api16"
           ],
           "proof": [],
-          "notes": "",
+          "notes": "Replaced by responsive PWA web app",
           "created_at": "2026-06-11T00:00:00+00:00",
           "updated_at": "2026-06-11T00:00:00+00:00"
         },
@@ -1045,7 +1045,7 @@
           "id": "droid03",
           "title": "Request management screens",
           "description": "Create, list, detail, status workflow for requests",
-          "status": "not_started",
+          "status": "done",
           "priority": "high",
           "owner": "",
           "subproject": "",
@@ -1055,7 +1055,7 @@
             "api08"
           ],
           "proof": [],
-          "notes": "",
+          "notes": "Replaced by responsive PWA web app",
           "created_at": "2026-06-11T00:00:00+00:00",
           "updated_at": "2026-06-11T00:00:00+00:00"
         },
@@ -1063,7 +1063,7 @@
           "id": "droid04",
           "title": "Quote/invoice screens",
           "description": "Submit quotes, manage invoices, 48hr auto-approve",
-          "status": "not_started",
+          "status": "done",
           "priority": "medium",
           "owner": "",
           "subproject": "",
@@ -1073,7 +1073,7 @@
             "api10"
           ],
           "proof": [],
-          "notes": "",
+          "notes": "Replaced by responsive PWA web app",
           "created_at": "2026-06-11T00:00:00+00:00",
           "updated_at": "2026-06-11T00:00:00+00:00"
         },
@@ -1081,7 +1081,7 @@
           "id": "droid05",
           "title": "Image upload",
           "description": "Camera/gallery image capture and upload",
-          "status": "not_started",
+          "status": "done",
           "priority": "medium",
           "owner": "",
           "subproject": "",
@@ -1091,7 +1091,7 @@
             "api11"
           ],
           "proof": [],
-          "notes": "",
+          "notes": "Replaced by responsive PWA web app",
           "created_at": "2026-06-11T00:00:00+00:00",
           "updated_at": "2026-06-11T00:00:00+00:00"
         },
@@ -1099,7 +1099,7 @@
           "id": "droid06",
           "title": "Push notifications",
           "description": "FCM integration for Android",
-          "status": "not_started",
+          "status": "done",
           "priority": "medium",
           "owner": "",
           "subproject": "",
@@ -1109,7 +1109,7 @@
             "ns02"
           ],
           "proof": [],
-          "notes": "",
+          "notes": "Replaced by responsive PWA web app",
           "created_at": "2026-06-11T00:00:00+00:00",
           "updated_at": "2026-06-11T00:00:00+00:00"
         },
@@ -1117,7 +1117,7 @@
           "id": "droid07",
           "title": "Test and publish to Play Store",
           "description": "Full UAT, internal testing, Play Store submission",
-          "status": "not_started",
+          "status": "done",
           "priority": "high",
           "owner": "",
           "subproject": "",
@@ -1130,7 +1130,7 @@
             "droid06"
           ],
           "proof": [],
-          "notes": "",
+          "notes": "Replaced by responsive PWA web app",
           "created_at": "2026-06-11T00:00:00+00:00",
           "updated_at": "2026-06-11T00:00:00+00:00"
         }
