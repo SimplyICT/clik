@@ -1,0 +1,1380 @@
+{
+  "projects": [
+    {
+      "id": "admin-portal",
+      "name": "Admin Portal",
+      "description": "React + Vite SPA served on port 3001. Customer/contractor/request/asset/lead management. Python HTTP server backend.",
+      "created_at": "2026-06-11T00:00:00+00:00",
+      "updated_at": "2026-06-12T01:00:00+00:00",
+      "sort_order": 1,
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ],
+      "tasks": [
+        {
+          "id": "ap01",
+          "title": "Login & Auth",
+          "description": "Email/password login with bcrypt, session token, admin role check",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "ap02",
+          "title": "Dashboard",
+          "description": "Count tiles: customers, contractors, locations, requests, leads",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [
+            "ap01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "ap03",
+          "title": "Customers CRUD + 4-step wizard",
+          "description": "List + Details/Locations/Manage/Billing wizard",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [
+            "ap01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "ap04",
+          "title": "Contractors CRUD + 3-step wizard",
+          "description": "List + Details/Locations-Services/Manage wizard",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [
+            "ap01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "ap05",
+          "title": "Requests List + Detail",
+          "description": "List with status filters, create modal, detail panel with inline edit",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [
+            "ap01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "ap06",
+          "title": "Assets CRUD",
+          "description": "List with CRUD modal, customer/location dropdowns",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [
+            "ap01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "ap07",
+          "title": "Leads Two-Panel",
+          "description": "List + detail/notes, convert, delete",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [
+            "ap01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "ap08",
+          "title": "Activity Monthly Summaries",
+          "description": "Monthly per-customer summaries, drill-down to location",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [
+            "ap01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "ap09",
+          "title": "Fix nav links (a href -> Link)",
+          "description": "Admin app uses raw <a href> tags \u2014 should use react-router <Link> for SPA behavior",
+          "status": "done",
+          "priority": "low",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 1",
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T23:38:46.390528+00:00"
+        },
+        {
+          "id": "ap10",
+          "title": "Location detail in Activity drill-down",
+          "description": "Activity page drill-down currently shows truncated UUID instead of location name",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 4",
+          "dependencies": [],
+          "proof": [],
+          "notes": "SESSION_SUMMARY.md known issue #4",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T23:38:47.280150+00:00"
+        },
+        {
+          "id": "ap11",
+          "title": "Location management in Customer wizard (step 2)",
+          "description": "Customer wizard step 2: inline add/remove locations, CSV bulk upload, save locations on customer create/edit",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 4",
+          "dependencies": [],
+          "proof": [],
+          "notes": "Includes CSV import with companyName/reference/address columns",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "ap12",
+          "title": "CSV bulk location upload",
+          "description": "CSV upload in Customer wizard step 2 with companyName/reference/address columns",
+          "status": "done",
+          "priority": "low",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 4",
+          "dependencies": [],
+          "proof": [],
+          "notes": "Built into step 2 of Customer wizard. Parses CSV, shows preview, creates locations on save.",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "ap13",
+          "title": "Refactor to use backend API (stop direct Supabase calls)",
+          "description": "Supabase REST proxy added to server.py, client.js now routes through /api/supabase/ instead of direct Supabase calls",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 5",
+          "dependencies": [],
+          "proof": [],
+          "notes": "server.py handles GET/POST/PATCH/DELETE /api/supabase/{table} proxy. Anon key no longer exposed to frontend.",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        }
+      ]
+    },
+    {
+      "id": "customer-portal",
+      "name": "Customer Portal",
+      "description": "React + Vite SPA served on port 3002. Customer-scoped dashboard, locations, requests. Python HTTP server backend.",
+      "created_at": "2026-06-11T00:00:00+00:00",
+      "updated_at": "2026-06-12T01:00:00+00:00",
+      "sort_order": 2,
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ],
+      "tasks": [
+        {
+          "id": "cp01",
+          "title": "Login with customer_id",
+          "description": "Custom auth storing customer_id and customer_ref for data filtering",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "cp02",
+          "title": "Dashboard tiles",
+          "description": "Clickable tiles for locations count and requests count",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [
+            "cp01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "cp03",
+          "title": "Service Locations two-panel",
+          "description": "Location list + detail showing requests per location",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [
+            "cp01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "cp04",
+          "title": "Requests three-tab view",
+          "description": "Pending/Open/Closed tabs with click-for-detail",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [
+            "cp01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "cp05",
+          "title": "Activity monthly summary",
+          "description": "Monthly per-location request summary",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [
+            "cp01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "cp06",
+          "title": "Manage page (user management)",
+          "description": "Add/edit/remove customer users with roles (Manager/Operator/User)",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 4",
+          "dependencies": [],
+          "proof": [],
+          "notes": "SESSION_SUMMARY.md known issue #1 \u2014 highest priority gap",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T23:38:47.862269+00:00"
+        },
+        {
+          "id": "cp07",
+          "title": "Request creation",
+          "description": "Create request with title, description, service type, priority, photo upload",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 4",
+          "dependencies": [],
+          "proof": [],
+          "notes": "SESSION_SUMMARY.md next step #3",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T23:38:48.552934+00:00"
+        },
+        {
+          "id": "cp08",
+          "title": "Full request workflow",
+          "description": "Enhanced detail panel with timeline, notes, action buttons (approve/decline quote, accept, RFI response), quote & invoice display, newNoteCustomer flag handling",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 4",
+          "dependencies": [
+            "cp07"
+          ],
+          "proof": [],
+          "notes": "Includes cp09 notes/comments. Action buttons for pending_quote_approval, awaiting_acceptance, rfi statuses",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "cp09",
+          "title": "Notes/comments on requests",
+          "description": "Timeline view of notes with add-note form, fetched from request_notes table",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 4",
+          "dependencies": [
+            "cp08"
+          ],
+          "proof": [],
+          "notes": "Built into cp08. Public visibility only for now. Sent on Enter key or button click.",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "cp10",
+          "title": "Refactor to use backend API",
+          "description": "Created shared api/client.js module (q, create, update, del, customerFilter). All pages now call through client instead of raw Supabase URLs.",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 5",
+          "dependencies": [],
+          "proof": [],
+          "notes": "client module matches admin pattern. Server proxy remains until full Backend API project is built.",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        }
+      ]
+    },
+    {
+      "id": "backend-api",
+      "name": "Backend API",
+      "description": "Python REST API layer replacing Firebase Cloud Functions. Customer/contractor/request/location/invoice CRUD, state machine, auth.",
+      "created_at": "2026-06-11T00:00:00+00:00",
+      "updated_at": "2026-06-12T00:00:00+00:00",
+      "sort_order": 3,
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ],
+      "tasks": [
+        {
+          "id": "api01",
+          "title": "Server migration: FastAPI with proper REST",
+          "description": "Replaced stdlib http.server with FastAPI + Uvicorn. Single shared module (fastapi_app.py) with admin/portal modes. Async Supabase proxy via httpx. Proper CORS middleware. Systemd services updated.",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 1",
+          "dependencies": [],
+          "proof": [],
+          "notes": "server/fastapi_app.py. Both servers running on ports 3001 (admin) and 3002 (portal).",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "api02",
+          "title": "Auth: real session management",
+          "description": "Server-side session store with 24h TTL. Token generated on login, validated on every /api/supabase/* request via require_session dependency. Logout endpoint clears session. Frontend sends Bearer token in Authorization header.",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [],
+          "proof": [],
+          "notes": "Admin and portal client.js both send token. Static file routes exempt from auth. Session is in-memory dict (lost on server restart).",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "api03",
+          "title": "Move secrets to env vars",
+          "description": "All secrets moved from source code to .env file + systemd Environment directives. _require_env() fails fast if any are missing. python-dotenv loads .env in development.",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [],
+          "proof": [],
+          "notes": "server/.env (gitignored). Admin + portal systemd services have Environment= lines. DB password, Supabase URL, anon key all out of source code.",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "api04",
+          "title": "Remove/lock Supabase proxy",
+          "description": "Proxy locked down: auth required (api02), table allowlist, rate limiting (100 req/min/IP). Anon key removed from frontend (api03).",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [
+            "api03"
+          ],
+          "proof": [],
+          "notes": "ALLOWED_TABLES set in fastapi_app.py. RATELIMIT_MAX/RATELIMIT_WINDOW configurable via env vars. Disallowed tables return 403.",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "api05",
+          "title": "Customer CRUD endpoints",
+          "description": "GET/POST/PATCH/DELETE /api/customers, GET /api/customers/summary (replaces fetchCustomerSummaryData), GET /api/customers/{id} with location/request counts. Portal-scoped via session customer_id.",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 1",
+          "dependencies": [
+            "api01",
+            "api02"
+          ],
+          "proof": [],
+          "notes": "Direct pg8000 queries on customers view + customerLocations and requests views. CamelCase columns quoted.",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "api06",
+          "title": "Contractor CRUD endpoints",
+          "description": "GET/POST/PATCH/DELETE /api/contractors. Full contractor fields from contractors view.",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 1",
+          "dependencies": [
+            "api01",
+            "api02"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "api07",
+          "title": "Location CRUD + geocoding",
+          "description": "GET/POST/PATCH/DELETE /api/locations. Portal-scoped via session customer_id. Geocoding not yet implemented (needs Google Maps API key).",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 1",
+          "dependencies": [
+            "api01",
+            "api02"
+          ],
+          "proof": [],
+          "notes": "customerLocations view with camelCase columns. Geocoding to be added when Google Maps API key is configured.",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "api08",
+          "title": "Request CRUD with state machine",
+          "description": "GET/POST/PATCH/DELETE /api/requests, POST /api/requests/{id}/transition with VALID_TRANSITIONS dict enforcing 11-status lifecycle. Portal-scoped.",
+          "status": "done",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 1",
+          "dependencies": [
+            "api01",
+            "api02"
+          ],
+          "proof": [],
+          "notes": "State transitions: pending_approval->rfi/awaiting_quote/cancelled, rfi->pending_approval/cancelled, awaiting_quote->pending_quote_approval/cancelled, pending_quote_approval->awaiting_acceptance/declined/rfi, awaiting_acceptance->accepted/declined, accepted->in_progress/cancelled, in_progress->contractor_completed/cancelled, contractor_completed->completed/cancelled",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "api09",
+          "title": "Notes/history endpoints",
+          "description": "GET/POST /api/requests/{id}/notes, DELETE /api/notes/{id}. Full CRUD on request_notes table.",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 2",
+          "dependencies": [
+            "api08"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "api10",
+          "title": "Invoice management",
+          "description": "GET/POST /api/requests/{id}/invoice, POST /api/invoices/process-auto-approvals (48hr window). Full CRUD on request_invoices table.",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 2",
+          "dependencies": [
+            "api08"
+          ],
+          "proof": [],
+          "notes": "Auto-approval endpoint processes invoices where auto_approve_date has passed.",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "api11",
+          "title": "Image upload (presigned URLs)",
+          "description": "POST /api/upload/presign returns upload + public URL. GET /api/upload/url/{bucket}/{path} returns public URL.",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 2",
+          "dependencies": [
+            "api01"
+          ],
+          "proof": [],
+          "notes": "Uses Supabase Storage API via httpx. Frontend uploads directly to the returned URL.",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "api12",
+          "title": "Asset CRUD endpoints",
+          "description": "GET/POST/PATCH/DELETE /api/assets. Full asset fields from assets view.",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 2",
+          "dependencies": [
+            "api01",
+            "api02"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "api13",
+          "title": "Lead management endpoints",
+          "description": "Lead CRUD + convert to customer",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 1",
+          "dependencies": [
+            "api01",
+            "api02"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "api14",
+          "title": "Activity/analytics endpoints",
+          "description": "Dashboard summaries, monthly activity, fetchCustomerDetailData",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 1",
+          "dependencies": [
+            "api05",
+            "api08"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "api15",
+          "title": "User management endpoints",
+          "description": "Create/update/delete customer users, password management",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 1",
+          "dependencies": [
+            "api01",
+            "api02"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "api16",
+          "title": "OTP generation/verification",
+          "description": "One-time passcode flow for contractor and location registration",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 6",
+          "dependencies": [
+            "api01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "api17",
+          "title": "Proper CORS + logging",
+          "description": "Add CORS headers, structured logging, request IDs",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [
+            "api01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        }
+      ]
+    },
+    {
+      "id": "scheduled-tasks",
+      "name": "Scheduled Tasks",
+      "description": "Background jobs replacing Firebase scheduled functions: auto-complete requests (12h), auto-reassign contractors (4h).",
+      "created_at": "2026-06-11T00:00:00+00:00",
+      "updated_at": "2026-06-12T00:00:00+00:00",
+      "sort_order": 4,
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ],
+      "tasks": [
+        {
+          "id": "st01",
+          "title": "Auto-complete requests (12h cron)",
+          "description": "APScheduler job (IntervalTrigger 12h). Finds contractor_completed requests with invoice submit_date >48h ago, marks as completed.",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 2",
+          "dependencies": [
+            "api10"
+          ],
+          "proof": [],
+          "notes": "Runs inside FastAPI admin server. Logged as simplyclik.scheduler.",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-12T00:00:00+00:00"
+        },
+        {
+          "id": "st02",
+          "title": "Auto-reassign contractors (4h cron)",
+          "description": "Escalate to next contractor if current hasn't accepted within priority timeout window (6-120h)",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 2",
+          "dependencies": [
+            "api08"
+          ],
+          "proof": [],
+          "notes": "Priority timeouts: None=120h, Low=36h, Medium=24h, High=12h, Urgent=6h",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "st03",
+          "title": "Choose scheduler (Celery/APScheduler/cron)",
+          "description": "Evaluate and implement background task scheduler",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 2",
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        }
+      ]
+    },
+    {
+      "id": "notification-system",
+      "name": "Notification System",
+      "description": "Email (SendGrid) + Push notifications (FCM) replacing Firebase Cloud Messaging and SendGrid email triggers.",
+      "created_at": "2026-06-11T00:00:00+00:00",
+      "updated_at": "2026-06-12T00:00:00+00:00",
+      "sort_order": 5,
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ],
+      "tasks": [
+        {
+          "id": "ns01",
+          "title": "Email service (SendGrid)",
+          "description": "Send emails for: OTPs, new request alerts, status changes, invoice notifications, lead confirmations",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 3",
+          "dependencies": [
+            "api01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "ns02",
+          "title": "Push notification service (FCM)",
+          "description": "Firebase Cloud Messaging for mobile app notifications",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 3",
+          "dependencies": [
+            "api01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "ns03",
+          "title": "In-app notifications",
+          "description": "Notification preferences and history within web apps",
+          "status": "done",
+          "priority": "low",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 3",
+          "dependencies": [
+            "ns01",
+            "ns02"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "ns04",
+          "title": "Notification trigger wiring",
+          "description": "Wire create/update events to notification dispatch (was Firebase trigger functions)",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 3",
+          "dependencies": [
+            "ns01",
+            "ns02"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        }
+      ]
+    },
+    {
+      "id": "ios-app",
+      "name": "iOS App",
+      "description": "Swift iOS app for contractors and customer location managers. Request lifecycle, quotes, invoices, images, push notifications.",
+      "created_at": "2026-06-11T00:00:00+00:00",
+      "updated_at": "2026-06-11T00:00:00+00:00",
+      "sort_order": 6,
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ],
+      "tasks": [
+        {
+          "id": "ios01",
+          "title": "Audit existing iOS Firebase calls",
+          "description": "Map all Firebase SDK calls to new API endpoints",
+          "status": "not_started",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 6",
+          "dependencies": [],
+          "proof": [],
+          "notes": "Legacy code in legacy/ios-master/",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "ios02",
+          "title": "Replace Firebase Auth with custom auth",
+          "description": "OTP flow: get passcode -> verify -> confirm registration",
+          "status": "not_started",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 6",
+          "dependencies": [
+            "ios01",
+            "api16"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "ios03",
+          "title": "Replace Firestore calls with REST API",
+          "description": "Requests, notes, invoices, images all via HTTP instead of Firestore SDK",
+          "status": "not_started",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 6",
+          "dependencies": [
+            "ios01",
+            "api08",
+            "api09",
+            "api10",
+            "api11"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "ios04",
+          "title": "Push notification migration",
+          "description": "Replace FCM token registration with new API endpoint",
+          "status": "not_started",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 6",
+          "dependencies": [
+            "ios01",
+            "ns02"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "ios05",
+          "title": "Image upload migration",
+          "description": "Replace Firebase Storage with presigned URL uploads",
+          "status": "not_started",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 6",
+          "dependencies": [
+            "ios01",
+            "api11"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "ios06",
+          "title": "Test and submit to App Store",
+          "description": "Full UAT, TestFlight, App Store submission",
+          "status": "not_started",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 6",
+          "dependencies": [
+            "ios02",
+            "ios03",
+            "ios04",
+            "ios05"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        }
+      ]
+    },
+    {
+      "id": "android-app",
+      "name": "Android App",
+      "description": "Kotlin Android app. Currently skeleton \u2014 needs full implementation matching iOS feature set.",
+      "created_at": "2026-06-11T00:00:00+00:00",
+      "updated_at": "2026-06-11T00:00:00+00:00",
+      "sort_order": 7,
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ],
+      "tasks": [
+        {
+          "id": "droid01",
+          "title": "Audit existing Android skeleton",
+          "description": "Map out what exists vs what needs building",
+          "status": "not_started",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 6",
+          "dependencies": [],
+          "proof": [],
+          "notes": "Legacy code in legacy/android-master/ \u2014 mostly skeleton",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "droid02",
+          "title": "Build auth/registration flow",
+          "description": "OTP-based registration mirroring iOS",
+          "status": "not_started",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 6",
+          "dependencies": [
+            "droid01",
+            "api16"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "droid03",
+          "title": "Request management screens",
+          "description": "Create, list, detail, status workflow for requests",
+          "status": "not_started",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 6",
+          "dependencies": [
+            "droid01",
+            "api08"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "droid04",
+          "title": "Quote/invoice screens",
+          "description": "Submit quotes, manage invoices, 48hr auto-approve",
+          "status": "not_started",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 6",
+          "dependencies": [
+            "droid03",
+            "api10"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "droid05",
+          "title": "Image upload",
+          "description": "Camera/gallery image capture and upload",
+          "status": "not_started",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 6",
+          "dependencies": [
+            "droid01",
+            "api11"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "droid06",
+          "title": "Push notifications",
+          "description": "FCM integration for Android",
+          "status": "not_started",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 6",
+          "dependencies": [
+            "droid01",
+            "ns02"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "droid07",
+          "title": "Test and publish to Play Store",
+          "description": "Full UAT, internal testing, Play Store submission",
+          "status": "not_started",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 6",
+          "dependencies": [
+            "droid02",
+            "droid03",
+            "droid04",
+            "droid05",
+            "droid06"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        }
+      ]
+    },
+    {
+      "id": "public-website",
+      "name": "Public Website",
+      "description": "Marketing/brochure site with 'Book a Demo' lead capture. Static HTML or React-based rebuild.",
+      "created_at": "2026-06-11T00:00:00+00:00",
+      "updated_at": "2026-06-11T00:00:00+00:00",
+      "sort_order": 8,
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ],
+      "tasks": [
+        {
+          "id": "pub01",
+          "title": "Port marketing site",
+          "description": "Rebuild static Bootstrap/jQuery marketing site in modern stack",
+          "status": "not_started",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 7",
+          "dependencies": [],
+          "proof": [],
+          "notes": "Legacy in legacy/web-public-master/ and legacy/web-static-master/",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "pub02",
+          "title": "Book a Demo lead capture",
+          "description": "Contact form -> leads table",
+          "status": "not_started",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 7",
+          "dependencies": [
+            "pub01",
+            "api13"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "pub03",
+          "title": "Pricing & solutions pages",
+          "description": "Pricing page, maintenance solutions pages (contractors, managers)",
+          "status": "not_started",
+          "priority": "low",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 7",
+          "dependencies": [
+            "pub01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "pub04",
+          "title": "SEO & analytics",
+          "description": "Search optimization, analytics integration",
+          "status": "not_started",
+          "priority": "low",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 7",
+          "dependencies": [
+            "pub01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        }
+      ]
+    },
+    {
+      "id": "infrastructure",
+      "name": "Infrastructure & Security",
+      "description": "DevOps, security hardening, monitoring, CI/CD, deployment automation, logging.",
+      "created_at": "2026-06-11T00:00:00+00:00",
+      "updated_at": "2026-06-12T00:00:00+00:00",
+      "sort_order": 9,
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ],
+      "tasks": [
+        {
+          "id": "inf01",
+          "title": "Move hardcoded secrets to env vars",
+          "description": "DB password, API keys, Supabase credentials \u2014 all out of source code",
+          "status": "not_started",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "inf02",
+          "title": "nGinx reverse proxy",
+          "description": "Single gateway for admin, portal, and API",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 8",
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "inf03",
+          "title": "Systemd services for all components",
+          "description": "Systemd unit files for admin, portal, tracker, API servers",
+          "status": "in_progress",
+          "priority": "high",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 0",
+          "dependencies": [],
+          "proof": [],
+          "notes": "Admin+Portal done. Tracker in progress.",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "inf04",
+          "title": "Structured logging",
+          "description": "JSON log format, request IDs, log levels",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 8",
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "inf05",
+          "title": "Health check endpoints",
+          "description": "/health endpoint for monitoring/load balancers",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 8",
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "inf06",
+          "title": "Rate limiting",
+          "description": "Protect API endpoints from abuse",
+          "status": "not_started",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 8",
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "inf07",
+          "title": "Environment config (dev/staging/prod)",
+          "description": "Separate configs per environment with .env files",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 8",
+          "dependencies": [],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "inf08",
+          "title": "Unit + integration tests",
+          "description": "Test coverage for API endpoints and frontend components",
+          "status": "done",
+          "priority": "medium",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 8",
+          "dependencies": [
+            "api01"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        },
+        {
+          "id": "inf09",
+          "title": "CI/CD pipeline",
+          "description": "GitHub Actions or similar for automated test + deploy",
+          "status": "done",
+          "priority": "low",
+          "owner": "",
+          "subproject": "",
+          "phase": "Phase 8",
+          "dependencies": [
+            "inf08"
+          ],
+          "proof": [],
+          "notes": "",
+          "created_at": "2026-06-11T00:00:00+00:00",
+          "updated_at": "2026-06-11T00:00:00+00:00"
+        }
+      ]
+    }
+  ]
+}

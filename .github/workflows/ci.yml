@@ -1,0 +1,65 @@
+name: SimplyClik CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install fastapi uvicorn httpx pg8000 bcrypt python-dotenv apscheduler firebase-admin pytest httpx
+
+    - name: Run tests
+      run: |
+        pip install pytest httpx
+        python -m pytest tests/ -v
+
+  build-admin:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web-admin
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: web-admin/package-lock.json
+
+    - run: npm ci
+    - run: npm run build
+
+  build-portal:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web-portal
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: web-portal/package-lock.json
+
+    - run: npm ci
+    - run: npm run build

@@ -1,0 +1,13 @@
+[Unit]
+Description=SimplyClik Project Tracker
+After=network.target
+
+[Service]
+WorkingDirectory=/home/aiagent/simplyclik-app/tracker
+ExecStart=/usr/bin/python3 /home/aiagent/simplyclik-app/tracker/server.py
+Environment=PORT=3003
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
