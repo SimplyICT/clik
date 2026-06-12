@@ -129,7 +129,7 @@ async def handle_login(request: Request):
         if not bcrypt.checkpw(pw.encode(), pw_hash.encode()):
             raise HTTPException(401, detail="Invalid credentials")
 
-        if MODE == "portal":
+        if MODE in ("portal", "mobile"):
             profile = db("""
                 SELECT up.role, up.customer_ref, p.customer_id, p.id
                 FROM public.user_profiles up

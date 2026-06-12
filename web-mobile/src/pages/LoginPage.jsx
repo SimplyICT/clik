@@ -22,7 +22,10 @@ export default function LoginPage() {
         sessionStorage.setItem('role', 'customer_user');
         sessionStorage.setItem('customer_name', d.customer_name || '');
         try {
-          const p = await (await fetch('/api/supabase/user_profiles?select=role&user_id=eq.' + d.user.id)).json();
+          const res = await fetch('/api/supabase/user_profiles?select=role&user_id=eq.' + d.user.id, {
+            headers: { 'Authorization': 'Bearer ' + d.token }
+          });
+          const p = await res.json();
           if (Array.isArray(p) && p.length > 0) sessionStorage.setItem('role', p[0].role || 'customer_user');
         } catch {}
       } else {
