@@ -2,59 +2,104 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { q } from '../api/client';
 
+const ST_COLORS = { pending_approval:'#94a3b8', awaiting_acceptance:'#38bdf8', awaiting_quote:'#f59e0b', pending_quote_approval:'#f59e0b', accepted:'#22c55e', rfi:'#ef4444', in_progress:'#3b82f6', contractor_completed:'#22c55e', completed:'#22c55e', declined:'#ef4444', cancelled:'#ef4444' };
+const ST_LABELS = { pending_approval:'Pending', awaiting_acceptance:'Awaiting Acceptance', awaiting_quote:'Awaiting Quote', pending_quote_approval:'Quote Approval', accepted:'Accepted', rfi:'More Info', in_progress:'In Progress', contractor_completed:'Done', completed:'Completed', declined:'Declined', cancelled:'Cancelled' };
+
 export default function DashboardPage() {
-  const [data, setData] = useState(null);
   const nav = useNavigate();
   const role = sessionStorage.getItem('role');
   const isContractor = role === 'contractor';
-  const cid = sessionStorage.getItem('customer_id') || '';
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (isContractor) {
-      q('requests', { select: 'id,title,status,priority', filters: cid ? [{ field: 'contractorProfileId', value: cid }] : [], limit: 20 }).then(d => setData(Array.isArray(d) ? d : [])).catch(() => setData([]));
+      const pid = sessionStorage.getItem('author_profile_id');
+      if (!pid) { setLoading(false); return; }
+      q('requests', { select: 'id,title,status,serviceType,priority,customerName,customerLocationProfileId,quoteAmount,invoiceAmount,requestStartDate,description', filters: [{ field: 'contractorProfileId', value: pid }], order: 'requestStartDate.desc.nullslast' }).then(d => {
+        setJobs(Array.isArray(d) ? d : []);
+        setLoading(false);
+      }).catch(() => setLoading(false));
     } else {
-      const cf = cid ? [{ field: 'customerId', value: cid }] : [];
+      const cid = sessionStorage.getItem('customer_id') || '';
       Promise.all([
-        q('requests', { select: 'id', filters: cf }),
-        q('customerLocations', { select: 'id', filters: cf }),
-      ]).then(([r, l]) => setData({ requests: Array.isArray(r) ? r.length : 0, locations: Array.isArray(l) ? l.length : 0 })).catch(() => setData({ requests: 0, locations: 0 }));
+        q('customerLocations', { select: 'id,companyName,customerId', filters: cid ? [{ field: 'customerId', value: cid }] : [] }),
+        q('requests', { select: 'id,status', filters: cid ? [{ field: 'customerId', value: cid }] : [] }),
+      ]).then(([locs, reqs]) => {
+        sessionStorage.setItem('siteCount', String(Array.isArray(locs) ? locs.length : 0));
+        sessionStorage.setItem('requestCount', String(Array.isArray(reqs) ? reqs.length : 0));
+        setLoading(false);
+      }).catch(() => setLoading(false));
     }
   }, []);
 
-  if (!data) return <Centered>Loading...</Centered>;
+  if (loading) return <Centered>Loading...</Centered>;
 
   if (isContractor) {
-    const open = data.filter(r => !['completed','declined','cancelled'].includes(r.status));
+    const counts = {};
+    jobs.forEach(j => { counts[j.status] = (counts[j.status] || 0) + 1; });
+    const needsAction = jobs.filter(j => ['awaiting_acceptance','awaiting_quote'].includes(j.status));
     return (
       <div>
-        <div style={{ background: '#fff', borderRadius: 10, padding: 20, textAlign: 'center', marginBottom: 16 }}>
-          <div style={{ fontSize: 36, fontWeight: 700, color: '#00d4ff' }}>{open.length}</div>
-          <div style={{ fontSize: 13, color: '#888', marginTop: 4 }}>Open Jobs</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
+          <StatBox label="New" count={jobs.filter(j => j.status === 'awaiting_acceptance').length} color="#38bdf8" />
+          <StatBox label="Active" count={jobs.filter(j => !['completed','declined','cancelled','awaiting_acceptance'].includes(j.status)).length} color="#3b82f6" />
+          <StatBox label="Completed" count={jobs.filter(j => j.status === 'completed').length} color="#22c55e" />
         </div>
-        <h3 style={{ fontSize: 14, marginBottom: 8, color: '#444' }}>Recent Jobs</h3>
-        {data.slice(0, 5).map(r => (
-          <div key={r.id} onClick={() => nav(`/jobs/${r.id}`)} style={{ background: '#fff', borderRadius: 8, padding: '12px 14px', marginBottom: 6, border: '1px solid #e0e0e0', cursor: 'pointer' }}>
-            <div style={{ fontWeight: 600, fontSize: 14 }}>{r.title}</div>
-            <div style={{ color: '#888', fontSize: 12, marginTop: 2 }}>{r.status?.replace(/_/g, ' ')} · {r.priority}</div>
+
+        {needsAction.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 14, marginBottom: 8, color: '#ef4444' }}>Needs Action</h3>
+            {needsAction.slice(0, 3).map(r => <JobCard key={r.id} job={r} onClick={() => nav(`/jobs/${r.id}`)} />)}
           </div>
-        ))}
+        )}
+
+        <h3 style={{ fontSize: 14, marginBottom: 8, color: '#444' }}>All Jobs ({jobs.length})</h3>
+        {jobs.length === 0 ? <Centered>No jobs assigned yet</Centered> : jobs.slice(0, 10).map(r => <JobCard key={r.id} job={r} onClick={() => nav(`/jobs/${r.id}`)} />)}
       </div>
     );
   }
 
+  // Manager view
+  const sc = parseInt(sessionStorage.getItem('siteCount') || '0');
+  const rc = parseInt(sessionStorage.getItem('requestCount') || '0');
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-      <Card label="Service Locations" value={data.locations} color="#00d4ff" onClick={() => nav('/locations')} />
-      <Card label="Open Requests" value={data.requests} color="#ff9500" onClick={() => nav('/requests')} />
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+        <QuickTile label="Sites" value={sc} color="#00d4ff" onClick={() => nav('/sites')} />
+        <QuickTile label="Requests" value={rc} color="#ff9500" onClick={() => nav('/requests')} />
+      </div>
+      <button onClick={() => nav('/requests/new')} style={{ width: '100%', padding: '14px', borderRadius: 8, border: 'none', background: '#00d4ff', color: '#000', fontWeight: 700, fontSize: 16, cursor: 'pointer' }}>+ New Request</button>
     </div>
   );
 }
 
-function Card({ label, value, color, onClick }) {
+function StatBox({ label, count, color }) {
+  return (
+    <div style={{ background: '#fff', borderRadius: 8, padding: '12px 8px', textAlign: 'center', border: '1px solid #e0e0e0' }}>
+      <div style={{ fontSize: 28, fontWeight: 700, color }}>{count}</div>
+      <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{label}</div>
+    </div>
+  );
+}
+
+function QuickTile({ label, value, color, onClick }) {
   return (
     <div onClick={onClick} style={{ background: '#fff', borderRadius: 10, padding: 20, textAlign: 'center', border: '1px solid #e0e0e0', cursor: 'pointer' }}>
-      <div style={{ fontSize: 36, fontWeight: 700, color }}>{value ?? '-'}</div>
+      <div style={{ fontSize: 36, fontWeight: 700, color }}>{value}</div>
       <div style={{ fontSize: 13, color: '#888', marginTop: 4 }}>{label}</div>
+    </div>
+  );
+}
+
+function JobCard({ job, onClick }) {
+  return (
+    <div onClick={onClick} style={{ background: '#fff', borderRadius: 8, padding: '12px 14px', marginBottom: 6, border: '1px solid #e0e0e0', cursor: 'pointer' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ fontWeight: 600, fontSize: 14 }}>{job.title}</div>
+        <span style={{ background: ST_COLORS[job.status] || '#94a3b8', color: '#fff', padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>{ST_LABELS[job.status] || job.status}</span>
+      </div>
+      <div style={{ color: '#888', fontSize: 12, marginTop: 4 }}>{job.customerName} · {job.serviceType}{job.priority ? ` · ${job.priority}` : ''}</div>
     </div>
   );
 }

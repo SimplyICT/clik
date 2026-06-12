@@ -29,8 +29,18 @@ export async function login(email, password) {
   sessionStorage.setItem('token', d.token);
   sessionStorage.setItem('user', JSON.stringify(d.user));
   if (d.customer_id) sessionStorage.setItem('customer_id', d.customer_id);
-  if (d.customer_ref) sessionStorage.setItem('customer_ref', d.customer_ref);
   if (d.author_profile_id) sessionStorage.setItem('author_profile_id', d.author_profile_id);
+  if (d.customer_name) sessionStorage.setItem('customer_name', d.customer_name);
+
+  // Detect role: if author_profile_id maps to a contractor profile, they're a contractor
+  try {
+    const p = await (await fetch('/api/supabase/profiles?select=profile_type&id=eq.' + d.author_profile_id, { headers: { 'Authorization': 'Bearer ' + d.token } })).json();
+    if (Array.isArray(p) && p.length > 0) {
+      sessionStorage.setItem('role', p[0].profile_type === 'contractor' ? 'contractor' : 'manager');
+    } else {
+      sessionStorage.setItem('role', 'manager');
+    }
+  } catch { sessionStorage.setItem('role', 'manager'); }
   return d;
 }
 export function logout() { sessionStorage.clear(); window.location.href = '/login'; }
