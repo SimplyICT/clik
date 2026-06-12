@@ -29,7 +29,6 @@ function Nav() {
           textDecoration: 'none', fontSize: 12, fontWeight: 600
         }}>{t.l}</Link>
       ))}
-      <button onClick={logout} style={{ flex: 1, textAlign: 'center', padding: '10px 4px', color: '#888', background: 'none', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Logout</button>
     </div>
   );
 }
@@ -38,9 +37,12 @@ function Layout({ children, title }) {
   const u = getUser();
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5', paddingBottom: 52 }}>
-      <header style={{ background: '#1a1a2e', color: '#fff', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontWeight: 700, fontSize: 16 }}>{title || 'SimplyClik'}</span>
-        <span style={{ fontSize: 11, color: '#888' }}>{u?.email}</span>
+      <header style={{ background: '#1a1a2e', color: '#fff', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontWeight: 700, fontSize: 15, whiteSpace: 'nowrap' }}>{title || 'SimplyClik'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <span style={{ fontSize: 11, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u?.email}</span>
+          <button onClick={logout} style={{ background: 'none', border: '1px solid #555', color: '#ccc', padding: '4px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap' }}>Logout</button>
+        </div>
       </header>
       <main style={{ padding: '12px 14px', maxWidth: 600, margin: '0 auto' }}>{children}</main>
       <Nav />
