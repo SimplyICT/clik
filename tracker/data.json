@@ -1375,6 +1375,74 @@
           "updated_at": "2026-06-11T00:00:00+00:00"
         }
       ]
+    },
+    {
+      "id": "mobile-pwa",
+      "name": "Mobile PWA",
+      "description": "Single mobile-friendly PWA for contractors and end users. Role-based UI after login. Contractors: jobs, quotes, invoices. End users: locations, requests.",
+      "created_at": "2026-06-12T00:00:00+00:00",
+      "updated_at": "2026-06-12T00:00:00+00:00",
+      "sort_order": 10,
+      "status_values": [
+        "not_started",
+        "in_progress",
+        "blocked",
+        "review",
+        "done"
+      ],
+      "tasks": [
+        {
+          "id": "mp01",
+          "title": "Mobile PWA scaffold + login",
+          "description": "Vite + React app, login with role detection, PWA manifest + service worker",
+          "status": "done",
+          "priority": "high",
+          "phase": "Phase 0",
+          "dependencies": [],
+          "proof": [],
+          "notes": "web-mobile/ directory. Port 3004. systemd service."
+        },
+        {
+          "id": "mp02",
+          "title": "Contractor dashboard + job views",
+          "description": "Dashboard with open job count, job list, job detail with accept/quote/invoice actions",
+          "status": "done",
+          "priority": "high",
+          "phase": "Phase 0",
+          "dependencies": [
+            "mp01"
+          ],
+          "proof": [],
+          "notes": ""
+        },
+        {
+          "id": "mp03",
+          "title": "End user locations + requests",
+          "description": "Location list, request creation, request list with status tracking",
+          "status": "done",
+          "priority": "high",
+          "phase": "Phase 0",
+          "dependencies": [
+            "mp01"
+          ],
+          "proof": [],
+          "notes": ""
+        },
+        {
+          "id": "mp04",
+          "title": "Photo upload from mobile camera",
+          "description": "Integrate camera capture for request creation and notes",
+          "status": "not_started",
+          "priority": "medium",
+          "phase": "Phase 1",
+          "dependencies": [
+            "mp02",
+            "mp03"
+          ],
+          "proof": [],
+          "notes": "Use <input type=file capture=environment>"
+        }
+      ]
     }
   ]
 }

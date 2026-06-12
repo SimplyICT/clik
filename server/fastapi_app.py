@@ -26,8 +26,9 @@ if ENV_PATH.exists():
 ROOT = Path(__file__).resolve().parent.parent
 ADMIN_BUILD = ROOT / "web-admin" / "build"
 PORTAL_BUILD = ROOT / "web-portal" / "build"
+MOBILE_BUILD = ROOT / "web-mobile" / "build"
 MODE = os.environ.get("MODE", "admin")
-BUILD_DIR = PORTAL_BUILD if MODE == "portal" else ADMIN_BUILD
+BUILD_DIR = MOBILE_BUILD if MODE == "mobile" else (PORTAL_BUILD if MODE == "portal" else ADMIN_BUILD)
 
 def _require_env(key: str) -> str:
     val = os.environ.get(key)
@@ -914,6 +915,8 @@ async def portal_static_head(filepath: str):
 async def admin_or_portal_root(filepath: str):
     if MODE == "portal":
         return _serve_file(filepath, PORTAL_BUILD)
+    if MODE == "mobile":
+        return _serve_file(filepath, MOBILE_BUILD)
     return _serve_file(filepath, ADMIN_BUILD)
 
 @app.head("/{filepath:path}")
