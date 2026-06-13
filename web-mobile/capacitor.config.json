@@ -1,0 +1,14 @@
+{
+  "appId": "com.simplyclik.mobile",
+  "appName": "SimplyClik",
+  "webDir": "build",
+  "server": {
+    "url": "http://208.87.135.84:3004",
+    "cleartext": true
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}

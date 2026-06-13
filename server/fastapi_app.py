@@ -4,6 +4,7 @@ Run in admin mode:  uvicorn fastapi_app:app --host 0.0.0.0 --port 3001
 Run in portal mode: MODE=portal uvicorn fastapi_app:app --host 0.0.0.0 --port 3002
 """
 import os, json, bcrypt, secrets, mimetypes, pg8000, time, logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(name)s] %(levelname)s: %(message)s')
 from pathlib import Path
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
@@ -904,11 +905,12 @@ async def register_device(body: dict, session: dict = Depends(require_session)):
     if not token: raise HTTPException(400, detail="pushToken is required")
     uid = session.get("uid")
     profile_id = body.get("profileId") or body.get("profile_id") or uid
+    app_version = body.get("appVersion") or body.get("app_version")
     db("""
-        INSERT INTO device_tokens (user_id, profile_id, push_token, platform, is_active)
-        VALUES (%s::uuid, %s::uuid, %s, %s, true)
-        ON CONFLICT (push_token) DO UPDATE SET last_seen_at = now(), is_active = true
-    """, (uid, profile_id, token, platform))
+        INSERT INTO device_tokens (user_id, profile_id, push_token, platform, app_version, is_active, last_seen_at)
+        VALUES (%s::uuid, %s::uuid, %s, %s, %s, true, now())
+        ON CONFLICT (push_token) DO UPDATE SET last_seen_at = now(), is_active = true, platform = EXCLUDED.platform
+    """, (uid, profile_id, token, platform, app_version))
     return {"ok": True}
 
 # ── static file serving ───────────────────────────────────────────────────
