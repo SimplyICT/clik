@@ -111,9 +111,9 @@ export default function RequestsPage() {
       await create('requests', {
         title: form.title, description: form.description,
         serviceType: form.serviceType, priority: form.priority,
-        customerId: sessionStorage.getItem('customer_id') || '',
+        customerId: sessionStorage.getItem('customer_id') || null,
         customerName: CNAME() || 'Customer',
-        customerLocationProfileId: form.customerLocationProfileId,
+        customerLocationProfileId: form.customerLocationProfileId || null,
         status: 'pending_approval', requestStartDate: new Date().toISOString(),
       });
       setShowCreate(false);

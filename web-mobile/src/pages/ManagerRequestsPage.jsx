@@ -33,8 +33,9 @@ export default function ManagerRequestsPage({ createMode }) {
     try {
       await create('requests', {
         title: form.title, description: form.description, serviceType: form.serviceType,
-        priority: form.priority, customerId: cid, customerName: cname || 'Customer',
-        customerLocationProfileId: form.customerLocationProfileId,
+        priority: form.priority,
+        customerId: cid || null, customerName: cname || 'Customer',
+        customerLocationProfileId: form.customerLocationProfileId || null,
         contractorProfileId: form.contractorProfileId || null,
         status: form.contractorProfileId ? 'awaiting_acceptance' : 'pending_approval',
         requestStartDate: new Date().toISOString(),
