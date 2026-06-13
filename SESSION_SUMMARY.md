@@ -82,8 +82,10 @@ systemctl --user restart simplyclik-tracker      # Tracker (port 3003)
 
 ## Known Issues
 1. Portal Manage page not built
-2. Portal locations show correct locations but request <-> location linking depends on `customerLocationProfileId` column
-3. Some migrated customer contact fields are empty (data was in Firebase customerLocations, not customers)
+2. Some migrated customer contact fields are empty (data was in Firebase customerLocations, not customers)
+
+## Database Notes
+- The `requests` view has `INSTEAD OF INSERT/UPDATE` triggers (`requests_insert()`, `requests_update()`) that map view columns to `requests_base` table columns. These were updated to include `customer_location_profile_id`, `contractor_profile_id`, `quote_amount`, `invoice_amount`. Without this fix, location and contractor IDs were silently dropped on insert/update.
 
 ## Project Tracker (port 3003)
 9 sub-projects, 60+ tasks tracked with Kanban + list views:
