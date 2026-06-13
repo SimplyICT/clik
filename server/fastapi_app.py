@@ -51,7 +51,7 @@ DB_CONFIG = dict(
 )
 
 # ── session store (DB-backed, survives restarts) ──────────────────────────
-SESSION_TTL = timedelta(hours=24)
+SESSION_TTL = timedelta(days=30)  # localStorage persists, so extend session lifetime
 
 def create_session(data: dict) -> str:
     token = secrets.token_hex(32)

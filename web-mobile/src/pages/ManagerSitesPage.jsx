@@ -8,7 +8,7 @@ export default function ManagerSitesPage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const nav = useNavigate();
-  const cid = sessionStorage.getItem('customer_id') || '';
+  const cid = localStorage.getItem('customer_id') || '';
 
   useEffect(() => {
     Promise.all([

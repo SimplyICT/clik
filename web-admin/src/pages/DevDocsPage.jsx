@@ -50,7 +50,7 @@ export default function DevDocsPage() {
               <tr><td><code>create(table, data)</code></td><td>POST</td><td>Insert, returns created record</td></tr>
               <tr><td><code>update(table, id, data)</code></td><td>PATCH</td><td>Update by id</td></tr>
               <tr><td><code>del(table, id)</code></td><td>DELETE</td><td>Delete by id</td></tr>
-              <tr><td><code>login / logout</code></td><td>POST</td><td>Auth via /api/login, stores token in sessionStorage</td></tr>
+              <tr><td><code>login / logout</code></td><td>POST</td><td>Auth via /api/login, stores token in localStorage</td></tr>
             </tbody>
           </table>
           <p style={{ fontSize: 13, marginTop: 8 }}>All calls include <code>Authorization: Bearer &lt;token&gt;</code> automatically. The proxy route is <code>/api/supabase/{'{table}'}</code>.</p>
@@ -146,7 +146,7 @@ contractor_completed → completed / cancelled</pre>
             <li><strong>Modals:</strong> fixed overlay, white card, flex centering.</li>
             <li><strong>Components:</strong> <code>Field</code> (label+input+error), <code>Fi</code> (compact input).</li>
             <li><strong>Phone format:</strong> <code>fmtPhone()</code> → <code>0412 345 678</code>.</li>
-            <li><strong>Auth:</strong> Bearer token in <code>Authorization</code> header, from <code>sessionStorage.getItem('token')</code>.</li>
+            <li><strong>Auth:</strong> Bearer token in <code>Authorization</code> header, from <code>localStorage.getItem('token')</code>.</li>
           </ul>
         </Section>
 

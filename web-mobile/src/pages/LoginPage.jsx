@@ -19,17 +19,17 @@ export default function LoginPage() {
       const d = await login(email, pw);
       // Determine role: if login returns customer_ref, they're a customer user; otherwise check user_profiles
       if (d.customer_id) {
-        sessionStorage.setItem('role', 'customer_user');
-        sessionStorage.setItem('customer_name', d.customer_name || '');
+        localStorage.setItem('role', 'customer_user');
+        localStorage.setItem('customer_name', d.customer_name || '');
         try {
           const res = await fetch('/api/supabase/user_profiles?select=role&user_id=eq.' + d.user.id, {
             headers: { 'Authorization': 'Bearer ' + d.token }
           });
           const p = await res.json();
-          if (Array.isArray(p) && p.length > 0) sessionStorage.setItem('role', p[0].role || 'customer_user');
+          if (Array.isArray(p) && p.length > 0) localStorage.setItem('role', p[0].role || 'customer_user');
         } catch {}
       } else {
-        sessionStorage.setItem('role', 'admin');
+        localStorage.setItem('role', 'admin');
       }
       nav('/dashboard', { replace: true });
     } catch (err) { setError(err.message); }

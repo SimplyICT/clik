@@ -16,7 +16,7 @@ function RequireAuth({ children }) {
 
 function Nav() {
   const loc = useLocation().pathname;
-  const role = sessionStorage.getItem('role');
+  const role = localStorage.getItem('role');
   const isContractor = role === 'contractor';
   const tabs = isContractor
     ? [{ p: '/', l: 'Jobs' }, { p: '/profile', l: 'Profile' }]

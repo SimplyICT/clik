@@ -69,7 +69,7 @@ await update('requests', id, { status: 'accepted' });`}</pre>
             <li><strong>Inline styles only</strong> — no CSS modules or UI libraries.</li>
             <li><strong>No comments in production code</strong>.</li>
             <li><strong>Loading state:</strong> "Loading..." div until data arrives.</li>
-            <li><strong>Auth check:</strong> <code>sessionStorage.getItem('user')</code> + Bearer token.</li>
+            <li><strong>Auth check:</strong> <code>localStorage.getItem('user')</code> + Bearer token.</li>
           </ul>
         </Section>
 

@@ -1,7 +1,7 @@
 const API = '/api/supabase';
 
 function authHeaders() {
-  const token = sessionStorage.getItem('token');
+  const token = localStorage.getItem('token');
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 
@@ -49,12 +49,12 @@ export async function login(email, password) {
   const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
   const d = await res.json();
   if (!res.ok) throw new Error(d.detail || d.error || 'Login failed');
-  sessionStorage.setItem('token', d.token);
-  sessionStorage.setItem('user', JSON.stringify(d.user));
-  sessionStorage.setItem('is_admin', JSON.stringify(d.is_admin));
+  localStorage.setItem('token', d.token);
+  localStorage.setItem('user', JSON.stringify(d.user));
+  localStorage.setItem('is_admin', JSON.stringify(d.is_admin));
   return d;
 }
 
-export function logout() { sessionStorage.clear(); }
-export function getUser() { try { return JSON.parse(sessionStorage.getItem('user')); } catch { return null; } }
-export function isAdmin() { try { return JSON.parse(sessionStorage.getItem('is_admin')) === true; } catch { return false; } }
+export function logout() { localStorage.clear(); }
+export function getUser() { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } }
+export function isAdmin() { try { return JSON.parse(localStorage.getItem('is_admin')) === true; } catch { return false; } }

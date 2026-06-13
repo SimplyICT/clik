@@ -33,7 +33,7 @@ export default function JobDetailPage() {
   const [quoteImages, setQuoteImages] = useState([]);
   const [completeImages, setCompleteImages] = useState([]);
   const [actionLoading, setActionLoading] = useState('');
-  const role = sessionStorage.getItem('role');
+  const role = localStorage.getItem('role');
   const isContractor = role === 'contractor';
 
   useEffect(() => {
@@ -64,7 +64,7 @@ export default function JobDetailPage() {
     if (!noteText.trim()) return;
     try {
       await create('request_notes', {
-        request_id: id, author_profile_id: sessionStorage.getItem('author_profile_id'),
+        request_id: id, author_profile_id: localStorage.getItem('author_profile_id'),
         display_name: isContractor ? 'Contractor' : 'Customer',
         description: noteText, note_type: 'comment', visibility: 'public', added_date: new Date().toISOString(),
       });

@@ -37,7 +37,7 @@ export default function PushSetup({ onSubscribed }) {
     try {
       setStatus('subscribing');
       setMsg('Setting up...');
-      const token = sessionStorage.getItem('token');
+      const token = localStorage.getItem('token');
       if (!token) { setStatus('prompt'); setMsg('Enable job alerts'); return; }
 
       const resp = await fetch('/api/push/vapid-key', {
@@ -52,7 +52,7 @@ export default function PushSetup({ onSubscribed }) {
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
 
-      const profileId = sessionStorage.getItem('author_profile_id');
+      const profileId = localStorage.getItem('author_profile_id');
       await fetch('/api/notifications/device-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },

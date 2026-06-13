@@ -8,7 +8,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const nav = useNavigate();
 
-  if (sessionStorage.getItem('user')) { nav('/dashboard', { replace: true }); return null; }
+  if (localStorage.getItem('user')) { nav('/dashboard', { replace: true }); return null; }
 
   const submit = async e => {
     e.preventDefault();
@@ -20,12 +20,12 @@ export default function LoginPage() {
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.detail || d.error || 'Login failed');
-      sessionStorage.setItem('token', d.token);
-      sessionStorage.setItem('user', JSON.stringify(d.user));
-      if (d.customer_id) sessionStorage.setItem('customer_id', d.customer_id);
-      if (d.customer_ref) sessionStorage.setItem('customer_ref', d.customer_ref);
-      if (d.customer_name) sessionStorage.setItem('customer_name', d.customer_name);
-      if (d.author_profile_id) sessionStorage.setItem('author_profile_id', d.author_profile_id);
+      localStorage.setItem('token', d.token);
+      localStorage.setItem('user', JSON.stringify(d.user));
+      if (d.customer_id) localStorage.setItem('customer_id', d.customer_id);
+      if (d.customer_ref) localStorage.setItem('customer_ref', d.customer_ref);
+      if (d.customer_name) localStorage.setItem('customer_name', d.customer_name);
+      if (d.author_profile_id) localStorage.setItem('author_profile_id', d.author_profile_id);
       nav('/dashboard', { replace: true });
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }

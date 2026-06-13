@@ -77,10 +77,19 @@ async def auto_reassign_contractors():
     except Exception as e:
         logger.error("[st02] Error: %s", e)
 
+# ── Session cleanup ──────────────────────────────────────────────────────
+async def cleanup_expired_sessions():
+    try:
+        db("DELETE FROM sessions WHERE expires_at < NOW()")
+        logger.info("[cleanup] Expired sessions removed")
+    except Exception as e:
+        logger.error("[cleanup] Error: %s", e)
+
 # ── Init ─────────────────────────────────────────────────────────────────
 def init_scheduler(db_config: dict):
     global DB_CONFIG
     DB_CONFIG = db_config
     scheduler.add_job(auto_complete_requests, IntervalTrigger(hours=12), id="st01", replace_existing=True)
     scheduler.add_job(auto_reassign_contractors, IntervalTrigger(hours=4), id="st02", replace_existing=True)
-    logger.info("Scheduler initialized with st01 (12h) and st02 (4h)")
+    scheduler.add_job(cleanup_expired_sessions, IntervalTrigger(hours=1), id="session_cleanup", replace_existing=True)
+    logger.info("Scheduler initialized with st01 (12h), st02 (4h), session_cleanup (1h)")

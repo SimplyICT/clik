@@ -51,7 +51,7 @@ export async function uploadImages(images, path) {
     if (img.url) { uploaded.push(img.url); continue; }
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
     const res = await fetch('/api/upload/presign', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionStorage.getItem('token') },
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('token') },
       body: JSON.stringify({ bucket: 'request-images', path: `${path}/${filename}` }),
     });
     const { uploadUrl } = await res.json();

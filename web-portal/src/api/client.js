@@ -1,8 +1,8 @@
 const API = '/api/supabase';
-const CID = () => sessionStorage.getItem('customer_id') || '';
+const CID = () => localStorage.getItem('customer_id') || '';
 
 function authHeaders() {
-  const token = sessionStorage.getItem('token');
+  const token = localStorage.getItem('token');
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 

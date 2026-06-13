@@ -4,7 +4,7 @@ import { q } from '../api/client';
 export default function LocationsPage() {
   const [locs, setLocs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const cid = sessionStorage.getItem('customer_id') || '';
+  const cid = localStorage.getItem('customer_id') || '';
 
   useEffect(() => {
     q('customerLocations', { select: '*', filters: cid ? [{ field: 'customerId', value: cid }] : [] }).then(d => { setLocs(Array.isArray(d) ? d : []); setLoading(false); }).catch(() => setLoading(false));

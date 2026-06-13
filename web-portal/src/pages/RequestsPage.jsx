@@ -25,7 +25,7 @@ const ST_LABELS = {
 
 const SERVICE_TYPES = ['Air Conditioning','Cleaning','Electrical','General Maintenance','Painting','Plumbing','Refrigeration'];
 const PRIORITIES = ['low','medium','high','urgent'];
-const CNAME = () => sessionStorage.getItem('customer_name') || '';
+const CNAME = () => localStorage.getItem('customer_name') || '';
 
 export default function RequestsPage() {
   const [all, setAll] = useState([]);
@@ -89,7 +89,7 @@ export default function RequestsPage() {
     try {
       await create('request_notes', {
         request_id: detail.id,
-        author_profile_id: sessionStorage.getItem('author_profile_id') || null,
+        author_profile_id: localStorage.getItem('author_profile_id') || null,
         display_name: CNAME() || 'Customer',
         description: noteText,
         note_type: 'comment',
@@ -106,7 +106,7 @@ export default function RequestsPage() {
     if (!form.title.trim() || !form.description.trim() || !form.customerLocationProfileId) {
       alert('Title, description, and location are required'); return;
     }
-    const cid = sessionStorage.getItem('customer_id');
+    const cid = localStorage.getItem('customer_id');
     if (!cid) { alert('Session expired - please log out and back in'); return; }
     setCreating(true);
     try {
