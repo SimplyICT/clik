@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { q } from '../api/client';
+import PushSetup from './PushSetup';
 
 const ST_COLORS = { pending_approval:'#94a3b8', awaiting_acceptance:'#38bdf8', awaiting_quote:'#f59e0b', pending_quote_approval:'#f59e0b', accepted:'#22c55e', rfi:'#ef4444', in_progress:'#3b82f6', contractor_completed:'#22c55e', completed:'#22c55e', declined:'#ef4444', cancelled:'#ef4444' };
 const ST_LABELS = { pending_approval:'Pending', awaiting_acceptance:'Awaiting Acceptance', awaiting_quote:'Awaiting Quote', pending_quote_approval:'Quote Approval', accepted:'Accepted', rfi:'More Info', in_progress:'In Progress', contractor_completed:'Done', completed:'Completed', declined:'Declined', cancelled:'Cancelled' };
@@ -17,13 +18,12 @@ export default function DashboardPage() {
       const pid = sessionStorage.getItem('author_profile_id');
       if (!pid) { setLoading(false); return; }
       q('requests', { select: 'id,title,status,serviceType,priority,customerName,customerLocationProfileId,quoteAmount,invoiceAmount,requestStartDate,description', filters: [{ field: 'contractorProfileId', value: pid }], order: 'requestStartDate.desc.nullslast' }).then(d => {
-        setJobs(Array.isArray(d) ? d : []);
-        setLoading(false);
+        setJobs(Array.isArray(d) ? d : []); setLoading(false);
       }).catch(() => setLoading(false));
     } else {
       const cid = sessionStorage.getItem('customer_id') || '';
       Promise.all([
-        q('customerLocations', { select: 'id,companyName,customerId', filters: cid ? [{ field: 'customerId', value: cid }] : [] }),
+        q('customerLocations', { select: 'id,companyName', filters: cid ? [{ field: 'customerId', value: cid }] : [] }),
         q('requests', { select: 'id,status', filters: cid ? [{ field: 'customerId', value: cid }] : [] }),
       ]).then(([locs, reqs]) => {
         sessionStorage.setItem('siteCount', String(Array.isArray(locs) ? locs.length : 0));
@@ -35,32 +35,42 @@ export default function DashboardPage() {
 
   if (loading) return <Centered>Loading...</Centered>;
 
-  if (isContractor) {
-    const counts = {};
-    jobs.forEach(j => { counts[j.status] = (counts[j.status] || 0) + 1; });
-    const needsAction = jobs.filter(j => ['awaiting_acceptance','awaiting_quote'].includes(j.status));
-    return (
-      <div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
-          <StatBox label="New" count={jobs.filter(j => j.status === 'awaiting_acceptance').length} color="#38bdf8" />
-          <StatBox label="Active" count={jobs.filter(j => !['completed','declined','cancelled','awaiting_acceptance'].includes(j.status)).length} color="#3b82f6" />
-          <StatBox label="Completed" count={jobs.filter(j => j.status === 'completed').length} color="#22c55e" />
-        </div>
+  return (
+    <div>
+      <PushSetup />
+      {isContractor ? <ContractorView jobs={jobs} nav={nav} /> : <ManagerView nav={nav} />}
+    </div>
+  );
+}
 
-        {needsAction.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, marginBottom: 8, color: '#ef4444' }}>Needs Action</h3>
-            {needsAction.slice(0, 3).map(r => <JobCard key={r.id} job={r} onClick={() => nav(`/jobs/${r.id}`)} />)}
-          </div>
-        )}
+function ContractorView({ jobs, nav }) {
+  const needsAction = jobs.filter(j => ['awaiting_acceptance', 'awaiting_quote'].includes(j.status));
+  const newJobs = jobs.filter(j => j.status === 'awaiting_acceptance').length;
+  const activeJobs = jobs.filter(j => !['completed', 'declined', 'cancelled', 'awaiting_acceptance'].includes(j.status)).length;
+  const completedJobs = jobs.filter(j => j.status === 'completed').length;
 
-        <h3 style={{ fontSize: 14, marginBottom: 8, color: '#444' }}>All Jobs ({jobs.length})</h3>
-        {jobs.length === 0 ? <Centered>No jobs assigned yet</Centered> : jobs.slice(0, 10).map(r => <JobCard key={r.id} job={r} onClick={() => nav(`/jobs/${r.id}`)} />)}
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
+        <StatBox label="New" count={newJobs} color="#38bdf8" />
+        <StatBox label="Active" count={activeJobs} color="#3b82f6" />
+        <StatBox label="Completed" count={completedJobs} color="#22c55e" />
       </div>
-    );
-  }
 
-  // Manager view
+      {needsAction.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <h3 style={{ fontSize: 14, marginBottom: 8, color: '#ef4444' }}>⚡ Needs Action</h3>
+          {needsAction.slice(0, 3).map(r => <JobCard key={r.id} job={r} onClick={() => nav(`/jobs/${r.id}`)} />)}
+        </div>
+      )}
+
+      <h3 style={{ fontSize: 14, marginBottom: 8, color: '#444' }}>All Jobs ({jobs.length})</h3>
+      {jobs.length === 0 ? <Centered>No jobs assigned yet. You'll be notified when one becomes available.</Centered> : jobs.slice(0, 10).map(r => <JobCard key={r.id} job={r} onClick={() => nav(`/jobs/${r.id}`)} />)}
+    </div>
+  );
+}
+
+function ManagerView({ nav }) {
   const sc = parseInt(sessionStorage.getItem('siteCount') || '0');
   const rc = parseInt(sessionStorage.getItem('requestCount') || '0');
   return (

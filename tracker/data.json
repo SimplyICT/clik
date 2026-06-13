@@ -1432,7 +1432,7 @@
           "id": "mp04",
           "title": "Photo upload from mobile camera",
           "description": "Integrate camera capture for request creation and notes",
-          "status": "not_started",
+          "status": "done",
           "priority": "medium",
           "phase": "Phase 1",
           "dependencies": [

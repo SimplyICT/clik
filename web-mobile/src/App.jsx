@@ -7,6 +7,7 @@ import JobsPage from './pages/JobsPage';
 import JobDetailPage from './pages/JobDetailPage';
 import ManagerSitesPage from './pages/ManagerSitesPage';
 import ManagerRequestsPage from './pages/ManagerRequestsPage';
+import ProfilePage from './pages/ProfilePage';
 
 function RequireAuth({ children }) {
   if (!getUser()) return <Navigate to="/login" replace />;
@@ -18,8 +19,8 @@ function Nav() {
   const role = sessionStorage.getItem('role');
   const isContractor = role === 'contractor';
   const tabs = isContractor
-    ? [{ p: '/', l: 'Jobs' }]
-    : [{ p: '/', l: 'Sites' }, { p: '/requests', l: 'Requests' }];
+    ? [{ p: '/', l: 'Jobs' }, { p: '/profile', l: 'Profile' }]
+    : [{ p: '/', l: 'Sites' }, { p: '/requests', l: 'Requests' }, { p: '/profile', l: 'Profile' }];
 
   return (
     <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#1a1a2e', display: 'flex', zIndex: 100, borderTop: '1px solid #333' }}>
@@ -60,6 +61,7 @@ export default function App() {
         <Route path="/sites" element={<RequireAuth><Layout title="Sites"><ManagerSitesPage /></Layout></RequireAuth>} />
         <Route path="/requests" element={<RequireAuth><Layout title="Requests"><ManagerRequestsPage /></Layout></RequireAuth>} />
         <Route path="/requests/new" element={<RequireAuth><Layout title="New Request"><ManagerRequestsPage createMode /></Layout></RequireAuth>} />
+        <Route path="/profile" element={<RequireAuth><Layout title="Profile"><ProfilePage /></Layout></RequireAuth>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

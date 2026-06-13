@@ -101,7 +101,13 @@ export default function CustomersPage() {
       }
       for (const loc of locations) {
         if (loc._tempId) {
-          await create('customerLocations', { companyName: loc.companyName, reference: loc.reference || null, customerId });
+          await create('customerLocations', {
+            companyName: loc.companyName, reference: loc.reference || null, customerId,
+            profileType: 'customer_location', contactName: loc.companyName,
+            contactEmail: 'location-' + (loc.reference || loc.companyName).replace(/\s+/g, '').toLowerCase().slice(0, 12) + '@simplyclik.invalid',
+            contactPhoneNumber: '', serviceContactName: loc.companyName,
+            serviceContactEmail: '', addressJson: {}, isVerified: true,
+          });
         } else {
           await update('customerLocations', loc.id, { companyName: loc.companyName, reference: loc.reference || null });
         }
