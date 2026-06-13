@@ -53,7 +53,7 @@ function Layout({ children, title }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/mobile">
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<RequireAuth><Layout><DashboardPage /></Layout></RequireAuth>} />
