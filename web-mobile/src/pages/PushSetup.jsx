@@ -36,10 +36,11 @@ export default function PushSetup({ onSubscribed }) {
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
 
+      const profileId = sessionStorage.getItem('author_profile_id');
       await fetch('/api/notifications/device-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ pushToken: JSON.stringify(sub.toJSON()), platform: 'web' }),
+        body: JSON.stringify({ pushToken: JSON.stringify(sub.toJSON()), platform: 'web', profileId }),
       });
       setStatus('active');
       onSubscribed?.();

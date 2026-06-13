@@ -903,11 +903,12 @@ async def register_device(body: dict, session: dict = Depends(require_session)):
     platform = body.get("platform", "web")
     if not token: raise HTTPException(400, detail="pushToken is required")
     uid = session.get("uid")
+    profile_id = body.get("profileId") or body.get("profile_id") or uid
     db("""
-        INSERT INTO device_tokens (user_id, push_token, platform, is_active)
-        VALUES (%s::uuid, %s, %s, true)
+        INSERT INTO device_tokens (user_id, profile_id, push_token, platform, is_active)
+        VALUES (%s::uuid, %s::uuid, %s, %s, true)
         ON CONFLICT (push_token) DO UPDATE SET last_seen_at = now(), is_active = true
-    """, (uid, token, platform))
+    """, (uid, profile_id, token, platform))
     return {"ok": True}
 
 # ── static file serving ───────────────────────────────────────────────────
