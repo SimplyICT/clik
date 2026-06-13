@@ -48,23 +48,26 @@ DB_CONFIG = dict(
     ssl_context=True,
 )
 
-# ── session store ─────────────────────────────────────────────────────────
-SESSIONS: dict[str, dict] = {}
+# ── session store (DB-backed, survives restarts) ──────────────────────────
 SESSION_TTL = timedelta(hours=24)
 
 def create_session(data: dict) -> str:
     token = secrets.token_hex(32)
-    SESSIONS[token] = {**data, "created_at": datetime.utcnow()}
+    now = datetime.utcnow().isoformat()
+    expires = (datetime.utcnow() + SESSION_TTL).isoformat()
+    db("INSERT INTO sessions (token, user_id, data, created_at, expires_at) VALUES (%s,%s,%s,%s,%s)",
+       (token, data.get("uid", ""), json.dumps(data), now, expires))
     return token
 
 def validate_session(token: str) -> dict | None:
-    s = SESSIONS.get(token)
-    if not s:
+    rows = db("SELECT data, expires_at FROM sessions WHERE token = %s", (token,))
+    if not rows:
         return None
-    if datetime.utcnow() - s["created_at"] > SESSION_TTL:
-        del SESSIONS[token]
+    data_str, expires_dt = rows[0]
+    if expires_dt and datetime.utcnow() > expires_dt.replace(tzinfo=None):
+        db("DELETE FROM sessions WHERE token = %s", (token,))
         return None
-    return s
+    return json.loads(data_str) if isinstance(data_str, str) else data_str
 
 # ── lifespan ──────────────────────────────────────────────────────────────
 @asynccontextmanager
@@ -175,7 +178,7 @@ async def handle_login(request: Request):
 @app.post("/api/logout")
 async def handle_logout(authorization: str | None = Header(None)):
     if authorization and authorization.startswith("Bearer "):
-        SESSIONS.pop(authorization[7:], None)
+        db("DELETE FROM sessions WHERE token = %s", (authorization[7:],))
     return {"ok": True}
 
 # ── Supabase proxy (auth required, allowlisted tables, rate limited) ──────
@@ -220,10 +223,14 @@ async def supabase_proxy(path: str, request: Request, session: dict = Depends(re
                     data = data[0]
                 contr_id = data.get("contractorProfileId")
                 if contr_id:
-                    from notifications import send_push
+                    from notifications import send_push, send_pushover
                     import asyncio
+                    title = data.get('title', '')
                     asyncio.create_task(asyncio.to_thread(send_push, contr_id,
-                        "New Job Available", f"'{data.get('title','')}' has been assigned to you"))
+                        "New Job Available", f"'{title}' has been assigned to you"))
+                    job_url = f"https://pwa.simplyclik.com/mobile/jobs/{data.get('id','')}"
+                    asyncio.create_task(asyncio.to_thread(send_pushover,
+                        "New Job Available", f"'{title}' has been assigned to you", job_url, "Open Job"))
             except:
                 pass
         return Response(content=resp.content, status_code=resp.status_code, media_type="application/json")

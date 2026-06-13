@@ -25,6 +25,10 @@ SMTP_PASS = os.environ.get("SMTP_PASS", "")
 SMTP_FROM = os.environ.get("SMTP_FROM", "noreply@simplyclik.com")
 FCM_CRED_PATH = os.environ.get("FCM_CREDENTIALS", "")
 
+# ── Pushover config ──────────────────────────────────────────────────────
+PUSHOVER_TOKEN = os.environ.get("PUSHOVER_TOKEN", "")
+PUSHOVER_USER = os.environ.get("PUSHOVER_USER", "")
+
 # ── DB helper ─────────────────────────────────────────────────────────────
 def db(sql: str, params=None):
     import pg8000
@@ -103,6 +107,33 @@ def get_vapid_public_key() -> str:
     if not VAPID_PUB:
         return ""
     return base64.urlsafe_b64encode(VAPID_PUB).rstrip(b"=").decode()
+
+# ── Pushover (iOS/Android push notifications, no Firebase needed) ────────
+PUSHOVER_API = "https://api.pushover.net/1/messages.json"
+
+def send_pushover(title: str, body: str, url: str = "", url_title: str = ""):
+    """Send push notification via Pushover. Configure PUSHOVER_TOKEN and PUSHOVER_USER in .env"""
+    if not PUSHOVER_TOKEN or not PUSHOVER_USER:
+        logger.debug("Pushover not configured")
+        return False
+    try:
+        import urllib.request, urllib.parse
+        data = urllib.parse.urlencode({
+            "token": PUSHOVER_TOKEN,
+            "user": PUSHOVER_USER,
+            "title": title[:250],
+            "message": body[:1024],
+            "url": url[:512] if url else "",
+            "url_title": url_title[:100] if url_title else "",
+            "sound": "pushover",
+        }).encode()
+        req = urllib.request.Request(PUSHOVER_API, data=data)
+        resp = urllib.request.urlopen(req, timeout=10)
+        logger.info("Pushover sent: %s", title)
+        return True
+    except Exception as e:
+        logger.error("Pushover failed: %s", e)
+        return False
 
 def send_web_push(subscription_info: dict, title: str, body: str):
     if not VAPID_PRIV:
@@ -212,7 +243,7 @@ def notify_request_update(request_id: str, old_status: str, new_status: str, act
         for (uid,) in users:
             create_inapp(uid, f"Request {label}", f"'{title}' is now {label}", f"/requests/{request_id}")
 
-    # Push notification
+    # Push notification (web push + FCM)
     if customer_id:
         users = db("""
             SELECT u.id FROM auth.users u
@@ -223,10 +254,15 @@ def notify_request_update(request_id: str, old_status: str, new_status: str, act
         for (uid,) in users:
             send_push(uid, f"Request {label}", f"'{title}' is now {label}")
 
+    # Pushover (reliable iOS/Android push - one alert per event)
+    job_url = f"https://pwa.simplyclik.com/mobile/jobs/{request_id}"
+    send_pushover(f"Request {label}", f"'{title}' - {customer_name}", job_url, "Open Job")
+
 # ── Init ──────────────────────────────────────────────────────────────────
 def init_notifications(db_config: dict):
     global DB
     DB = db_config
     _init_vapid()
     init_fcm()
-    logger.info("Notification system initialized (SMTP=%s, FCM=%s, VAPID=%s)", bool(SMTP_HOST), bool(FCM_APP), bool(VAPID_PRIV))
+    logger.info("Notification system initialized (SMTP=%s, FCM=%s, VAPID=%s, Pushover=%s)",
+                bool(SMTP_HOST), bool(FCM_APP), bool(VAPID_PRIV), bool(PUSHOVER_TOKEN))
