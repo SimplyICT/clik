@@ -130,21 +130,23 @@ async def handle_login(request: Request):
         if not bcrypt.checkpw(pw.encode(), pw_hash.encode()):
             raise HTTPException(401, detail="Invalid credentials")
 
+        # Always fetch profile data for portal/mobile fields (contractor, customer_id, etc.)
+        profile = db("""
+            SELECT up.role, up.customer_ref, p.customer_id, p.id
+            FROM public.user_profiles up
+            LEFT JOIN public.profiles p ON p.user_id = up.user_id
+            WHERE up.user_id = %s LIMIT 1
+        """, (uid,))
+        customer_ref = profile[0][1] if profile else None
+        customer_id = str(profile[0][2]) if profile and profile[0][2] else None
+        author_profile_id = str(profile[0][3]) if profile and profile[0][3] else None
+        customer_name = None
+        if customer_id:
+            c = db("SELECT name FROM public.customers WHERE id = %s", (customer_id,))
+            if c:
+                customer_name = c[0][0]
+
         if MODE in ("portal", "mobile"):
-            profile = db("""
-                SELECT up.role, up.customer_ref, p.customer_id, p.id
-                FROM public.user_profiles up
-                LEFT JOIN public.profiles p ON p.user_id = up.user_id
-                WHERE up.user_id = %s LIMIT 1
-            """, (uid,))
-            customer_ref = profile[0][1] if profile else None
-            customer_id = str(profile[0][2]) if profile and profile[0][2] else None
-            author_profile_id = str(profile[0][3]) if profile and profile[0][3] else None
-            customer_name = None
-            if customer_id:
-                c = db("SELECT name FROM public.customers WHERE id = %s", (customer_id,))
-                if c:
-                    customer_name = c[0][0]
             session_data = {"uid": str(uid), "email": db_email, "mode": "portal",
                            "customer_id": customer_id, "customer_ref": customer_ref}
             token = create_session(session_data)
@@ -154,9 +156,16 @@ async def handle_login(request: Request):
         else:
             role_rows = db("SELECT role FROM public.user_roles WHERE user_id = %s", (uid,))
             is_admin = bool(role_rows and role_rows[0][0] == "admin")
-            session_data = {"uid": str(uid), "email": db_email, "mode": "admin", "is_admin": is_admin}
+            session_data = {"uid": str(uid), "email": db_email, "mode": "admin", "is_admin": is_admin,
+                           "customer_id": customer_id, "customer_ref": customer_ref}
             token = create_session(session_data)
-            return {"token": token, "user": {"id": str(uid), "email": db_email, "uid": str(uid)}, "is_admin": is_admin}
+            result = {"token": token, "user": {"id": str(uid), "email": db_email, "uid": str(uid)}, "is_admin": is_admin}
+            if customer_id:
+                result["customer_id"] = customer_id
+                result["customer_ref"] = customer_ref
+                result["author_profile_id"] = author_profile_id
+                result["customer_name"] = customer_name
+            return result
     except HTTPException:
         raise
     except Exception as e:
