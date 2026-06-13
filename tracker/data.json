@@ -1381,7 +1381,7 @@
       "name": "Mobile PWA",
       "description": "Single mobile-friendly PWA for contractors and end users. Role-based UI after login. Contractors: jobs, quotes, invoices. End users: locations, requests.",
       "created_at": "2026-06-12T00:00:00+00:00",
-      "updated_at": "2026-06-12T00:00:00+00:00",
+      "updated_at": "2026-06-13T00:00:00+00:00",
       "sort_order": 10,
       "status_values": [
         "not_started",
