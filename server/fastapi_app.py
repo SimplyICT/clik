@@ -482,13 +482,27 @@ async def create_request(body: dict, session: dict = Depends(require_session)):
     if not title:
         raise HTTPException(400, detail="Title is required")
     status = body.get("status", "pending_approval")
+    loc_id = body.get("customerLocationProfileId")
+
+    # Auto-assign contractor based on customer_location_contractors
+    contr_id = body.get("contractorProfileId")
+    if not contr_id and loc_id:
+        crows = db("SELECT contractor_id::text FROM customer_location_contractors WHERE customer_location_id = %s::uuid LIMIT 1", (loc_id,))
+        if crows:
+            contr_id = crows[0][0]
+            status = "awaiting_acceptance"
+
     rows = db("""
         INSERT INTO requests (title, description, "serviceType", priority, status,
-          "customerId", "customerName", "customerLocationProfileId", "requestStartDate")
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id
+          "customerId", "customerName", "customerLocationProfileId", "contractorProfileId", "requestStartDate")
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id
     """, (title, body.get("description"), body.get("serviceType"), body.get("priority", "medium"),
           status, body.get("customerId"), body.get("customerName"),
-          body.get("customerLocationProfileId"), body.get("requestStartDate", None)))
+          loc_id, contr_id, body.get("requestStartDate", None)))
+
+    if contr_id:
+        db("INSERT INTO request_contractor_priority (request_id, contractor_id, priority) VALUES (%s,%s,1) ON CONFLICT DO NOTHING",
+           (str(rows[0][0]), contr_id))
     return {"id": str(rows[0][0]), "status": status}
 
 @app.post("/api/requests/{request_id}/transition")
