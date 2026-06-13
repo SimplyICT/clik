@@ -24,11 +24,12 @@ Complete rebuild of the SimplyClik maintenance platform from Firebase to a stand
 ## Live URLs
 | App | URL | Login |
 |-----|-----|-------|
-| **Admin** | http://208.87.135.84:3001 | admin@simplyclik.local / Temp123! |
-| **Portal** | http://208.87.135.84:3002 | cont2@simplyclik.testinator.com / Temp123! |
+| **Admin** | https://pwa.simplyclik.com/ | admin@simplyclik.local / Temp123! |
+| **Portal** | https://pwa.simplyclik.com/portal/ | portal@simplyclik.local / Temp123! |
 | **Tracker** | http://208.87.135.84:3003 | Project management for all sub-projects |
 | **API** | POST /api/login | Returns {token, user, is_admin, customer_id} |
-| **Mobile** | http://208.87.135.84:3004 | contractor@simplyclik.local / Temp123! or manager@simplyclik.local / Temp123! |
+| **Mobile** | https://pwa.simplyclik.com/mobile/ | contractor@simplyclik.local / Temp123! or manager@simplyclik.local / Temp123! |
+| **Mobile (direct)** | http://208.87.135.84:3004 | contractor@simplyclik.local / Temp123! |
 
 ## Data Source
 Supabase project `imkkhzxeggjxepbisoyy` — migrated from Firebase with 14 users, 2 customers, 4 contractors, 9 locations, 25 requests, 42 notes, 8 invoices.
