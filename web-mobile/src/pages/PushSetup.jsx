@@ -1,61 +1,57 @@
 import { useEffect, useState } from 'react';
 
-const VAPID_PUBLIC_KEY = 'BHAsqVznJ0KZnN4y9GvK0kRx7FcXz0GZnY0KZnN4y9GvK0kRx7Fc'; // placeholder
-
 export default function PushSetup() {
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState('loading');
 
   useEffect(() => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      setStatus('not supported');
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+      setStatus('unsupported');
       return;
     }
-    // Check existing subscription
-    navigator.serviceWorker.ready.then(reg => {
-      reg.pushManager.getSubscription().then(sub => {
-        if (sub) {
-          setStatus('subscribed');
-          // Send to server
-          const token = sessionStorage.getItem('token');
-          if (token) {
-            fetch('/api/notifications/device-token', {
-              method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-              body: JSON.stringify({ pushToken: JSON.stringify(sub.toJSON()), platform: 'web' }),
-            }).catch(() => {});
-          }
-        }
-      });
+
+    // Always request permission on load
+    Notification.requestPermission().then(perm => {
+      if (perm !== 'granted') {
+        setStatus('denied');
+        return;
+      }
+      subscribe();
     });
   }, []);
 
   const subscribe = async () => {
     try {
+      // Fetch VAPID public key from server
+      const token = sessionStorage.getItem('token');
+      if (!token) { setStatus('noauth'); return; }
+
+      const resp = await fetch('/api/push/vapid-key', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (!resp.ok) { setStatus('no-vapid'); return; }
+      const { publicKey } = await resp.json();
+
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
-      setStatus('subscribed');
-      const token = sessionStorage.getItem('token');
-      if (token) {
-        await fetch('/api/notifications/device-token', {
-          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ pushToken: JSON.stringify(sub.toJSON()), platform: 'web' }),
-        });
-      }
+
+      // Register with server
+      await fetch('/api/notifications/device-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ pushToken: JSON.stringify(sub.toJSON()), platform: 'web' }),
+      });
+      setStatus('active');
     } catch (e) {
-      setStatus('blocked');
+      setStatus('error');
     }
   };
 
-  if (status === 'subscribed') return null;
+  if (status === 'active' || status === 'loading') return null;
 
-  return (
-    <div style={{ background: '#e3f2fd', borderRadius: 8, padding: '10px 14px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span style={{ fontSize: 13, color: '#1565c0' }}>🔔 Get notified when jobs are available</span>
-      <button onClick={subscribe} style={{ padding: '6px 14px', borderRadius: 6, border: 'none', background: '#1565c0', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Enable</button>
-    </div>
-  );
+  return null;
 }
 
 function urlBase64ToUint8Array(base64String) {

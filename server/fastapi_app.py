@@ -858,6 +858,15 @@ async def health_db():
 
 # ── CORS + logging (api17) — handled by middleware and CORSMiddleware above ──
 
+# ── Push notification VAPID key ──────────────────────────────────────────
+@app.get("/api/push/vapid-key")
+async def vapid_key():
+    from notifications import get_vapid_public_key
+    key = get_vapid_public_key()
+    if not key:
+        raise HTTPException(503, detail="VAPID not initialized")
+    return {"publicKey": key}
+
 # ── Notification API endpoints (ns03) ──────────────────────────────────────
 @app.get("/api/notifications")
 async def list_notifications(session: dict = Depends(require_session)):

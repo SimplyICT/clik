@@ -1,15 +1,21 @@
 """
-SimplyClik Notification System — Email (SMTP), Push (FCM), In-app.
+SimplyClik Notification System — Email (SMTP), Push (FCM + Web Push), In-app.
 """
-import os, smtplib, logging, json
+import os, smtplib, logging, json, base64
 from email.mime.text import MIMEText
 from datetime import datetime, timezone
 from pathlib import Path
 
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.backends import default_backend
+
 logger = logging.getLogger("simplyclik.notifications")
 
-DB = None  # set by init_notifications
+DB = None
 FCM_APP = None
+VAPID_PRIV = None
+VAPID_PUB = None
 
 # ── Config from env vars ──────────────────────────────────────────────────
 SMTP_HOST = os.environ.get("SMTP_HOST", "")
@@ -63,6 +69,82 @@ def send_request_notification(to: str, title: str, status: str, request_id: str)
     send_email(to, f"Request Update: {title}", f"Your request '{title}' has been updated to: {status.replace('_', ' ').title()}\n\nView: http://208.87.135.84:3002/requests")
 
 # ── ns02: Push notifications (FCM) ────────────────────────────────────────
+# ── VAPID keys for Web Push ──────────────────────────────────────────────
+def _init_vapid():
+    global VAPID_PRIV, VAPID_PUB
+    try:
+        key_path = Path(__file__).resolve().parent / "vapid_private.pem"
+        if key_path.exists():
+            with open(key_path, "rb") as f:
+                VAPID_PRIV = f.read()
+            pub_path = Path(__file__).resolve().parent / "vapid_public.pem"
+            with open(pub_path, "rb") as f:
+                VAPID_PUB = f.read()
+        else:
+            private_key = ec.generate_private_key(ec.SECP256R1(), default_backend())
+            VAPID_PRIV = private_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption())
+            public_key = private_key.public_key()
+            VAPID_PUB = public_key.public_bytes(
+                encoding=serialization.Encoding.X962,
+                format=serialization.PublicFormat.UncompressedPoint)
+            with open(key_path, "wb") as f:
+                f.write(VAPID_PRIV)
+            pub_path = Path(__file__).resolve().parent / "vapid_public.pem"
+            with open(pub_path, "wb") as f:
+                f.write(VAPID_PUB)
+        logger.info("VAPID keys ready")
+    except Exception as e:
+        logger.error("VAPID init failed: %s", e)
+
+def get_vapid_public_key() -> str:
+    if not VAPID_PUB:
+        return ""
+    return base64.urlsafe_b64encode(VAPID_PUB).rstrip(b"=").decode()
+
+def send_web_push(subscription_info: dict, title: str, body: str):
+    if not VAPID_PRIV:
+        logger.warning("VAPID not initialized")
+        return False
+    try:
+        from pywebpush import webpush
+        payload = json.dumps({"title": title, "body": body, "icon": "/icon-192.svg"})
+        webpush(
+            subscription_info=subscription_info,
+            data=payload,
+            vapid_private_key=VAPID_PRIV.decode() if isinstance(VAPID_PRIV, bytes) else VAPID_PRIV,
+            vapid_claims={"sub": "mailto:admin@simplyclik.local"},
+        )
+        return True
+    except Exception as e:
+        logger.error("Web push failed: %s", e)
+        return False
+
+def send_push(user_id: str, title: str, body: str, data: dict = None):
+    """Try FCM first, fall back to web push for web platform tokens."""
+    tokens = db("SELECT push_token, platform FROM device_tokens WHERE user_id = %s::uuid AND is_active = true", (user_id,))
+    if not tokens:
+        logger.debug("No device tokens for user %s", user_id)
+        return False
+    sent = 0
+    for token_str, platform in tokens:
+        try:
+            if FCM_APP and platform != "web":
+                from firebase_admin import messaging
+                msg = messaging.Message(notification=messaging.Notification(title=title, body=body), token=token_str)
+                messaging.send(msg)
+                sent += 1
+            elif VAPID_PRIV:
+                sub = json.loads(token_str) if isinstance(token_str, str) else token_str
+                send_web_push(sub, title, body)
+                sent += 1
+        except Exception as e:
+            logger.error("Push failed for %s: %s", user_id, e)
+    logger.info("Push sent to %d/%d devices for user %s", sent, len(tokens), user_id)
+    return sent > 0
+
 def init_fcm():
     global FCM_APP
     if not FCM_CRED_PATH:
@@ -80,29 +162,6 @@ def init_fcm():
         logger.info("FCM initialized")
     except Exception as e:
         logger.error("FCM init failed: %s", e)
-
-def send_push(user_id: str, title: str, body: str, data: dict = None):
-    if not FCM_APP:
-        logger.warning("FCM not initialized, skipping push to %s", user_id)
-        return False
-    try:
-        from firebase_admin import messaging
-        tokens = db("SELECT push_token FROM device_tokens WHERE user_id = %s::uuid AND is_active = true", (user_id,))
-        if not tokens:
-            logger.debug("No device tokens for user %s", user_id)
-            return False
-        for (token,) in tokens:
-            msg = messaging.Message(
-                notification=messaging.Notification(title=title, body=body),
-                data=data or {},
-                token=token,
-            )
-            messaging.send(msg)
-        logger.info("Push sent to %d devices for user %s", len(tokens), user_id)
-        return True
-    except Exception as e:
-        logger.error("Push failed for %s: %s", user_id, e)
-        return False
 
 # ── ns03: In-app notifications ────────────────────────────────────────────
 def create_inapp(user_id: str, title: str, body: str, link: str = None):
@@ -168,5 +227,6 @@ def notify_request_update(request_id: str, old_status: str, new_status: str, act
 def init_notifications(db_config: dict):
     global DB
     DB = db_config
+    _init_vapid()
     init_fcm()
-    logger.info("Notification system initialized (SMTP=%s, FCM=%s)", bool(SMTP_HOST), bool(FCM_APP))
+    logger.info("Notification system initialized (SMTP=%s, FCM=%s, VAPID=%s)", bool(SMTP_HOST), bool(FCM_APP), bool(VAPID_PRIV))
