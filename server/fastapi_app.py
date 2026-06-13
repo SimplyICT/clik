@@ -212,6 +212,20 @@ async def supabase_proxy(path: str, request: Request, session: dict = Depends(re
     body = await request.body() if request.method in ("POST", "PATCH") else None
     try:
         resp = await app.state.http.request(request.method, url, content=body, headers=headers)
+        # After successful POST to requests, fire notification if contractor was assigned
+        if request.method == "POST" and resp.status_code == 201 and table == "requests":
+            try:
+                data = json.loads(resp.content)
+                if isinstance(data, list):
+                    data = data[0]
+                contr_id = data.get("contractorProfileId")
+                if contr_id:
+                    from notifications import send_push
+                    import asyncio
+                    asyncio.create_task(asyncio.to_thread(send_push, contr_id,
+                        "New Job Available", f"'{data.get('title','')}' has been assigned to you"))
+            except:
+                pass
         return Response(content=resp.content, status_code=resp.status_code, media_type="application/json")
     except httpx.HTTPStatusError as e:
         return Response(content=e.response.content, status_code=e.response.status_code, media_type="application/json")

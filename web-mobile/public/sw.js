@@ -1,5 +1,5 @@
 const CACHE = 'simplyclik-m-v1';
-const ASSETS = ['/', '/manifest.json', '/icon-192.svg'];
+const ASSETS = ['/mobile/', '/mobile/manifest.json', '/mobile/icon-192.svg'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
@@ -23,10 +23,10 @@ self.addEventListener('push', (e) => {
   
   const options = {
     body: data.body,
-    icon: '/icon-192.svg',
-    badge: '/icon-192.svg',
+    icon: '/mobile/icon-192.svg',
+    badge: '/mobile/icon-192.svg',
     vibrate: [200, 100, 200],
-    data: { url: data.url || '/' },
+    data: { url: data.url || '/mobile/' },
   };
 
   e.waitUntil(self.registration.showNotification(data.title, options));
@@ -34,13 +34,11 @@ self.addEventListener('push', (e) => {
 
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
-  const urlToOpen = e.notification.data?.url || '/';
+  const urlToOpen = e.notification.data?.url || '/mobile/';
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          return client.focus();
-        }
+        if (client.url.includes(self.location.origin) && 'focus' in client) return client.focus();
       }
       return clients.openWindow(urlToOpen);
     })
