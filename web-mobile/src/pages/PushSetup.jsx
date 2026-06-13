@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export default function PushSetup() {
+export default function PushSetup({ onSubscribed }) {
   const [status, setStatus] = useState('loading');
 
   useEffect(() => {
@@ -44,6 +44,7 @@ export default function PushSetup() {
         body: JSON.stringify({ pushToken: JSON.stringify(sub.toJSON()), platform: 'web' }),
       });
       setStatus('active');
+      onSubscribed?.();
     } catch (e) {
       setStatus('error');
     }

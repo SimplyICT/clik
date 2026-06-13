@@ -1,43 +1,67 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { q } from '../api/client';
 import PushSetup from './PushSetup';
 
 const ST_COLORS = { pending_approval:'#94a3b8', awaiting_acceptance:'#38bdf8', awaiting_quote:'#f59e0b', pending_quote_approval:'#f59e0b', accepted:'#22c55e', rfi:'#ef4444', in_progress:'#3b82f6', contractor_completed:'#22c55e', completed:'#22c55e', declined:'#ef4444', cancelled:'#ef4444' };
 const ST_LABELS = { pending_approval:'Pending', awaiting_acceptance:'Awaiting Acceptance', awaiting_quote:'Awaiting Quote', pending_quote_approval:'Quote Approval', accepted:'Accepted', rfi:'More Info', in_progress:'In Progress', contractor_completed:'Done', completed:'Completed', declined:'Declined', cancelled:'Cancelled' };
+const POLL_MS = 30000;
+
+function useJobPoller(isContractor) {
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [newJobs, setNewJobs] = useState(0);
+  const prevCount = useRef(0);
+
+  const fetch = useCallback(() => {
+    const pid = sessionStorage.getItem('author_profile_id');
+    if (!pid && isContractor) { setLoading(false); return; }
+    if (isContractor) {
+      q('requests', {
+        select: 'id,title,status,serviceType,priority,customerName,customerLocationProfileId,quoteAmount,invoiceAmount,requestStartDate,description',
+        filters: [{ field: 'contractorProfileId', value: pid }],
+        order: 'requestStartDate.desc.nullslast',
+      }).then(d => {
+        const arr = Array.isArray(d) ? d : [];
+        const needsAction = arr.filter(j => ['awaiting_acceptance', 'awaiting_quote'].includes(j.status)).length;
+        if (prevCount.current > 0 && needsAction > prevCount.current) {
+          setNewJobs(n => n + (needsAction - prevCount.current));
+        }
+        prevCount.current = needsAction;
+        setJobs(arr);
+        setLoading(false);
+      }).catch(() => setLoading(false));
+    }
+  }, [isContractor]);
+
+  useEffect(() => {
+    fetch();
+    const interval = setInterval(fetch, POLL_MS);
+    return () => clearInterval(interval);
+  }, [fetch]);
+
+  return { jobs, loading, newJobs, clearNew: () => setNewJobs(0), refetch: fetch };
+}
 
 export default function DashboardPage() {
   const nav = useNavigate();
   const role = sessionStorage.getItem('role');
   const isContractor = role === 'contractor';
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (isContractor) {
-      const pid = sessionStorage.getItem('author_profile_id');
-      if (!pid) { setLoading(false); return; }
-      q('requests', { select: 'id,title,status,serviceType,priority,customerName,customerLocationProfileId,quoteAmount,invoiceAmount,requestStartDate,description', filters: [{ field: 'contractorProfileId', value: pid }], order: 'requestStartDate.desc.nullslast' }).then(d => {
-        setJobs(Array.isArray(d) ? d : []); setLoading(false);
-      }).catch(() => setLoading(false));
-    } else {
-      const cid = sessionStorage.getItem('customer_id') || '';
-      Promise.all([
-        q('customerLocations', { select: 'id,companyName', filters: cid ? [{ field: 'customerId', value: cid }] : [] }),
-        q('requests', { select: 'id,status', filters: cid ? [{ field: 'customerId', value: cid }] : [] }),
-      ]).then(([locs, reqs]) => {
-        sessionStorage.setItem('siteCount', String(Array.isArray(locs) ? locs.length : 0));
-        sessionStorage.setItem('requestCount', String(Array.isArray(reqs) ? reqs.length : 0));
-        setLoading(false);
-      }).catch(() => setLoading(false));
-    }
-  }, []);
+  const { jobs, loading, newJobs, clearNew, refetch } = useJobPoller(isContractor);
 
   if (loading) return <Centered>Loading...</Centered>;
 
   return (
     <div>
-      <PushSetup />
+      <PushSetup onSubscribed={refetch} />
+
+      {newJobs > 0 && (
+        <div style={{ background: '#00d4ff', borderRadius: 8, padding: '10px 14px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', animation: 'pulse 2s infinite' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#000' }}>⚡ {newJobs} new job{newJobs > 1 ? 's' : ''} available!</span>
+          <button onClick={() => { clearNew(); refetch(); }} style={{ padding: '4px 12px', borderRadius: 4, border: 'none', background: '#000', color: '#00d4ff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Refresh</button>
+        </div>
+      )}
+
       {isContractor ? <ContractorView jobs={jobs} nav={nav} /> : <ManagerView nav={nav} />}
     </div>
   );
@@ -52,9 +76,18 @@ function ContractorView({ jobs, nav }) {
   return (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
-        <StatBox label="New" count={newJobs} color="#38bdf8" />
-        <StatBox label="Active" count={activeJobs} color="#3b82f6" />
-        <StatBox label="Completed" count={completedJobs} color="#22c55e" />
+        <div style={{ background: '#fff', borderRadius: 8, padding: '12px 8px', textAlign: 'center', border: '1px solid #e0e0e0' }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#38bdf8' }}>{newJobs}</div>
+          <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>New</div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 8, padding: '12px 8px', textAlign: 'center', border: '1px solid #e0e0e0' }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#3b82f6' }}>{activeJobs}</div>
+          <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>Active</div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 8, padding: '12px 8px', textAlign: 'center', border: '1px solid #e0e0e0' }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e' }}>{completedJobs}</div>
+          <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>Completed</div>
+        </div>
       </div>
 
       {needsAction.length > 0 && (
@@ -65,7 +98,8 @@ function ContractorView({ jobs, nav }) {
       )}
 
       <h3 style={{ fontSize: 14, marginBottom: 8, color: '#444' }}>All Jobs ({jobs.length})</h3>
-      {jobs.length === 0 ? <Centered>No jobs assigned yet. You'll be notified when one becomes available.</Centered> : jobs.slice(0, 10).map(r => <JobCard key={r.id} job={r} onClick={() => nav(`/jobs/${r.id}`)} />)}
+      {jobs.length === 0 ? <Centered>No jobs assigned yet. Waiting for new jobs...</Centered> : jobs.slice(0, 10).map(r => <JobCard key={r.id} job={r} onClick={() => nav(`/jobs/${r.id}`)} />)}
+      <div style={{ textAlign: 'center', color: '#ccc', fontSize: 11, marginTop: 12 }}>Auto-refreshes every 30s</div>
     </div>
   );
 }
@@ -80,15 +114,6 @@ function ManagerView({ nav }) {
         <QuickTile label="Requests" value={rc} color="#ff9500" onClick={() => nav('/requests')} />
       </div>
       <button onClick={() => nav('/requests/new')} style={{ width: '100%', padding: '14px', borderRadius: 8, border: 'none', background: '#00d4ff', color: '#000', fontWeight: 700, fontSize: 16, cursor: 'pointer' }}>+ New Request</button>
-    </div>
-  );
-}
-
-function StatBox({ label, count, color }) {
-  return (
-    <div style={{ background: '#fff', borderRadius: 8, padding: '12px 8px', textAlign: 'center', border: '1px solid #e0e0e0' }}>
-      <div style={{ fontSize: 28, fontWeight: 700, color }}>{count}</div>
-      <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{label}</div>
     </div>
   );
 }

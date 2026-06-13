@@ -1,1 +1,48 @@
-const C='simplyclik-m-v1';const A=['/','/manifest.json','/icon-192.svg'];self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(A)));self.skipWaiting()});self.addEventListener('activate',e=>{e.waitUntil(clients.claim())});self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)))});
+const CACHE = 'simplyclik-m-v1';
+const ASSETS = ['/', '/manifest.json', '/icon-192.svg'];
+
+self.addEventListener('install', (e) => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(clients.claim());
+});
+
+self.addEventListener('fetch', (e) => {
+  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+});
+
+// Push notification handling
+self.addEventListener('push', (e) => {
+  let data = { title: 'SimplyClik', body: 'New job available' };
+  try {
+    if (e.data) data = e.data.json();
+  } catch {}
+  
+  const options = {
+    body: data.body,
+    icon: '/icon-192.svg',
+    badge: '/icon-192.svg',
+    vibrate: [200, 100, 200],
+    data: { url: data.url || '/' },
+  };
+
+  e.waitUntil(self.registration.showNotification(data.title, options));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const urlToOpen = e.notification.data?.url || '/';
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      return clients.openWindow(urlToOpen);
+    })
+  );
+});

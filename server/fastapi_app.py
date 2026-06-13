@@ -503,6 +503,10 @@ async def create_request(body: dict, session: dict = Depends(require_session)):
     if contr_id:
         db("INSERT INTO request_contractor_priority (request_id, contractor_id, priority) VALUES (%s,%s,1) ON CONFLICT DO NOTHING",
            (str(rows[0][0]), contr_id))
+        from notifications import send_push
+        import asyncio
+        asyncio.create_task(asyncio.to_thread(send_push, contr_id, 'New Job Available',
+            f"'{title}' has been assigned to you"))
     return {"id": str(rows[0][0]), "status": status}
 
 @app.post("/api/requests/{request_id}/transition")

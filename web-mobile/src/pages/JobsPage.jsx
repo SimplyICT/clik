@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { q } from '../api/client';
 
@@ -10,20 +10,36 @@ const FILTERS = [
   { key: 'done', label: 'Done', statuses: ['contractor_completed','completed'] },
   { key: 'closed', label: 'Closed', statuses: ['declined','cancelled'] },
 ];
+const POLL_MS = 30000;
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [newJobs, setNewJobs] = useState(0);
+  const prevCount = useRef(0);
   const nav = useNavigate();
 
-  useEffect(() => {
+  const fetch = useCallback(() => {
     const pid = sessionStorage.getItem('author_profile_id');
     if (!pid) { setLoading(false); return; }
     q('requests', { select: 'id,title,status,serviceType,priority,customerName,quoteAmount,invoiceAmount,requestStartDate,description', filters: [{ field: 'contractorProfileId', value: pid }], order: 'requestStartDate.desc.nullslast' }).then(d => {
-      setJobs(Array.isArray(d) ? d : []); setLoading(false);
+      const arr = Array.isArray(d) ? d : [];
+      const needsAction = arr.filter(j => ['awaiting_acceptance', 'awaiting_quote'].includes(j.status)).length;
+      if (prevCount.current > 0 && needsAction > prevCount.current) {
+        setNewJobs(n => n + (needsAction - prevCount.current));
+      }
+      prevCount.current = needsAction;
+      setJobs(arr);
+      setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetch();
+    const interval = setInterval(fetch, POLL_MS);
+    return () => clearInterval(interval);
+  }, [fetch]);
 
   const f = FILTERS.find(x => x.key === filter);
   const filtered = f?.statuses ? jobs.filter(j => f.statuses.includes(j.status)) : jobs;
@@ -32,6 +48,12 @@ export default function JobsPage() {
 
   return (
     <div>
+      {newJobs > 0 && (
+        <div style={{ background: '#00d4ff', borderRadius: 8, padding: '10px 14px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#000' }}>⚡ {newJobs} new job{newJobs > 1 ? 's' : ''}!</span>
+          <button onClick={() => { setNewJobs(0); fetch(); }} style={{ padding: '4px 12px', borderRadius: 4, border: 'none', background: '#000', color: '#00d4ff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Show</button>
+        </div>
+      )}
       <div style={{ display: 'flex', gap: 4, marginBottom: 12, overflowX: 'auto' }}>
         {FILTERS.map(f2 => (
           <button key={f2.key} onClick={() => setFilter(f2.key)} style={{
@@ -49,6 +71,7 @@ export default function JobsPage() {
           <div style={{ color: '#888', fontSize: 12, marginTop: 4 }}>{r.customerName} · {r.serviceType}{r.priority ? ` · ${r.priority}` : ''}</div>
         </div>
       ))}
+      <div style={{ textAlign: 'center', color: '#ccc', fontSize: 11, marginTop: 12 }}>Auto-refreshes every 30s</div>
     </div>
   );
 }
