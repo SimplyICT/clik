@@ -10,14 +10,14 @@ const FILTERS = [
   { key: 'done', label: 'Done', statuses: ['contractor_completed','completed'] },
   { key: 'closed', label: 'Closed', statuses: ['declined','cancelled'] },
 ];
-const POLL_MS = 30000;
+const POLL_MS = 15000;
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
-  const [newJobs, setNewJobs] = useState(0);
-  const prevCount = useRef(0);
+  const [newJobs, setNewJobs] = useState([]);
+  const lastTitles = useRef('');
   const nav = useNavigate();
 
   const fetch = useCallback(() => {
@@ -25,11 +25,19 @@ export default function JobsPage() {
     if (!pid) { setLoading(false); return; }
     q('requests', { select: 'id,title,status,serviceType,priority,customerName,quoteAmount,invoiceAmount,requestStartDate,description', filters: [{ field: 'contractorProfileId', value: pid }], order: 'requestStartDate.desc.nullslast' }).then(d => {
       const arr = Array.isArray(d) ? d : [];
-      const needsAction = arr.filter(j => ['awaiting_acceptance', 'awaiting_quote'].includes(j.status)).length;
-      if (prevCount.current > 0 && needsAction > prevCount.current) {
-        setNewJobs(n => n + (needsAction - prevCount.current));
+      const needsAction = arr.filter(j => ['awaiting_acceptance', 'awaiting_quote'].includes(j.status));
+      const currentTitles = needsAction.map(j => j.title).sort().join('|');
+      if (lastTitles.current && currentTitles !== lastTitles.current) {
+        const oldTitles = new Set(lastTitles.current.split('|'));
+        const fresh = needsAction.filter(j => !oldTitles.has(j.title));
+        if (fresh.length > 0) {
+          setNewJobs(prev => [...fresh.map(j => ({ title: j.title, customerName: j.customerName })), ...prev].slice(0, 10));
+          if (navigator.vibrate) navigator.vibrate(200);
+          document.title = `(${fresh.length}) SimplyClik`;
+          setTimeout(() => { document.title = 'SimplyClik'; }, 10000);
+        }
       }
-      prevCount.current = needsAction;
+      lastTitles.current = currentTitles;
       setJobs(arr);
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -48,12 +56,24 @@ export default function JobsPage() {
 
   return (
     <div>
-      {newJobs > 0 && (
-        <div style={{ background: '#00d4ff', borderRadius: 8, padding: '10px 14px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#000' }}>⚡ {newJobs} new job{newJobs > 1 ? 's' : ''}!</span>
-          <button onClick={() => { setNewJobs(0); fetch(); }} style={{ padding: '4px 12px', borderRadius: 4, border: 'none', background: '#000', color: '#00d4ff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Show</button>
+      {newJobs.length > 0 && (
+        <div style={{ background: 'linear-gradient(135deg, #1a1a2e, #00d4ff)', borderRadius: 10, padding: '14px 16px', marginBottom: 12, boxShadow: '0 4px 12px rgba(0,212,255,0.3)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>⚡ {newJobs.length} New Job{newJobs.length > 1 ? 's' : ''}</div>
+            <button onClick={() => { setNewJobs([]); document.title = 'SimplyClik'; }}
+              style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', fontSize: 16, borderRadius: '50%', width: 26, height: 26, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+          </div>
+          {newJobs.slice(0, 3).map((j, i) => (
+            <div key={i} style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, marginBottom: 4, padding: '6px 10px', background: 'rgba(255,255,255,0.1)', borderRadius: 6 }}>
+              <span style={{ fontWeight: 600 }}>{j.title}</span>
+              {j.customerName && <span style={{ opacity: 0.7 }}> — {j.customerName}</span>}
+            </div>
+          ))}
+          {newJobs.length > 3 && <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 4 }}>+{newJobs.length - 3} more</div>}
+          <button onClick={() => { setNewJobs([]); fetch(); }} style={{ width: '100%', padding: '8px', borderRadius: 6, border: 'none', background: '#fff', color: '#1a1a2e', fontWeight: 700, fontSize: 13, cursor: 'pointer', marginTop: 8 }}>Refresh & Dismiss</button>
         </div>
       )}
+
       <div style={{ display: 'flex', gap: 4, marginBottom: 12, overflowX: 'auto' }}>
         {FILTERS.map(f2 => (
           <button key={f2.key} onClick={() => setFilter(f2.key)} style={{
@@ -71,7 +91,7 @@ export default function JobsPage() {
           <div style={{ color: '#888', fontSize: 12, marginTop: 4 }}>{r.customerName} · {r.serviceType}{r.priority ? ` · ${r.priority}` : ''}</div>
         </div>
       ))}
-      <div style={{ textAlign: 'center', color: '#ccc', fontSize: 11, marginTop: 12 }}>Auto-refreshes every 30s</div>
+      <div style={{ textAlign: 'center', color: '#ccc', fontSize: 11, marginTop: 12 }}>Auto-refreshes every 15s</div>
     </div>
   );
 }
