@@ -1,27 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function PushSetup({ onSubscribed }) {
-  const [status, setStatus] = useState('loading');
+  const [status, setStatus] = useState('checking');
 
   useEffect(() => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
       setStatus('unsupported');
       return;
     }
-
-    // Always request permission on load
-    Notification.requestPermission().then(perm => {
-      if (perm !== 'granted') {
-        setStatus('denied');
-        return;
-      }
+    // Check existing permission
+    if (Notification.permission === 'granted') {
       subscribe();
-    });
+    } else if (Notification.permission === 'denied') {
+      setStatus('denied');
+    } else {
+      setStatus('prompt');
+    }
   }, []);
 
   const subscribe = async () => {
     try {
-      // Fetch VAPID public key from server
+      setStatus('subscribing');
       const token = sessionStorage.getItem('token');
       if (!token) { setStatus('noauth'); return; }
 
@@ -37,7 +36,6 @@ export default function PushSetup({ onSubscribed }) {
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
 
-      // Register with server
       await fetch('/api/notifications/device-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -50,7 +48,35 @@ export default function PushSetup({ onSubscribed }) {
     }
   };
 
-  if (status === 'active' || status === 'loading') return null;
+  const handleEnable = async () => {
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      await subscribe();
+    } else {
+      setStatus('denied');
+    }
+  };
+
+  if (status === 'active' || status === 'checking') return null;
+
+  if (status === 'prompt') {
+    return (
+      <div style={{ background: '#e3f2fd', borderRadius: 8, padding: '10px 14px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 13, color: '#1565c0', flex: 1 }}>🔔 Enable job alerts</span>
+        <button onClick={handleEnable} style={{ padding: '6px 16px', borderRadius: 6, border: 'none', background: '#1565c0', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          {status === 'subscribing' ? '...' : 'Enable'}
+        </button>
+      </div>
+    );
+  }
+
+  if (status === 'denied') {
+    return (
+      <div style={{ background: '#fff3e0', borderRadius: 8, padding: '8px 14px', marginBottom: 12, fontSize: 12, color: '#e65100' }}>
+        🔕 Notifications blocked. Enable in browser settings for job alerts.
+      </div>
+    );
+  }
 
   return null;
 }
