@@ -10,6 +10,12 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
+
+# Load .env BEFORE any other local imports that read env vars
+ENV_PATH = Path(__file__).resolve().parent / ".env"
+if ENV_PATH.exists():
+    load_dotenv(ENV_PATH)
+
 from fastapi import FastAPI, Request, HTTPException, Depends, Header
 from fastapi.responses import Response, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,10 +25,6 @@ from notifications import init_notifications as init_notif, get_inapp, mark_read
 
 mimetypes.add_type('application/javascript', '.js')
 mimetypes.add_type('text/css', '.css')
-
-ENV_PATH = Path(__file__).resolve().parent / ".env"
-if ENV_PATH.exists():
-    load_dotenv(ENV_PATH)
 
 ROOT = Path(__file__).resolve().parent.parent
 ADMIN_BUILD = ROOT / "web-admin" / "build"
