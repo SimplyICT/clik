@@ -90,8 +90,16 @@ app = FastAPI(lifespan=lifespan, title=f"SimplyClik {MODE.title()} API", version
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 # ── helpers ───────────────────────────────────────────────────────────────
+import threading
+_db_local = threading.local()
+
+def _get_conn():
+    if not hasattr(_db_local, "conn") or _db_local.conn is None:
+        _db_local.conn = pg8000.connect(**DB_CONFIG)
+    return _db_local.conn
+
 def db(sql: str, params=None):
-    conn = pg8000.connect(**DB_CONFIG)
+    conn = _get_conn()
     cur = conn.cursor()
     cur.execute(sql, params or [])
     try:
@@ -103,7 +111,6 @@ def db(sql: str, params=None):
         return []
     finally:
         cur.close()
-        conn.close()
 
 def guess_ct(path: str) -> str:
     return mimetypes.guess_type(path)[0] or "application/octet-stream"
@@ -214,6 +221,10 @@ async def supabase_proxy(path: str, request: Request, session: dict = Depends(re
     qs = str(request.url).split("?")[1] if "?" in str(request.url) else ""
     url = f"{SUPABASE_URL}/rest/v1/{path}?{qs}" if qs else f"{SUPABASE_URL}/rest/v1/{path}"
     headers = {"apikey": ANON_KEY, "Content-Type": "application/json"}
+    # Forward the Prefer header from the frontend (needed for return=representation)
+    prefer = request.headers.get("prefer")
+    if prefer:
+        headers["Prefer"] = prefer
     body = await request.body() if request.method in ("POST", "PATCH") else None
     try:
         resp = await app.state.http.request(request.method, url, content=body, headers=headers)
