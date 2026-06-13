@@ -106,14 +106,16 @@ export default function RequestsPage() {
     if (!form.title.trim() || !form.description.trim() || !form.customerLocationProfileId) {
       alert('Title, description, and location are required'); return;
     }
+    const cid = sessionStorage.getItem('customer_id');
+    if (!cid) { alert('Session expired - please log out and back in'); return; }
     setCreating(true);
     try {
       await create('requests', {
         title: form.title, description: form.description,
         serviceType: form.serviceType, priority: form.priority,
-        customerId: sessionStorage.getItem('customer_id') || null,
+        customerId: cid,
         customerName: CNAME() || 'Customer',
-        customerLocationProfileId: form.customerLocationProfileId || null,
+        customerLocationProfileId: form.customerLocationProfileId,
         status: 'pending_approval', requestStartDate: new Date().toISOString(),
       });
       setShowCreate(false);

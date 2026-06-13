@@ -30,12 +30,14 @@ export default function ManagerRequestsPage({ createMode }) {
       alert('Title, description, and location are required');
       return;
     }
+    const cid = sessionStorage.getItem('customer_id');
+    if (!cid) { alert('Session expired - please log out and back in'); return; }
     try {
       await create('requests', {
         title: form.title, description: form.description, serviceType: form.serviceType,
         priority: form.priority,
-        customerId: cid || null, customerName: cname || 'Customer',
-        customerLocationProfileId: form.customerLocationProfileId || null,
+        customerId: cid, customerName: sessionStorage.getItem('customer_name') || 'Customer',
+        customerLocationProfileId: form.customerLocationProfileId,
         contractorProfileId: form.contractorProfileId || null,
         status: form.contractorProfileId ? 'awaiting_acceptance' : 'pending_approval',
         requestStartDate: new Date().toISOString(),
