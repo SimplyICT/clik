@@ -1,9 +1,12 @@
 const API = '/api/supabase';
-const CID = () => localStorage.getItem('customer_id') || '';
+
+function storage() {
+  return localStorage.getItem('_remember') === 'true' ? localStorage : sessionStorage;
+}
 
 function authHeaders() {
-  const token = localStorage.getItem('token');
-  return token ? { 'Authorization': `Bearer ${token}` } : {};
+  const t = storage().getItem('token');
+  return t ? { 'Authorization': `Bearer ${t}` } : {};
 }
 
 async function req(url, opts = {}) {
@@ -43,6 +46,6 @@ export async function del(table, id) {
 }
 
 export function customerFilter() {
-  const cid = CID();
+  const cid = storage().getItem('customer_id') || '';
   return cid ? [{ field: 'customerId', value: cid }] : [];
 }

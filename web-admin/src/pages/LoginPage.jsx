@@ -7,6 +7,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [remember, setRemember] = useState(true);
   const nav = useNavigate();
 
   if (getUser() && isAdmin()) { nav('/dashboard', { replace: true }); return null; }
@@ -16,9 +17,9 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const d = await login(email, password);
+      const d = await login(email, password, remember);
       if (d.is_admin) nav('/dashboard', { replace: true });
-      else setError('Admin access denied. is_admin=' + JSON.stringify(d.is_admin) + ' response=' + JSON.stringify(d).slice(0,100));
+      else setError('Admin access denied');
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
   };
@@ -31,7 +32,12 @@ export default function LoginPage() {
         <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}
           style={{ width: '100%', padding: '10px 12px', marginBottom: 12, borderRadius: 4, border: '1px solid #333', background: '#0f3460', color: '#fff', fontSize: 14 }} />
         <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}
-          style={{ width: '100%', padding: '10px 12px', marginBottom: 20, borderRadius: 4, border: '1px solid #333', background: '#0f3460', color: '#fff', fontSize: 14 }} />
+          style={{ width: '100%', padding: '10px 12px', marginBottom: 16, borderRadius: 4, border: '1px solid #333', background: '#0f3460', color: '#fff', fontSize: 14 }} />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: '#888', fontSize: 13, cursor: 'pointer' }}>
+          <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)}
+            style={{ width: 16, height: 16, accentColor: '#00d4ff' }} />
+          Remember me
+        </label>
         <button type="submit" disabled={loading}
           style={{ width: '100%', padding: '10px', borderRadius: 4, border: 'none', background: loading ? '#555' : '#00d4ff', color: '#000', fontSize: 14, fontWeight: 700, cursor: loading ? 'default' : 'pointer' }}>
           {loading ? 'Signing in...' : 'Sign In'}

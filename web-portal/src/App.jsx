@@ -32,7 +32,8 @@ styles.textContent = `
 document.head.appendChild(styles);
 
 function RequireAuth({ children }) {
-  if (!localStorage.getItem('user')) return <Navigate to="/login" replace />;
+  const user = localStorage.getItem('user') || sessionStorage.getItem('user');
+  if (!user) return <Navigate to="/login" replace />;
   return children;
 }
 
@@ -45,7 +46,7 @@ const NAV = [
 ];
 
 function Layout({ children }) {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
   const loc = useLocation().pathname;
   const [menuOpen, setMenuOpen] = React.useState(false);
 
@@ -67,7 +68,7 @@ function Layout({ children }) {
           {menuOpen ? '✕' : '☰'}
         </button>
         <span style={{ fontSize: 12, color: '#888', marginLeft: 'auto' }} className="desktop-only">{user.email}</span>
-        <button onClick={() => { localStorage.clear(); window.location.href = '/login'; }}
+        <button onClick={() => { localStorage.clear(); sessionStorage.clear(); window.location.href = '/login'; }}
           style={{ background: 'none', border: '1px solid #555', color: '#ccc', padding: '3px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>Logout</button>
       </header>
       {menuOpen && (

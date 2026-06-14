@@ -7,6 +7,7 @@ export default function LoginPage() {
   const [pw, setPw] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [remember, setRemember] = useState(true);
   const nav = useNavigate();
 
   if (getUser()) { nav('/dashboard', { replace: true }); return null; }
@@ -16,21 +17,7 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const d = await login(email, pw);
-      // Determine role: if login returns customer_ref, they're a customer user; otherwise check user_profiles
-      if (d.customer_id) {
-        localStorage.setItem('role', 'customer_user');
-        localStorage.setItem('customer_name', d.customer_name || '');
-        try {
-          const res = await fetch('/api/supabase/user_profiles?select=role&user_id=eq.' + d.user.id, {
-            headers: { 'Authorization': 'Bearer ' + d.token }
-          });
-          const p = await res.json();
-          if (Array.isArray(p) && p.length > 0) localStorage.setItem('role', p[0].role || 'customer_user');
-        } catch {}
-      } else {
-        localStorage.setItem('role', 'admin');
-      }
+      await login(email, pw, remember);
       nav('/dashboard', { replace: true });
     } catch (err) { setError(err.message); }
     setLoading(false);
@@ -44,7 +31,12 @@ export default function LoginPage() {
         <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}
           style={{ width: '100%', padding: '12px', marginBottom: 10, borderRadius: 6, border: '1px solid #333', background: '#0f3460', color: '#fff', fontSize: 16 }} />
         <input type="password" placeholder="Password" value={pw} onChange={e => setPw(e.target.value)}
-          style={{ width: '100%', padding: '12px', marginBottom: 20, borderRadius: 6, border: '1px solid #333', background: '#0f3460', color: '#fff', fontSize: 16 }} />
+          style={{ width: '100%', padding: '12px', marginBottom: 16, borderRadius: 6, border: '1px solid #333', background: '#0f3460', color: '#fff', fontSize: 16 }} />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: '#888', fontSize: 13, cursor: 'pointer' }}>
+          <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)}
+            style={{ width: 16, height: 16, accentColor: '#00d4ff' }} />
+          Remember me
+        </label>
         <button type="submit" disabled={loading}
           style={{ width: '100%', padding: '12px', borderRadius: 6, border: 'none', background: loading ? '#555' : '#00d4ff', color: '#000', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
           {loading ? 'Signing in...' : 'Sign In'}

@@ -6,9 +6,17 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [remember, setRemember] = useState(true);
   const nav = useNavigate();
 
-  if (localStorage.getItem('user')) { nav('/dashboard', { replace: true }); return null; }
+  if (localStorage.getItem('user') || sessionStorage.getItem('user')) { nav('/dashboard', { replace: true }); return null; }
+
+  const store = (k, v) => {
+    const s = remember ? localStorage : sessionStorage;
+    s.setItem(k, v);
+    if (remember) localStorage.setItem('_remember', 'true');
+    else sessionStorage.setItem('_remember', 'false');
+  };
 
   const submit = async e => {
     e.preventDefault();
@@ -20,12 +28,13 @@ export default function LoginPage() {
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.detail || d.error || 'Login failed');
-      localStorage.setItem('token', d.token);
-      localStorage.setItem('user', JSON.stringify(d.user));
-      if (d.customer_id) localStorage.setItem('customer_id', d.customer_id);
-      if (d.customer_ref) localStorage.setItem('customer_ref', d.customer_ref);
-      if (d.customer_name) localStorage.setItem('customer_name', d.customer_name);
-      if (d.author_profile_id) localStorage.setItem('author_profile_id', d.author_profile_id);
+      store('token', d.token);
+      store('user', JSON.stringify(d.user));
+      if (d.customer_id) store('customer_id', d.customer_id);
+      if (d.customer_ref) store('customer_ref', d.customer_ref);
+      if (d.customer_name) store('customer_name', d.customer_name);
+      if (d.author_profile_id) store('author_profile_id', d.author_profile_id);
+      if (d.is_admin) store('is_admin', JSON.stringify(d.is_admin));
       nav('/dashboard', { replace: true });
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
@@ -39,7 +48,12 @@ export default function LoginPage() {
         <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}
           style={{ width: '100%', padding: '10px 12px', marginBottom: 12, borderRadius: 4, border: '1px solid #333', background: '#0f3460', color: '#fff', fontSize: 14 }} />
         <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}
-          style={{ width: '100%', padding: '10px 12px', marginBottom: 20, borderRadius: 4, border: '1px solid #333', background: '#0f3460', color: '#fff', fontSize: 14 }} />
+          style={{ width: '100%', padding: '10px 12px', marginBottom: 16, borderRadius: 4, border: '1px solid #333', background: '#0f3460', color: '#fff', fontSize: 14 }} />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, color: '#888', fontSize: 13, cursor: 'pointer' }}>
+          <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)}
+            style={{ width: 16, height: 16, accentColor: '#00d4ff' }} />
+          Remember me
+        </label>
         <button type="submit" disabled={loading}
           style={{ width: '100%', padding: '10px', borderRadius: 4, border: 'none', background: loading ? '#555' : '#00d4ff', color: '#000', fontSize: 14, fontWeight: 700, cursor: loading ? 'default' : 'pointer' }}>
           {loading ? 'Signing in...' : 'Sign In'}

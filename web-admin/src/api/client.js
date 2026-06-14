@@ -1,8 +1,12 @@
 const API = '/api/supabase';
 
+function storage() {
+  return localStorage.getItem('_remember') === 'true' ? localStorage : sessionStorage;
+}
+
 function authHeaders() {
-  const token = localStorage.getItem('token');
-  return token ? { 'Authorization': `Bearer ${token}` } : {};
+  const t = storage().getItem('token');
+  return t ? { 'Authorization': `Bearer ${t}` } : {};
 }
 
 async function req(url, opts = {}) {
@@ -45,16 +49,24 @@ export async function del(table, id) {
   await fetch(`${API}/${table}?id=eq.${id}`, { method: 'DELETE', headers });
 }
 
-export async function login(email, password) {
+export async function login(email, password, remember) {
   const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
   const d = await res.json();
   if (!res.ok) throw new Error(d.detail || d.error || 'Login failed');
-  localStorage.setItem('token', d.token);
-  localStorage.setItem('user', JSON.stringify(d.user));
-  localStorage.setItem('is_admin', JSON.stringify(d.is_admin));
+  const s = remember ? localStorage : sessionStorage;
+  if (remember) localStorage.setItem('_remember', 'true');
+  s.setItem('token', d.token);
+  s.setItem('user', JSON.stringify(d.user));
+  s.setItem('is_admin', JSON.stringify(d.is_admin));
   return d;
 }
 
-export function logout() { localStorage.clear(); }
-export function getUser() { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } }
-export function isAdmin() { try { return JSON.parse(localStorage.getItem('is_admin')) === true; } catch { return false; } }
+export function logout() { localStorage.clear(); sessionStorage.clear(); }
+export function getUser() {
+  const u = localStorage.getItem('user') || sessionStorage.getItem('user');
+  try { return JSON.parse(u); } catch { return null; }
+}
+export function isAdmin() {
+  const a = localStorage.getItem('is_admin') || sessionStorage.getItem('is_admin');
+  try { return JSON.parse(a) === true; } catch { return false; }
+}
