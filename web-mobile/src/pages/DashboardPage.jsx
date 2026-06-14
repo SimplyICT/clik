@@ -16,7 +16,7 @@ function useJobPoller(isContractor) {
   const lastTitles = useRef('');
 
   const fetch = useCallback(() => {
-    const pid = localStorage.getItem('author_profile_id');
+    const pid = localStorage.getItem('author_profile_id') || sessionStorage.getItem('author_profile_id');
     if (!pid && isContractor) { setLoading(false); return; }
     if (isContractor) {
       q('requests', {
@@ -60,7 +60,7 @@ function useJobPoller(isContractor) {
 
 export default function DashboardPage() {
   const nav = useNavigate();
-  const role = localStorage.getItem('role');
+  const role = localStorage.getItem('role') || sessionStorage.getItem('role');
   const isContractor = role === 'contractor';
   const { jobs, loading, newJobs, clearNew, refetch } = useJobPoller(isContractor);
 
@@ -141,8 +141,8 @@ function ContractorView({ jobs, nav }) {
 }
 
 function ManagerView({ nav }) {
-  const sc = parseInt(localStorage.getItem('siteCount') || '0');
-  const rc = parseInt(localStorage.getItem('requestCount') || '0');
+  const sc = parseInt(localStorage.getItem('siteCount') || sessionStorage.getItem('siteCount') || '0');
+  const rc = parseInt(localStorage.getItem('requestCount') || sessionStorage.getItem('requestCount') || '0');
   return (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>

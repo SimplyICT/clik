@@ -21,7 +21,7 @@ export default function JobsPage() {
   const nav = useNavigate();
 
   const fetch = useCallback(() => {
-    const pid = localStorage.getItem('author_profile_id');
+    const pid = localStorage.getItem('author_profile_id') || sessionStorage.getItem('author_profile_id');
     if (!pid) { setLoading(false); return; }
     q('requests', { select: 'id,title,status,serviceType,priority,customerName,quoteAmount,invoiceAmount,requestStartDate,description', filters: [{ field: 'contractorProfileId', value: pid }], order: 'requestStartDate.desc.nullslast' }).then(d => {
       const arr = Array.isArray(d) ? d : [];

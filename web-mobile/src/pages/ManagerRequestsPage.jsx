@@ -14,8 +14,8 @@ export default function ManagerRequestsPage({ createMode }) {
   const [showForm, setShowForm] = useState(!!createMode);
   const [form, setForm] = useState({ title:'', description:'', serviceType: TYPES[0], priority:'medium', customerLocationProfileId:'', contractorProfileId:'' });
   const nav = useNavigate();
-  const cid = localStorage.getItem('customer_id') || '';
-  const cname = localStorage.getItem('customer_name') || '';
+  const cid = localStorage.getItem('customer_id') || sessionStorage.getItem('customer_id') || '';
+  const cname = localStorage.getItem('customer_name') || sessionStorage.getItem('customer_name') || '';
 
   useEffect(() => {
     Promise.all([
@@ -30,13 +30,13 @@ export default function ManagerRequestsPage({ createMode }) {
       alert('Title, description, and location are required');
       return;
     }
-    const cid = localStorage.getItem('customer_id');
+    const cid = localStorage.getItem('customer_id') || sessionStorage.getItem('customer_id');
     if (!cid) { alert('Session expired - please log out and back in'); return; }
     try {
       await create('requests', {
         title: form.title, description: form.description, serviceType: form.serviceType,
         priority: form.priority,
-        customerId: cid, customerName: localStorage.getItem('customer_name') || 'Customer',
+        customerId: cid, customerName: localStorage.getItem('customer_name') || sessionStorage.getItem('customer_name') || 'Customer',
         customerLocationProfileId: form.customerLocationProfileId,
         contractorProfileId: form.contractorProfileId || null,
         status: form.contractorProfileId ? 'awaiting_acceptance' : 'pending_approval',

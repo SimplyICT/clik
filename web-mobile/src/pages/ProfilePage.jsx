@@ -5,12 +5,12 @@ import { q } from '../api/client';
 export default function ProfilePage() {
   const nav = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const role = localStorage.getItem('role');
-  const cname = localStorage.getItem('customer_name') || '';
+  const role = localStorage.getItem('role') || sessionStorage.getItem('role');
+  const cname = localStorage.getItem('customer_name') || sessionStorage.getItem('customer_name') || '';
   const [profile, setProfile] = useState(null);
 
   useEffect(() => {
-    const pid = localStorage.getItem('author_profile_id');
+    const pid = localStorage.getItem('author_profile_id') || sessionStorage.getItem('author_profile_id');
     if (pid) {
       q('profiles', { select: 'company_name,contact_name,contact_email,contact_phone_number,profile_type', filters: [{ field: 'id', value: pid }] }).then(d => {
         if (Array.isArray(d) && d.length > 0) setProfile(d[0]);

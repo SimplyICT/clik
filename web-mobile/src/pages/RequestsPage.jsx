@@ -10,8 +10,8 @@ export default function RequestsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title:'', description:'', serviceType: TYPES[0], priority:'medium', customerLocationProfileId:'' });
   const [locs, setLocs] = useState([]);
-  const cid = localStorage.getItem('customer_id') || '';
-  const cname = localStorage.getItem('customer_name') || '';
+  const cid = localStorage.getItem('customer_id') || sessionStorage.getItem('customer_id') || '';
+  const cname = localStorage.getItem('customer_name') || sessionStorage.getItem('customer_name') || '';
 
   useEffect(() => {
     Promise.all([

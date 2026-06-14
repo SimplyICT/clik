@@ -5,13 +5,13 @@ export default function PwaInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 
   useEffect(() => {
-    // Check if already in standalone mode
+    // Check if already in standalone mode (added to home screen)
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
       setShow('installed');
       return;
     }
 
-    // Android: beforeinstallprompt event
+    // Android Chrome: beforeinstallprompt event
     const handler = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -19,9 +19,10 @@ export default function PwaInstall() {
     };
     window.addEventListener('beforeinstallprompt', handler);
 
-    // iOS: detect Safari
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    if (isIOS) {
+    // iOS detection — works on Safari AND Chrome on iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isIOS && !window.navigator.standalone) {
       setShow('ios');
     }
 
@@ -32,22 +33,18 @@ export default function PwaInstall() {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const result = await deferredPrompt.userChoice;
-    if (result.outcome === 'accepted') {
-      setShow('installed');
-    }
+    if (result.outcome === 'accepted') setShow('installed');
     setDeferredPrompt(null);
   };
 
   const dismiss = () => {
     setShow('dismissed');
-    // Show again after 7 days
     const expiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
     localStorage.setItem('pwa_dismissed', String(expiry));
   };
 
-  // Don't show if dismissed recently
   if (show === 'dismissed') {
-    const expiry = parseInt(localStorage.getItem('pwa_dismissed') || '0');
+    const expiry = parseInt(localStorage.getItem('pwa_dismissed') || sessionStorage.getItem('pwa_dismissed') || '0');
     if (Date.now() < expiry) return null;
   }
 
@@ -56,40 +53,41 @@ export default function PwaInstall() {
   if (show === 'android') {
     return (
       <div style={{ background: '#1a1a2e', borderRadius: 10, padding: '14px 16px', marginBottom: 12, border: '1px solid #333' }}>
-        <div style={{ color: '#fff', fontSize: 14, fontWeight: 600, marginBottom: 8 }}>
-          📲 Install SimplyClik
-        </div>
+        <div style={{ color: '#fff', fontSize: 14, fontWeight: 600, marginBottom: 8 }}>📲 Install SimplyClik</div>
         <div style={{ color: '#aaa', fontSize: 13, marginBottom: 12 }}>
           Add to your home screen for the full app experience with push notifications.
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={handleInstall} style={{ flex: 1, padding: '10px', borderRadius: 6, border: 'none', background: '#00d4ff', color: '#000', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-            Install
-          </button>
-          <button onClick={dismiss} style={{ padding: '10px 16px', borderRadius: 6, border: '1px solid #555', background: 'transparent', color: '#888', fontSize: 13, cursor: 'pointer' }}>
-            Not now
-          </button>
+          <button onClick={handleInstall} style={{ flex: 1, padding: '10px', borderRadius: 6, border: 'none', background: '#00d4ff', color: '#000', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Install</button>
+          <button onClick={dismiss} style={{ padding: '10px 16px', borderRadius: 6, border: '1px solid #555', background: 'transparent', color: '#888', fontSize: 13, cursor: 'pointer' }}>Not now</button>
         </div>
       </div>
     );
   }
 
   if (show === 'ios') {
+    const isChrome = /CriOS|Chrome/.test(navigator.userAgent);
     return (
       <div style={{ background: '#1a1a2e', borderRadius: 10, padding: '14px 16px', marginBottom: 12, border: '1px solid #333' }}>
-        <div style={{ color: '#fff', fontSize: 14, fontWeight: 600, marginBottom: 8 }}>
-          📲 Add to Home Screen
-        </div>
+        <div style={{ color: '#fff', fontSize: 14, fontWeight: 600, marginBottom: 8 }}>📲 Add to Home Screen</div>
         <div style={{ color: '#aaa', fontSize: 13, lineHeight: 1.6 }}>
-          1. Tap the <strong style={{ color: '#fff' }}>Share</strong> button at the bottom of Safari
+          {isChrome ? (
+            <>
+              <div style={{ marginBottom: 8 }}>Chrome on iOS can't install web apps. Please use <strong style={{ color: '#fff' }}>Safari</strong> instead:</div>
+              <div>1. Open this page in <strong style={{ color: '#fff' }}>Safari</strong> (not Chrome)</div>
+              <div>2. Tap the <strong style={{ color: '#fff' }}>Share</strong> button at the bottom</div>
+              <div>3. Scroll and tap <strong style={{ color: '#fff' }}>Add to Home Screen</strong></div>
+              <div style={{ marginTop: 8 }}>4. Tap <strong style={{ color: '#fff' }}>Add</strong> — app appears with notifications enabled</div>
+            </>
+          ) : (
+            <>
+              <div>1. Tap the <strong style={{ color: '#fff' }}>Share</strong> button at the bottom of Safari</div>
+              <div>2. Scroll down and tap <strong style={{ color: '#fff' }}>Add to Home Screen</strong></div>
+              <div style={{ marginTop: 8 }}>3. Tap <strong style={{ color: '#fff' }}>Add</strong> — full screen, no browser chrome</div>
+            </>
+          )}
         </div>
-        <div style={{ color: '#aaa', fontSize: 13, lineHeight: 1.6 }}>
-          2. Scroll down and tap <strong style={{ color: '#fff' }}>Add to Home Screen</strong>
-        </div>
-        <div style={{ color: '#aaa', fontSize: 13, lineHeight: 1.6, marginBottom: 12 }}>
-          3. Tap <strong style={{ color: '#fff' }}>Add</strong> — the app appears on your home screen with notifications enabled
-        </div>
-        <button onClick={dismiss} style={{ padding: '10px 16px', borderRadius: 6, border: '1px solid #555', background: 'transparent', color: '#888', fontSize: 13, cursor: 'pointer' }}>
+        <button onClick={dismiss} style={{ marginTop: 12, padding: '10px 16px', borderRadius: 6, border: '1px solid #555', background: 'transparent', color: '#888', fontSize: 13, cursor: 'pointer', width: '100%' }}>
           Got it
         </button>
       </div>

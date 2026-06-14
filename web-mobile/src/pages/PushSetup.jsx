@@ -52,7 +52,7 @@ export default function PushSetup({ onSubscribed }) {
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
 
-      const profileId = localStorage.getItem('author_profile_id');
+      const profileId = localStorage.getItem('author_profile_id') || sessionStorage.getItem('author_profile_id');
       await fetch('/api/notifications/device-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },

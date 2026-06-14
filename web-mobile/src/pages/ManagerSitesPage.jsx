@@ -8,7 +8,8 @@ export default function ManagerSitesPage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const nav = useNavigate();
-  const cid = localStorage.getItem('customer_id') || '';
+  // Check both storage types — login may store in sessionStorage if Remember Me unchecked
+  const cid = localStorage.getItem('customer_id') || sessionStorage.getItem('customer_id') || '';
 
   useEffect(() => {
     Promise.all([
