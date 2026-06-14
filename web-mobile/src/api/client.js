@@ -39,6 +39,16 @@ export async function login(email, password, remember) {
   if (d.customer_id) st('customer_id', d.customer_id);
   if (d.author_profile_id) st('author_profile_id', d.author_profile_id);
   if (d.customer_name) st('customer_name', d.customer_name);
+  // Detect role from author_profile_id -> profiles table
+  try {
+    const resp = await fetch('/api/supabase/profiles?select=profile_type&id=eq.' + d.author_profile_id, {
+      headers: { 'Authorization': 'Bearer ' + d.token }
+    });
+    const p = await resp.json();
+    if (Array.isArray(p) && p.length > 0) {
+      st('role', p[0].profile_type === 'contractor' ? 'contractor' : 'manager');
+    }
+  } catch {}
   return d;
 }
 export function logout() { clearAll(); window.location.href = '/login'; }
