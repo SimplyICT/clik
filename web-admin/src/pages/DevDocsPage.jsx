@@ -179,7 +179,7 @@ contractor_completed → completed / cancelled</pre>
               <tr><td><code>sessions</code></td><td>token, user_id, data, expires_at (DB-backed, 30-day TTL)</td></tr>
               <tr><td><code>device_tokens</code></td><td>user_id, push_token, platform, is_active</td></tr>
               <tr><td><code>notifications</code></td><td>id, user_id, title, body, is_read, created_at</td></tr>
-              <tr><td><code>customer_location_contractors</code></td><td>customer_location_id, contractor_id (auto-assignment linking)</td></tr>
+              <tr><td><code>customer_location_contractors</code></td><td>customer_location_id, contractor_id, service_types (TEXT[]) — links contractors to locations with service type filters for auto-assignment</td></tr>
             </tbody>
           </table>
         </Section>

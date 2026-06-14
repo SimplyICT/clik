@@ -50,7 +50,11 @@ export default function HelpPage() {
         </Section>
 
         <Section id="contractors" title="Contractors">
-          <p style={{ fontSize: 13, lineHeight: 1.7 }}>Lists all contractors. <strong>"+ Add Contractor"</strong> opens a 3-step wizard: Details, Locations (assign to customer sites + service types), Manage. Edit with the pencil icon. Contractors can be linked to specific locations via <code>customer_location_contractors</code> for auto-assignment.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>Lists all contractors. <strong>"+ Add Contractor"</strong> opens a 3-step wizard. Edit with the pencil icon.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Step 1 — Details:</strong> Company name, contact person, ABN, address.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Step 2 — Locations:</strong> Select a customer to see their locations. Check the boxes for locations this contractor services. For each location, toggle the service type chips (Air Conditioning, Cleaning, Electrical, etc.) to indicate which trades they handle at that site. When editing, previously assigned locations and services are pre-loaded.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Step 3 — Manage:</strong> Service contact details.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>Contractor-location links are stored in <code>customer_location_contractors</code> and used for auto-assignment when new requests are created.</p>
         </Section>
 
         <Section id="requests" title="Service Requests">
