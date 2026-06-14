@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { q, create, update } from '../api/client';
+import { q, create, update, del } from '../api/client';
 
 const STEPS = ['Details', 'Locations', 'Manage'];
 const AUS_STATES = ['ACT','NSW','NT','QLD','SA','TAS','VIC','WA'];
@@ -37,6 +37,9 @@ export default function ContractorsPage() {
   const [editId, setEditId] = useState(null);
   const [errors, setErrors] = useState({});
   const [selectedCustomer, setSelectedCustomer] = useState('');
+  // Location assignment state: { [locationId]: { linked: bool, services: Set<string> } }
+  const [locAssign, setLocAssign] = useState({});
+  const [initialLinks, setInitialLinks] = useState([]); // track original links for diff
 
   const load = useCallback(async () => {
     const [cont, cust, locs] = await Promise.all([
@@ -59,7 +62,6 @@ export default function ContractorsPage() {
     ? customerLocations.filter(l => l.customerId === selectedCustomer)
     : [];
 
-  // ── validation ─────────────────────────────────────────────────────────────
   const validate = () => {
     const e = {};
     if (step === 0) {
@@ -96,10 +98,22 @@ export default function ContractorsPage() {
         service_contact_email: form.serviceContactEmail,
         profile_type: 'contractor',
       };
+      let contractorId = editId;
       if (editId) {
         await update('profiles', editId, payload);
       } else {
-        await create('profiles', payload);
+        const created = await create('profiles', payload);
+        contractorId = created.id;
+      }
+      // Sync location links: remove unchecked, add newly checked
+      const linkedLocIds = Object.entries(locAssign).filter(([,v]) => v.linked).map(([id]) => id);
+      const toRemove = initialLinks.filter(id => !linkedLocIds.includes(id));
+      const toAdd = linkedLocIds.filter(id => !initialLinks.includes(id));
+      for (const locId of toRemove) {
+        del('customer_location_contractors', `${locId}_${contractorId}`).catch(() => {});
+      }
+      for (const locId of toAdd) {
+        await create('customer_location_contractors', { customer_location_id: locId, contractor_id: contractorId });
       }
       closeWizard();
       load();
@@ -109,10 +123,11 @@ export default function ContractorsPage() {
   const openAdd = () => {
     setForm({ ...EMPTY, address: { ...EMPTY.address } });
     setEditId(null); setStep(0); setErrors({}); setSelectedCustomer('');
+    setLocAssign({}); setInitialLinks([]);
     setShowWizard(true);
   };
 
-  const openEdit = (c) => {
+  const openEdit = async (c) => {
     setForm({
       companyName: c.companyName || '', contactName: c.contactName || '',
       contactEmail: c.contactEmail || '', contactPhoneNumber: c.contactPhoneNumber || '',
@@ -122,12 +137,50 @@ export default function ContractorsPage() {
       serviceContactEmail: c.serviceContactEmail || '',
     });
     setEditId(c.id); setStep(0); setErrors({});
+    // Load existing location links for this contractor
+    try {
+      const links = await q('customer_location_contractors', {
+        select: 'customer_location_id',
+        filters: [{ field: 'contractor_id', value: c.id }],
+        limit: 200,
+      });
+      const linked = (links || []).map(l => l.customer_location_id).filter(Boolean);
+      setInitialLinks(linked);
+      const assign = {};
+      linked.forEach(id => { assign[id] = { linked: true, services: new Set() }; });
+      setLocAssign(assign);
+    } catch { setInitialLinks([]); setLocAssign({}); }
     setShowWizard(true);
   };
 
-  const closeWizard = () => { setShowWizard(false); setStep(0); setErrors({}); setSelectedCustomer(''); };
+  const closeWizard = () => {
+    setShowWizard(false); setStep(0); setErrors({}); setSelectedCustomer('');
+    setLocAssign({}); setInitialLinks([]);
+  };
   const setF = (f, v) => setForm(p => ({ ...p, [f]: v }));
   const setA = (f, v) => setForm(p => ({ ...p, address: { ...p.address, [f]: v } }));
+
+  const toggleLoc = (locId) => {
+    setLocAssign(prev => {
+      const cur = prev[locId];
+      if (cur?.linked) {
+        const next = { ...prev };
+        delete next[locId];
+        return next;
+      }
+      return { ...prev, [locId]: { linked: true, services: new Set() } };
+    });
+  };
+
+  const toggleService = (locId, svc) => {
+    setLocAssign(prev => {
+      const cur = prev[locId] || { linked: true, services: new Set() };
+      const services = new Set(cur.services);
+      if (services.has(svc)) services.delete(svc);
+      else services.add(svc);
+      return { ...prev, [locId]: { linked: true, services } };
+    });
+  };
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Loading...</div>;
 
@@ -164,10 +217,9 @@ export default function ContractorsPage() {
         </tbody>
       </table>
 
-      {/* ── 3-step wizard ────────────────────────────────────────────────────── */}
       {showWizard && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ background: '#fff', borderRadius: 8, width: 520, maxHeight: '90vh', overflow: 'auto' }}>
+          <div style={{ background: '#fff', borderRadius: 8, width: 560, maxHeight: '90vh', overflow: 'auto' }}>
             <div style={{ padding: 20, borderBottom: '1px solid #e0e0e0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ fontSize: 16 }}>{editId ? 'Edit' : 'Add'} Contractor</h3>
               <button onClick={closeWizard} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}>✕</button>
@@ -210,27 +262,53 @@ export default function ContractorsPage() {
                 <div>
                   <p style={{ color: '#666', fontSize: 13, marginBottom: 12 }}>Assign this contractor to customer locations and select their service types.</p>
                   <div style={{ marginBottom: 12 }}>
-                    <select value={selectedCustomer} onChange={e => setSelectedCustomer(e.target.value)}
-                      style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
+                    <select value={selectedCustomer} onChange={e => {
+                      setSelectedCustomer(e.target.value);
+                    }} style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
                       <option value="">Select a customer...</option>
-                      {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      {customers.map(c => <option key={c.id} value={c.id}>{c.name} ({c.billing || 'no plan'})</option>)}
                     </select>
                   </div>
-                  {locsForCustomer.length === 0 && selectedCustomer && (
+                  {selectedCustomer && locsForCustomer.length === 0 && (
                     <div style={{ color: '#888', fontSize: 13, padding: 12 }}>No locations found for this customer.</div>
                   )}
-                  {locsForCustomer.map(loc => (
-                    <div key={loc.id} style={{ display: 'flex', alignItems: 'center', padding: '8px 10px', marginBottom: 4, borderRadius: 4, border: '1px solid #f0f0f0', fontSize: 13 }}>
-                      <span style={{ flex: 1 }}>{loc.companyName}{loc.reference ? ` (${loc.reference})` : ''}</span>
-                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                        {SERVICE_TYPES.map(st => (
-                          <label key={st} style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 2, marginRight: 4 }}>
-                            <input type="checkbox" /> {st}
-                          </label>
-                        ))}
+                  {locsForCustomer.map(loc => {
+                    const assign = locAssign[loc.id];
+                    const linked = assign?.linked || false;
+                    return (
+                      <div key={loc.id} onClick={() => toggleLoc(loc.id)}
+                        style={{ display: 'flex', flexDirection: 'column', padding: '10px 12px', marginBottom: 6, borderRadius: 6,
+                          border: linked ? '2px solid #00d4ff' : '1px solid #e0e0e0', cursor: 'pointer', background: linked ? '#f0faff' : '#fff' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <input type="checkbox" checked={linked} onChange={() => toggleLoc(loc.id)}
+                            style={{ width: 16, height: 16, accentColor: '#00d4ff' }} />
+                          <span style={{ flex: 1, fontWeight: 600, fontSize: 13 }}>{loc.companyName}{loc.reference ? ` (${loc.reference})` : ''}</span>
+                          <span style={{ fontSize: 11, color: linked ? '#00d4ff' : '#ccc' }}>{linked ? 'Assigned' : 'Click to assign'}</span>
+                        </div>
+                        {linked && (
+                          <div style={{ marginTop: 6, paddingLeft: 24, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                            {SERVICE_TYPES.map(st => (
+                              <label key={st} onClick={e => e.stopPropagation()}
+                                style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 3, padding: '3px 8px',
+                                  borderRadius: 12, border: '1px solid #ddd', cursor: 'pointer',
+                                  background: assign?.services?.has(st) ? '#00d4ff' : '#f5f5f5',
+                                  color: assign?.services?.has(st) ? '#000' : '#666' }}>
+                                <input type="checkbox" checked={assign?.services?.has(st) || false}
+                                  onChange={() => toggleService(loc.id, st)}
+                                  style={{ display: 'none' }} />
+                                {st}
+                              </label>
+                            ))}
+                          </div>
+                        )}
                       </div>
+                    );
+                  })}
+                  {!selectedCustomer && (
+                    <div style={{ color: '#888', fontSize: 13, padding: 12, textAlign: 'center' }}>
+                      Select a customer above to see their locations and assign this contractor.
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
 
