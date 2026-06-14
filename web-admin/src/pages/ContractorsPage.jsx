@@ -105,15 +105,30 @@ export default function ContractorsPage() {
         const created = await create('profiles', payload);
         contractorId = created.id;
       }
-      // Sync location links: remove unchecked, add newly checked
+      // Sync location links with service types
       const linkedLocIds = Object.entries(locAssign).filter(([,v]) => v.linked).map(([id]) => id);
       const toRemove = initialLinks.filter(id => !linkedLocIds.includes(id));
-      const toAdd = linkedLocIds.filter(id => !initialLinks.includes(id));
       for (const locId of toRemove) {
-        del('customer_location_contractors', `${locId}_${contractorId}`).catch(() => {});
+        const link = Object.values(locAssign).find(l => l.linkId && l.linkId.includes(locId));
+        if (link?.linkId) await del('customer_location_contractors', link.linkId);
       }
-      for (const locId of toAdd) {
-        await create('customer_location_contractors', { customer_location_id: locId, contractor_id: contractorId });
+      for (const [locId, val] of Object.entries(locAssign)) {
+        if (!val.linked) continue;
+        const svcArr = Array.from(val.services);
+        if (initialLinks.includes(locId)) {
+          // Update existing link: find by contractor_id + customer_location_id
+          await fetch(`/api/supabase/customer_location_contractors?contractor_id=eq.${contractorId}&customer_location_id=eq.${locId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || sessionStorage.getItem('token')) },
+            body: JSON.stringify({ service_types: svcArr }),
+          });
+        } else {
+          // Create new link
+          const created = await create('customer_location_contractors', {
+            customer_location_id: locId, contractor_id: contractorId, service_types: svcArr,
+          });
+          val.linkId = created?.id;
+        }
       }
       closeWizard();
       load();
@@ -140,14 +155,22 @@ export default function ContractorsPage() {
     // Load existing location links for this contractor
     try {
       const links = await q('customer_location_contractors', {
-        select: 'customer_location_id',
+        select: 'customer_location_id, service_types',
         filters: [{ field: 'contractor_id', value: c.id }],
         limit: 200,
       });
-      const linked = (links || []).map(l => l.customer_location_id).filter(Boolean);
-      setInitialLinks(linked);
       const assign = {};
-      linked.forEach(id => { assign[id] = { linked: true, services: new Set() }; });
+      const linked = (links || []).map(l => {
+        if (l.customer_location_id) {
+          assign[l.customer_location_id] = {
+            linked: true,
+            services: new Set(Array.isArray(l.service_types) ? l.service_types : []),
+            linkId: l.id,
+          };
+        }
+        return l.customer_location_id;
+      }).filter(Boolean);
+      setInitialLinks(linked);
       setLocAssign(assign);
     } catch { setInitialLinks([]); setLocAssign({}); }
     setShowWizard(true);
