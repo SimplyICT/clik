@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { q, create, update, del } from '../api/client';
 
 const STEPS = ['Details', 'Locations', 'Manage'];
@@ -40,6 +40,7 @@ export default function ContractorsPage() {
   // Location assignment state: { [locationId]: { linked: bool, services: Set<string> } }
   const [locAssign, setLocAssign] = useState({});
   const [initialLinks, setInitialLinks] = useState([]); // track original links for diff
+  const linkIdByLoc = useRef({}); // { [locationId]: linkId } for removal lookup
 
   const load = useCallback(async () => {
     const [cont, cust, locs] = await Promise.all([
@@ -109,8 +110,8 @@ export default function ContractorsPage() {
       const linkedLocIds = Object.entries(locAssign).filter(([,v]) => v.linked).map(([id]) => id);
       const toRemove = initialLinks.filter(id => !linkedLocIds.includes(id));
       for (const locId of toRemove) {
-        const link = Object.values(locAssign).find(l => l.linkId && l.linkId.includes(locId));
-        if (link?.linkId) await del('customer_location_contractors', link.linkId);
+        const lid = linkIdByLoc.current[locId];
+        if (lid) await del('customer_location_contractors', lid);
       }
       for (const [locId, val] of Object.entries(locAssign)) {
         if (!val.linked) continue;
@@ -128,6 +129,7 @@ export default function ContractorsPage() {
             customer_location_id: locId, contractor_id: contractorId, service_types: svcArr,
           });
           val.linkId = created?.id;
+          if (created?.id) linkIdByLoc.current[locId] = created.id;
         }
       }
       closeWizard();
@@ -160,25 +162,32 @@ export default function ContractorsPage() {
         limit: 200,
       });
       const assign = {};
-      const linked = (links || []).map(l => {
+      const idMap = {};
+      let firstCustomerId = '';
+      (links || []).forEach(l => {
         if (l.customer_location_id) {
           assign[l.customer_location_id] = {
             linked: true,
             services: new Set(Array.isArray(l.service_types) ? l.service_types : []),
             linkId: l.id,
           };
+          idMap[l.customer_location_id] = l.id;
+          const loc = customerLocations.find(cl => cl.id === l.customer_location_id);
+          if (loc && !firstCustomerId) firstCustomerId = loc.customerId;
         }
-        return l.customer_location_id;
-      }).filter(Boolean);
+      });
+      linkIdByLoc.current = idMap;
+      const linked = Object.keys(assign);
       setInitialLinks(linked);
       setLocAssign(assign);
-    } catch { setInitialLinks([]); setLocAssign({}); }
+      setSelectedCustomer(firstCustomerId);
+    } catch { setInitialLinks([]); setLocAssign({}); setSelectedCustomer(''); linkIdByLoc.current = {}; }
     setShowWizard(true);
   };
 
   const closeWizard = () => {
     setShowWizard(false); setStep(0); setErrors({}); setSelectedCustomer('');
-    setLocAssign({}); setInitialLinks([]);
+    setLocAssign({}); setInitialLinks([]); linkIdByLoc.current = {};
   };
   const setF = (f, v) => setForm(p => ({ ...p, [f]: v }));
   const setA = (f, v) => setForm(p => ({ ...p, address: { ...p.address, [f]: v } }));
@@ -303,8 +312,8 @@ export default function ContractorsPage() {
                         style={{ display: 'flex', flexDirection: 'column', padding: '10px 12px', marginBottom: 6, borderRadius: 6,
                           border: linked ? '2px solid #00d4ff' : '1px solid #e0e0e0', cursor: 'pointer', background: linked ? '#f0faff' : '#fff' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <input type="checkbox" checked={linked} onChange={() => toggleLoc(loc.id)}
-                            style={{ width: 16, height: 16, accentColor: '#00d4ff' }} />
+                          <input type="checkbox" checked={linked} readOnly
+                            style={{ width: 16, height: 16, accentColor: '#00d4ff', pointerEvents: 'none' }} />
                           <span style={{ flex: 1, fontWeight: 600, fontSize: 13 }}>{loc.companyName}{loc.reference ? ` (${loc.reference})` : ''}</span>
                           <span style={{ fontSize: 11, color: linked ? '#00d4ff' : '#ccc' }}>{linked ? 'Assigned' : 'Click to assign'}</span>
                         </div>

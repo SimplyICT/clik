@@ -100,7 +100,8 @@ export default function DevDocsPage() {
         </Section>
 
         <Section id="proxy" title="Supabase Proxy">
-          <p style={{ fontSize: 13, lineHeight: 1.6 }}>The <code>ALLOWED_TABLES</code> set restricts which tables can be proxied (12 tables). Rate limiting at 100 req/min/IP. The <code>Prefer</code> header from the frontend is forwarded to Supabase (needed for <code>return=representation</code>). The proxy also fires Pushover notifications on successful POST to the <code>requests</code> table when <code>contractorProfileId</code> is set.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.6 }}>The <code>ALLOWED_TABLES</code> set restricts which tables can be proxied (12 tables). Rate limiting at 100 req/min/IP. The <code>Prefer</code> header from the frontend is forwarded to Supabase (needed for <code>return=representation</code>).</p>
+          <p style={{ fontSize: 13, lineHeight: 1.6 }}><strong>Auto-assignment flow:</strong> The <code>requests</code> table is a VIEW backed by <code>requests_base</code>. An <code>INSTEAD OF INSERT</code> trigger (<code>requests_insert</code>) handles new requests: if <code>customerLocationProfileId</code> is provided but no <code>contractorProfileId</code>, it queries <code>customer_location_contractors</code> matching both location AND service type (via <code>service_types</code> array), assigns the first match, and upgrades status to <code>awaiting_acceptance</code>. The proxy then reads the returned row and fires Pushover/Web Push notifications when <code>contractorProfileId</code> is present.</p>
         </Section>
 
         <Section id="state-machine" title="Request State Machine">
@@ -172,7 +173,7 @@ contractor_completed → completed / cancelled</pre>
               <tr><td><code>customers</code></td><td>id, name, contactName, contactEmail, addressJson, billing</td></tr>
               <tr><td><code>customerLocations</code></td><td>id, companyName, customerId, reference, addressJson</td></tr>
               <tr><td><code>contractors</code></td><td>id, companyName, contactName, abn, addressJson</td></tr>
-              <tr><td><code>requests</code></td><td>id, title, status, serviceType, priority, customerId, quoteAmount</td></tr>
+              <tr><td><code>requests</code> (VIEW)</td><td>id, title, status, serviceType, priority, customerId, customerLocationProfileId, contractorProfileId, quoteAmount, invoiceAmount — backed by <code>requests_base</code> table, auto-assigns contractor via trigger on insert</td></tr>
               <tr><td><code>request_notes</code></td><td>id, request_id, author_profile_id, display_name, description</td></tr>
               <tr><td><code>request_invoices</code></td><td>request_id, invoice_number, amount, submit_date, auto_approve_date</td></tr>
               <tr><td><code>profiles</code></td><td>id, user_id, profile_type, company_name, customer_id</td></tr>

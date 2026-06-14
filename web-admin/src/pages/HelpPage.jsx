@@ -58,8 +58,9 @@ export default function HelpPage() {
         </Section>
 
         <Section id="requests" title="Service Requests">
-          <p style={{ fontSize: 13, lineHeight: 1.7 }}>Each request tracks a maintenance job through an 11-status lifecycle. <strong>Filter</strong> by status dropdown. <strong>Click a row</strong> to expand the detail panel. <strong>Edit</strong> to change fields. Status transitions are validated server-side.</p>
-          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Auto-assignment:</strong> When a request is created for a location that has linked contractors, the system automatically assigns the first available contractor and sets the status to Awaiting Acceptance.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>Each request tracks a maintenance job through an 11-status lifecycle. <strong>Filter</strong> by status dropdown. <strong>Click a row</strong> to expand the detail panel. <strong>Edit</strong> to change fields. Status transitions are validated server-side. The detail panel now shows the assigned site and contractor names.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Creating a Request:</strong> The <strong>"+ New Request"</strong> form includes a <strong>Site/Location</strong> dropdown that loads when you select a customer. You can also optionally pick a specific contractor. If you select a site without picking a contractor, the system auto-assigns a matching contractor based on the service type at that location.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Auto-assignment:</strong> When a request is created for a location that has linked contractors, the system looks up contractors whose service types match the job's service type at that location, assigns the first match, and sets the status to <strong>Awaiting Acceptance</strong>. A Pushover push notification is also sent.</p>
         </Section>
 
         <Section id="assets" title="Assets">

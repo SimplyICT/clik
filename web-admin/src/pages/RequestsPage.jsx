@@ -26,30 +26,63 @@ export default function RequestsPage() {
   const [detail, setDetail] = useState(null);
   const [editForm, setEditForm] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ title: '', description: '', serviceType: SERVICE_TYPES[0], priority: 'medium', customerId: '' });
+  const [form, setForm] = useState({ title: '', description: '', serviceType: SERVICE_TYPES[0], priority: 'medium', customerId: '', customerLocationProfileId: '', contractorProfileId: '' });
+  const [customerLocations, setCustomerLocations] = useState([]);
+  const [editCustomerLocations, setEditCustomerLocations] = useState([]);
+  const [allLocations, setAllLocations] = useState([]);
+  const [contractors, setContractors] = useState([]);
 
   const load = useCallback(async () => {
-    const [reqs, cust] = await Promise.all([
+    const [reqs, cust, conts, locs] = await Promise.all([
       q('requests', { select: '*', order: 'requestStartDate.desc.nullslast', limit: 100 }),
       q('customers', { select: 'id,name', order: 'name.asc' }),
+      q('contractors', { select: 'id,companyName', order: 'companyName.asc' }).catch(() => []),
+      q('customerLocations', { select: 'id,companyName,reference,customerId', limit: 500 }).catch(() => []),
     ]);
     setRequests(reqs || []);
     setCustomers(cust || []);
+    setContractors(conts || []);
+    setAllLocations(locs || []);
     setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (form.customerId) {
+      q('customerLocations', { select: 'id,companyName,reference', filters: [{ field: 'customerId', value: form.customerId }], limit: 100 }).then(locs => {
+        setCustomerLocations(locs || []);
+      }).catch(() => setCustomerLocations([]));
+    } else {
+      setCustomerLocations([]);
+    }
+  }, [form.customerId]);
+
+  useEffect(() => {
+    if (editForm?.customerId) {
+      q('customerLocations', { select: 'id,companyName,reference', filters: [{ field: 'customerId', value: editForm.customerId }], limit: 100 }).then(locs => {
+        setEditCustomerLocations(locs || []);
+      }).catch(() => setEditCustomerLocations([]));
+    }
+  }, [editForm?.customerId]);
 
   const filtered = statusFilter ? requests.filter(r => r.status === statusFilter) : requests;
 
   const handleSaveEdit = async () => {
     if (!editForm) return;
     try {
-      await update('requests', editForm.id, {
+      const updates = {
         title: editForm.title, description: editForm.description,
         serviceType: editForm.serviceType, priority: editForm.priority,
         status: editForm.status,
-      });
+      };
+      if (editForm.customerLocationProfileId !== undefined) {
+        updates.customerLocationProfileId = editForm.customerLocationProfileId || null;
+      }
+      if (editForm.contractorProfileId !== undefined) {
+        updates.contractorProfileId = editForm.contractorProfileId || null;
+      }
+      await update('requests', editForm.id, updates);
       setDetail({ ...detail, ...editForm });
       setEditForm(null);
       load();
@@ -64,10 +97,13 @@ export default function RequestsPage() {
       await create('requests', {
         title: form.title, description: form.description,
         serviceType: form.serviceType, priority: form.priority,
-        customerId: form.customerId, status: 'pending_approval',
+        customerId: form.customerId,
+        customerLocationProfileId: form.customerLocationProfileId || null,
+        contractorProfileId: form.contractorProfileId || null,
+        status: form.contractorProfileId ? 'awaiting_acceptance' : 'pending_approval',
       });
       setShowCreate(false);
-      setForm({ title: '', description: '', serviceType: SERVICE_TYPES[0], priority: 'medium', customerId: '' });
+      setForm({ title: '', description: '', serviceType: SERVICE_TYPES[0], priority: 'medium', customerId: '', customerLocationProfileId: '', contractorProfileId: '' });
       load();
     } catch (err) { alert('Create failed: ' + err.message); }
   };
@@ -138,7 +174,7 @@ export default function RequestsPage() {
                 <textarea value={editForm.description} onChange={e => setEditForm({...editForm, description: e.target.value})} rows={3}
                   style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box', resize: 'vertical' }} />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div><label style={{ fontSize: 11, color: '#888' }}>Service</label>
                   <select value={editForm.serviceType} onChange={e => setEditForm({...editForm, serviceType: e.target.value})}
                     style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
@@ -151,12 +187,26 @@ export default function RequestsPage() {
                     {PRIORITIES.map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase()+p.slice(1)}</option>)}
                   </select>
                 </div>
-                <div><label style={{ fontSize: 11, color: '#888' }}>Status</label>
-                  <select value={editForm.status} onChange={e => setEditForm({...editForm, status: e.target.value})}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
-                    {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                  </select>
-                </div>
+              </div>
+              <div style={{ marginBottom: 10 }}><label style={{ fontSize: 11, color: '#888' }}>Status</label>
+                <select value={editForm.status} onChange={e => setEditForm({...editForm, status: e.target.value})}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
+                  {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </div>
+              <div style={{ marginBottom: 10 }}><label style={{ fontSize: 11, color: '#888' }}>Site/Location</label>
+                <select value={editForm.customerLocationProfileId || ''} onChange={e => setEditForm({...editForm, customerLocationProfileId: e.target.value})}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
+                  <option value="">Not set</option>
+                  {editCustomerLocations.map(l => <option key={l.id} value={l.id}>{l.companyName}{l.reference ? ` (${l.reference})` : ''}</option>)}
+                </select>
+              </div>
+              <div style={{ marginBottom: 10 }}><label style={{ fontSize: 11, color: '#888' }}>Contractor</label>
+                <select value={editForm.contractorProfileId || ''} onChange={e => setEditForm({...editForm, contractorProfileId: e.target.value})}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
+                  <option value="">Not assigned</option>
+                  {contractors.map(c => <option key={c.id} value={c.id}>{c.companyName}</option>)}
+                </select>
               </div>
               <button onClick={handleSaveEdit} style={{ marginTop: 14, padding: '8px 20px', borderRadius: 4, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
                 Save Changes
@@ -173,6 +223,18 @@ export default function RequestsPage() {
               <div><small style={{ color: '#888' }}>Description</small><div style={{ fontSize: 14, marginTop: 2 }}>{detail.description || '-'}</div></div>
               <div><small style={{ color: '#888' }}>Service</small><div style={{ fontSize: 14, marginTop: 2 }}>{detail.serviceType || '-'}</div></div>
               <div><small style={{ color: '#888' }}>Priority</small><div style={{ fontSize: 14, marginTop: 2, textTransform: 'capitalize' }}>{detail.priority}</div></div>
+              <div><small style={{ color: '#888' }}>Site</small><div style={{ fontSize: 14, marginTop: 2 }}>{
+                (() => {
+                  const loc = allLocations.find(l => l.id === detail.customerLocationProfileId);
+                  return loc ? loc.companyName : (detail.customerLocationProfileId || '-');
+                })()
+              }</div></div>
+              <div><small style={{ color: '#888' }}>Contractor</small><div style={{ fontSize: 14, marginTop: 2 }}>{
+                (() => {
+                  const c = contractors.find(c2 => c2.id === detail.contractorProfileId);
+                  return c ? c.companyName : (detail.contractorProfileId || 'Not assigned');
+                })()
+              }</div></div>
               <div><small style={{ color: '#888' }}>Created</small><div style={{ fontSize: 14, marginTop: 2 }}>{detail.requestStartDate ? new Date(detail.requestStartDate).toLocaleDateString() : '-'}</div></div>
             </div>
           )}
@@ -182,7 +244,7 @@ export default function RequestsPage() {
       {/* Create Modal */}
       {showCreate && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ background: '#fff', borderRadius: 8, padding: 24, width: 480 }}>
+          <div style={{ background: '#fff', borderRadius: 8, padding: 24, width: 520 }}>
             <h3 style={{ marginBottom: 16 }}>New Request</h3>
             <input placeholder="Title" value={form.title} onChange={e => setForm({...form, title: e.target.value})}
               style={{ width: '100%', padding: '8px 10px', marginBottom: 10, borderRadius: 4, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' }} />
@@ -197,11 +259,28 @@ export default function RequestsPage() {
                 style={{ padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
                 {PRIORITIES.map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase()+p.slice(1)}</option>)}
               </select>
-              <select value={form.customerId} onChange={e => setForm({...form, customerId: e.target.value})}
+              <select value={form.customerId} onChange={e => setForm({...form, customerId: e.target.value, customerLocationProfileId: ''})}
                 style={{ padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
                 <option value="">Select customer...</option>
                 {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
+            </div>
+            <select value={form.customerLocationProfileId} onChange={e => setForm({...form, customerLocationProfileId: e.target.value})}
+              style={{ width: '100%', padding: '8px 10px', marginBottom: 10, borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
+              <option value="">Select site/location...</option>
+              {customerLocations.map(l => <option key={l.id} value={l.id}>{l.companyName}{l.reference ? ` (${l.reference})` : ''}</option>)}
+            </select>
+            <select value={form.contractorProfileId} onChange={e => setForm({...form, contractorProfileId: e.target.value})}
+              style={{ width: '100%', padding: '8px 10px', marginBottom: 10, borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
+              <option value="">Assign contractor (optional — auto-match if site selected)</option>
+              {contractors.map(c => <option key={c.id} value={c.id}>{c.companyName}</option>)}
+            </select>
+            <div style={{ fontSize: 11, color: '#888', marginBottom: 10 }}>
+              {form.contractorProfileId
+                ? 'Status will be set to Awaiting Acceptance — contractor notified immediately.'
+                : form.customerLocationProfileId
+                  ? 'A contractor linked to this site will be auto-assigned and notified.'
+                  : 'No site selected — request will be created as Pending Approval (unassigned).'}
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
               <button onClick={() => setShowCreate(false)} style={{ padding: '8px 16px', borderRadius: 4, border: '1px solid #ddd', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
