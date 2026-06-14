@@ -8,6 +8,7 @@ import JobDetailPage from './pages/JobDetailPage';
 import ManagerSitesPage from './pages/ManagerSitesPage';
 import ManagerRequestsPage from './pages/ManagerRequestsPage';
 import ProfilePage from './pages/ProfilePage';
+import PwaInstall from './pages/PwaInstall';
 
 function RequireAuth({ children }) {
   if (!getUser()) return <Navigate to="/login" replace />;
@@ -45,7 +46,10 @@ function Layout({ children, title }) {
           <button onClick={logout} style={{ background: 'none', border: '1px solid #555', color: '#ccc', padding: '4px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap' }}>Logout</button>
         </div>
       </header>
-      <main style={{ padding: '12px 14px', maxWidth: 600, margin: '0 auto' }}>{children}</main>
+      <main style={{ padding: '12px 14px', maxWidth: 600, margin: '0 auto' }}>
+        <PwaInstall />
+        {children}
+      </main>
       <Nav />
     </div>
   );
