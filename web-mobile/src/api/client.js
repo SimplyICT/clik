@@ -51,5 +51,5 @@ export async function login(email, password, remember) {
   } catch {}
   return d;
 }
-export function logout() { clearAll(); window.location.href = '/login'; }
+export function logout() { clearAll(); window.location.href = '/mobile/login'; }
 export function getUser() { try { return JSON.parse(getItem('user')); } catch { return null; } }
