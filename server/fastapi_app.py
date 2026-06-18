@@ -22,6 +22,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import httpx
 from scheduler import init_scheduler, scheduler as sched
 from notifications import init_notifications as init_notif, get_inapp, mark_read, notify_request_update
+from asset_service.routes import router as asset_management_router
+from asset_service.documents.routes import router as documents_router
+from asset_service.costs.routes import router as costs_router
 
 mimetypes.add_type('application/javascript', '.js')
 mimetypes.add_type('text/css', '.css')
@@ -88,6 +91,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan, title=f"SimplyClik {MODE.title()} API", version="2.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.include_router(asset_management_router)
+app.include_router(documents_router)
+app.include_router(costs_router)
 
 # ── helpers ───────────────────────────────────────────────────────────────
 import threading
@@ -193,7 +199,7 @@ async def handle_logout(authorization: str | None = Header(None)):
 # ── Supabase proxy (auth required, allowlisted tables, rate limited) ──────
 ALLOWED_TABLES = {
     "customers", "customerLocations", "contractors", "requests",
-    "assets", "leads", "request_notes", "request_invoices",
+    "assets", "assets_v2", "leads", "request_notes", "request_invoices",
     "user_profiles", "users", "profiles", "user_roles",
     "leadsHistory", "customer_location_contractors",
 }
