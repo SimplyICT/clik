@@ -127,3 +127,47 @@ CREATE TABLE IF NOT EXISTS asset_cost_history (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_asset_cost_history_asset_id ON asset_cost_history(asset_id);
+
+-- Phase 2: Asset maintenance schedules table
+CREATE TABLE IF NOT EXISTS asset_maintenance_schedules (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    asset_id UUID NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    frequency_type TEXT NOT NULL,
+    frequency_value INTEGER NOT NULL,
+    last_completed TIMESTAMPTZ,
+    next_due TIMESTAMPTZ,
+    assigned_contractor_id UUID,
+    auto_create_work_order BOOLEAN DEFAULT FALSE,
+    created_by UUID,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_asset_maintenance_schedules_asset_id ON asset_maintenance_schedules(asset_id);
+CREATE INDEX IF NOT EXISTS idx_asset_maintenance_schedules_next_due ON asset_maintenance_schedules(next_due);
+
+-- Phase 2: Asset work orders table
+CREATE TABLE IF NOT EXISTS asset_work_orders (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    asset_id UUID NOT NULL,
+    schedule_id UUID,
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    priority TEXT NOT NULL DEFAULT 'medium',
+    status TEXT NOT NULL DEFAULT 'pending',
+    assigned_contractor_id UUID,
+    scheduled_date DATE,
+    completed_date DATE,
+    completed_by UUID,
+    labor_hours DECIMAL(6,2),
+    labor_cost DECIMAL(10,2),
+    parts_cost DECIMAL(10,2) DEFAULT 0,
+    total_cost DECIMAL(10,2),
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_asset_work_orders_asset_id ON asset_work_orders(asset_id);
+CREATE INDEX IF NOT EXISTS idx_asset_work_orders_status ON asset_work_orders(status);
+CREATE INDEX IF NOT EXISTS idx_asset_work_orders_assigned_contractor ON asset_work_orders(assigned_contractor_id);

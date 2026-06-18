@@ -1,8 +1,11 @@
-"""Tests for Phase 1 schema changes: assets_v2 extensions, asset_documents, asset_audit_log, asset_cost_history."""
+"""Tests for schema changes: Phase 1 (assets_v2 extensions, asset_documents, asset_audit_log, asset_cost_history) and Phase 2 (asset_maintenance_schedules, asset_work_orders)."""
 
 import os
 import pytest
 import pg8000
+from dotenv import load_dotenv
+from pathlib import Path
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 
 def get_test_conn():
@@ -225,5 +228,82 @@ class TestAssetCostHistoryTable:
             cols = _get_columns(conn, "asset_cost_history")
             missing = self.EXPECTED_COLUMNS - cols
             assert not missing, f"asset_cost_history is missing columns: {missing}"
+        finally:
+            conn.close()
+
+
+class TestAssetMaintenanceSchedulesTable:
+    """Verify asset_maintenance_schedules table exists with correct columns."""
+
+    EXPECTED_COLUMNS = {
+        "id",
+        "asset_id",
+        "title",
+        "description",
+        "frequency_type",
+        "frequency_value",
+        "last_completed",
+        "next_due",
+        "assigned_contractor_id",
+        "auto_create_work_order",
+        "created_by",
+        "created_at",
+    }
+
+    def test_table_exists(self):
+        conn = get_test_conn()
+        try:
+            assert _table_exists(conn, "asset_maintenance_schedules")
+        finally:
+            conn.close()
+
+    def test_columns_exist(self):
+        conn = get_test_conn()
+        try:
+            cols = _get_columns(conn, "asset_maintenance_schedules")
+            missing = self.EXPECTED_COLUMNS - cols
+            assert not missing, f"asset_maintenance_schedules is missing columns: {missing}"
+        finally:
+            conn.close()
+
+
+class TestAssetWorkOrdersTable:
+    """Verify asset_work_orders table exists with correct columns."""
+
+    EXPECTED_COLUMNS = {
+        "id",
+        "asset_id",
+        "schedule_id",
+        "type",
+        "title",
+        "description",
+        "priority",
+        "status",
+        "assigned_contractor_id",
+        "scheduled_date",
+        "completed_date",
+        "completed_by",
+        "labor_hours",
+        "labor_cost",
+        "parts_cost",
+        "total_cost",
+        "notes",
+        "created_at",
+        "updated_at",
+    }
+
+    def test_table_exists(self):
+        conn = get_test_conn()
+        try:
+            assert _table_exists(conn, "asset_work_orders")
+        finally:
+            conn.close()
+
+    def test_columns_exist(self):
+        conn = get_test_conn()
+        try:
+            cols = _get_columns(conn, "asset_work_orders")
+            missing = self.EXPECTED_COLUMNS - cols
+            assert not missing, f"asset_work_orders is missing columns: {missing}"
         finally:
             conn.close()
