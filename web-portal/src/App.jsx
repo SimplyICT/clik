@@ -9,6 +9,8 @@ import ActivityPage from './pages/ActivityPage';
 import ManagePage from './pages/ManagePage';
 import HelpPage from './pages/HelpPage';
 import DevDocsPage from './pages/DevDocsPage';
+import MyAssetsPage from './pages/MyAssetsPage';
+import MyWorkOrdersPage from './pages/MyWorkOrdersPage';
 
 const styles = document.createElement('style');
 styles.textContent = `
@@ -39,7 +41,9 @@ function RequireAuth({ children }) {
 
 const NAV = [
   { path: '/dashboard', label: 'Dashboard' },
+  { path: '/my-assets', label: 'My Assets' },
   { path: '/locations', label: 'Locations' },
+  { path: '/work-orders', label: 'Work Orders' },
   { path: '/requests', label: 'Requests' },
   { path: '/activity', label: 'Activity' },
   { path: '/manage', label: 'Manage' },
@@ -94,7 +98,9 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<RequireAuth><Layout><DashboardPage /></Layout></RequireAuth>} />
         <Route path="/dashboard" element={<RequireAuth><Layout><DashboardPage /></Layout></RequireAuth>} />
+        <Route path="/my-assets" element={<RequireAuth><Layout><MyAssetsPage /></Layout></RequireAuth>} />
         <Route path="/locations" element={<RequireAuth><Layout><LocationsPage /></Layout></RequireAuth>} />
+        <Route path="/work-orders" element={<RequireAuth><Layout><MyWorkOrdersPage /></Layout></RequireAuth>} />
         <Route path="/requests" element={<RequireAuth><Layout><RequestsPage /></Layout></RequireAuth>} />
         <Route path="/activity" element={<RequireAuth><Layout><ActivityPage /></Layout></RequireAuth>} />
         <Route path="/manage" element={<RequireAuth><Layout><ManagePage /></Layout></RequireAuth>} />
