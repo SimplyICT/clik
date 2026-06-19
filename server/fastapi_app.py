@@ -28,6 +28,7 @@ from asset_service.costs.routes import router as costs_router
 from asset_service.maintenance.routes import router as maintenance_router
 from asset_service.work_orders.routes import router as work_orders_router
 from asset_service.reports.routes import router as reports_router
+from asset_service.imports.routes import router as imports_router
 
 mimetypes.add_type('application/javascript', '.js')
 mimetypes.add_type('text/css', '.css')
@@ -100,6 +101,7 @@ app.include_router(costs_router)
 app.include_router(maintenance_router)
 app.include_router(work_orders_router)
 app.include_router(reports_router)
+app.include_router(imports_router)
 
 # ── helpers ───────────────────────────────────────────────────────────────
 import threading
