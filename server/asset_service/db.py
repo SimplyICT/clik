@@ -126,7 +126,7 @@ def _exec(conn, sql, params=None):
     cur.close()
     return rows
 
-def list_assets(conn, filters=None):
+def list_assets(conn, filters=None, limit=50, offset=0):
     filters = filters or {}
     clauses = []
     params = []
@@ -147,9 +147,36 @@ def list_assets(conn, filters=None):
         like = f"%{filters['search']}%"
         params.extend([like, like, like])
     where = "WHERE " + " AND ".join(clauses) if clauses else ""
-    sql = f"SELECT {ASSET_V2_COLS} FROM assets_v2 {where} ORDER BY asset_name ASC NULLS LAST"
+    sql = f"SELECT {ASSET_V2_COLS} FROM assets_v2 {where} ORDER BY asset_name ASC NULLS LAST LIMIT %s OFFSET %s"
+    params.extend([limit, offset])
     rows = _exec(conn, sql, params)
     return [_row_to_asset_v2(r) for r in rows]
+
+
+def count_assets(conn, filters=None):
+    filters = filters or {}
+    clauses = []
+    params = []
+    if filters.get("category"):
+        clauses.append("category = %s")
+        params.append(filters["category"])
+    if filters.get("status"):
+        clauses.append("status = %s")
+        params.append(filters["status"])
+    if filters.get("customer_id"):
+        clauses.append("customer_id = %s::uuid")
+        params.append(filters["customer_id"])
+    if filters.get("contractor_id"):
+        clauses.append("assigned_contractor_id = %s::uuid")
+        params.append(filters["contractor_id"])
+    if filters.get("search"):
+        clauses.append("(asset_name ILIKE %s OR asset_code ILIKE %s OR serial_number ILIKE %s)")
+        like = f"%{filters['search']}%"
+        params.extend([like, like, like])
+    where = "WHERE " + " AND ".join(clauses) if clauses else ""
+    sql = f"SELECT COUNT(*) FROM assets_v2 {where}"
+    rows = _exec(conn, sql, params)
+    return rows[0][0] if rows else 0
 
 def get_asset(conn, asset_id):
     sql = f"SELECT {ASSET_V2_COLS} FROM assets_v2 WHERE id = %s::uuid"

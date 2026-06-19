@@ -39,7 +39,7 @@ def _exec(conn, sql, params=None):
     return rows
 
 
-def list_work_orders(conn, asset_id=None, status=None, contractor_id=None):
+def list_work_orders(conn, asset_id=None, status=None, contractor_id=None, limit=50, offset=0):
     clauses = []
     params = []
     if asset_id:
@@ -52,7 +52,8 @@ def list_work_orders(conn, asset_id=None, status=None, contractor_id=None):
         clauses.append("assigned_contractor_id = %s::uuid")
         params.append(contractor_id)
     where = "WHERE " + " AND ".join(clauses) if clauses else ""
-    sql = f"SELECT {WO_COLS} FROM asset_work_orders {where} ORDER BY created_at DESC"
+    sql = f"SELECT {WO_COLS} FROM asset_work_orders {where} ORDER BY created_at DESC LIMIT %s OFFSET %s"
+    params.extend([limit, offset])
     rows = _exec(conn, sql, params)
     return [_row_to_wo(r) for r in rows]
 

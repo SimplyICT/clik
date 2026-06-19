@@ -28,13 +28,13 @@ def _exec(conn, sql, params=None):
     return rows
 
 
-def list_schedules(conn, asset_id=None):
+def list_schedules(conn, asset_id=None, limit=50, offset=0):
     if asset_id:
-        sql = f"SELECT {SCHED_COLS} FROM asset_maintenance_schedules WHERE asset_id = %s::uuid ORDER BY created_at DESC"
-        rows = _exec(conn, sql, (asset_id,))
+        sql = f"SELECT {SCHED_COLS} FROM asset_maintenance_schedules WHERE asset_id = %s::uuid ORDER BY created_at DESC LIMIT %s OFFSET %s"
+        rows = _exec(conn, sql, (asset_id, limit, offset))
     else:
-        sql = f"SELECT {SCHED_COLS} FROM asset_maintenance_schedules ORDER BY created_at DESC"
-        rows = _exec(conn, sql)
+        sql = f"SELECT {SCHED_COLS} FROM asset_maintenance_schedules ORDER BY created_at DESC LIMIT %s OFFSET %s"
+        rows = _exec(conn, sql, (limit, offset))
     return [_row_to_schedule(r) for r in rows]
 
 

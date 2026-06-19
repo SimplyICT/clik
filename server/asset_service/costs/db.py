@@ -56,9 +56,9 @@ def get_cost(conn, cost_id):
     return None
 
 
-def list_costs(conn, asset_id):
-    sql = f"SELECT {COST_COLS} FROM asset_cost_history WHERE asset_id = %s::uuid ORDER BY recorded_date DESC"
-    rows = _exec(conn, sql, (asset_id,))
+def list_costs(conn, asset_id, limit=50, offset=0):
+    sql = f"SELECT {COST_COLS} FROM asset_cost_history WHERE asset_id = %s::uuid ORDER BY recorded_date DESC LIMIT %s OFFSET %s"
+    rows = _exec(conn, sql, (asset_id, limit, offset))
     return [_row_to_cost(r) for r in rows]
 
 

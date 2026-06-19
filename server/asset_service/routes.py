@@ -18,6 +18,8 @@ async def list_assets(
     customer_id: str = Query(None),
     contractor_id: str = Query(None),
     search: str = Query(None),
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     session: dict = Depends(require_session),
 ):
     conn = db.get_conn()
@@ -28,7 +30,30 @@ async def list_assets(
             "customer_id": customer_id,
             "contractor_id": contractor_id,
             "search": search,
+        }, limit=limit, offset=offset)
+    finally:
+        conn.close()
+
+
+@router.get("/api/asset-management/assets/count")
+async def count_assets(
+    category: str = Query(None),
+    status: str = Query(None),
+    customer_id: str = Query(None),
+    contractor_id: str = Query(None),
+    search: str = Query(None),
+    session: dict = Depends(require_session),
+):
+    conn = db.get_conn()
+    try:
+        count = db.count_assets(conn, {
+            "category": category,
+            "status": status,
+            "customer_id": customer_id,
+            "contractor_id": contractor_id,
+            "search": search,
         })
+        return {"count": count}
     finally:
         conn.close()
 

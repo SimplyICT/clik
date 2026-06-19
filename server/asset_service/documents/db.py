@@ -25,9 +25,9 @@ def _exec(conn, sql, params=None):
     return rows
 
 
-def list_documents(conn, asset_id):
-    sql = f"SELECT {DOC_COLS} FROM asset_documents WHERE asset_id = %s::uuid ORDER BY created_at DESC"
-    rows = _exec(conn, sql, (asset_id,))
+def list_documents(conn, asset_id, limit=50, offset=0):
+    sql = f"SELECT {DOC_COLS} FROM asset_documents WHERE asset_id = %s::uuid ORDER BY created_at DESC LIMIT %s OFFSET %s"
+    rows = _exec(conn, sql, (asset_id, limit, offset))
     return [_row_to_doc(r) for r in rows]
 
 

@@ -14,12 +14,14 @@ async def list_work_orders(
     asset_id: str = Query(None),
     status: str = Query(None),
     contractor_id: str = Query(None),
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     session: dict = Depends(require_session),
 ):
     from asset_service.db import get_conn
     conn = get_conn()
     try:
-        return db.list_work_orders(conn, asset_id, status, contractor_id)
+        return db.list_work_orders(conn, asset_id, status, contractor_id, limit=limit, offset=offset)
     finally:
         conn.close()
 
@@ -91,10 +93,15 @@ async def delete_work_order_route(wo_id: str, session: dict = Depends(require_se
 
 
 @router.get("/api/asset-management/assets/{asset_id}/work-orders")
-async def list_work_orders_by_asset(asset_id: str, session: dict = Depends(require_session)):
+async def list_work_orders_by_asset(
+    asset_id: str,
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    session: dict = Depends(require_session),
+):
     from asset_service.db import get_conn
     conn = get_conn()
     try:
-        return db.list_work_orders(conn, asset_id=asset_id)
+        return db.list_work_orders(conn, asset_id=asset_id, limit=limit, offset=offset)
     finally:
         conn.close()

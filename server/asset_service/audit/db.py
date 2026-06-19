@@ -41,7 +41,7 @@ def get_event(conn, event_id):
     return None
 
 
-def list_events(conn, asset_id=None, event_type=None, limit=100):
+def list_events(conn, asset_id=None, event_type=None, limit=100, offset=0):
     clauses = []
     params = []
     if asset_id:
@@ -51,7 +51,7 @@ def list_events(conn, asset_id=None, event_type=None, limit=100):
         clauses.append("event_type = %s")
         params.append(event_type)
     where = "WHERE " + " AND ".join(clauses) if clauses else ""
-    sql = f"SELECT {AUDIT_COLS} FROM asset_audit_log {where} ORDER BY created_at DESC LIMIT %s"
-    params.append(limit)
+    sql = f"SELECT {AUDIT_COLS} FROM asset_audit_log {where} ORDER BY created_at DESC LIMIT %s OFFSET %s"
+    params.extend([limit, offset])
     rows = _exec(conn, sql, params)
     return [_row_to_event(r) for r in rows]

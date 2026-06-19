@@ -12,12 +12,14 @@ async def require_session(authorization: str | None = Header(None)):
 @router.get("/api/asset-management/maintenance")
 async def list_schedules(
     asset_id: str | None = Query(None),
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     session: dict = Depends(require_session),
 ):
     from asset_service.db import get_conn
     conn = get_conn()
     try:
-        return db.list_schedules(conn, asset_id)
+        return db.list_schedules(conn, asset_id, limit=limit, offset=offset)
     finally:
         conn.close()
 
