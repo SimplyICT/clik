@@ -25,6 +25,7 @@ from notifications import init_notifications as init_notif, get_inapp, mark_read
 from asset_service.routes import router as asset_management_router
 from asset_service.documents.routes import router as documents_router
 from asset_service.costs.routes import router as costs_router
+from asset_service.maintenance.routes import router as maintenance_router
 
 mimetypes.add_type('application/javascript', '.js')
 mimetypes.add_type('text/css', '.css')
@@ -94,6 +95,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 app.include_router(asset_management_router)
 app.include_router(documents_router)
 app.include_router(costs_router)
+app.include_router(maintenance_router)
 
 # ── helpers ───────────────────────────────────────────────────────────────
 import threading
