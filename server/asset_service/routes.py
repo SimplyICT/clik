@@ -72,6 +72,45 @@ async def update_asset(asset_id: str, body: models.AssetUpdate, session: dict = 
         conn.close()
 
 
+@router.post("/api/asset-management/assets/bulk/status")
+async def bulk_update_status(body: dict, session: dict = Depends(require_session)):
+    if not session.get("is_admin"):
+        raise HTTPException(403, detail="Only admins can perform bulk operations")
+    conn = db.get_conn()
+    try:
+        result = db.bulk_update_status(conn, body["asset_ids"], body["status"], session.get("uid"))
+        conn.commit()
+        return result
+    finally:
+        conn.close()
+
+
+@router.post("/api/asset-management/assets/bulk/transfer")
+async def bulk_transfer(body: dict, session: dict = Depends(require_session)):
+    if not session.get("is_admin"):
+        raise HTTPException(403, detail="Only admins can perform bulk operations")
+    conn = db.get_conn()
+    try:
+        result = db.bulk_transfer(conn, body["asset_ids"], body.get("customer_id"), body.get("location_id"), session.get("uid"))
+        conn.commit()
+        return result
+    finally:
+        conn.close()
+
+
+@router.post("/api/asset-management/assets/bulk/assign")
+async def bulk_assign(body: dict, session: dict = Depends(require_session)):
+    if not session.get("is_admin"):
+        raise HTTPException(403, detail="Only admins can perform bulk operations")
+    conn = db.get_conn()
+    try:
+        result = db.bulk_assign_contractor(conn, body["asset_ids"], body.get("contractor_id"), session.get("uid"))
+        conn.commit()
+        return result
+    finally:
+        conn.close()
+
+
 @router.post("/api/asset-management/assets/{asset_id}/retire")
 async def retire_asset(asset_id: str, session: dict = Depends(require_session)):
     conn = db.get_conn()

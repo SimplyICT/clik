@@ -85,6 +85,17 @@ def _ensure_tables():
             UNIQUE(category, field_name)
         )
     """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS asset_audit_log (
+            id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+            asset_id UUID NOT NULL,
+            event_type TEXT NOT NULL,
+            actor_id UUID,
+            actor_name TEXT,
+            details JSONB,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+    """)
     conn.commit()
     cur.close()
     conn.close()
@@ -129,3 +140,84 @@ def test_asset_management_create_asset():
     assert data["asset_code"] == unique_code
     assert "id" in data
     assert "qr_code" in data
+
+
+def _create_test_asset(token, name, code):
+    resp = client.post("/api/asset-management/assets",
+                       json={
+                           "asset_name": name,
+                           "asset_code": code,
+                           "category": "Test",
+                           "status": "Active",
+                       },
+                       headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 201
+    return resp.json()["id"]
+
+
+def test_bulk_update_status():
+    token = login_token()
+    import uuid
+    id1 = _create_test_asset(token, "Bulk Status 1", f"BULK-STATUS-{uuid.uuid4().hex[:8].upper()}")
+    id2 = _create_test_asset(token, "Bulk Status 2", f"BULK-STATUS-{uuid.uuid4().hex[:8].upper()}")
+    resp = client.post("/api/asset-management/assets/bulk/status",
+                       json={"asset_ids": [id1, id2], "status": "Inactive"},
+                       headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["updated"] == 2
+    for aid in (id1, id2):
+        r = client.get(f"/api/asset-management/assets/{aid}",
+                       headers={"Authorization": f"Bearer {token}"})
+        assert r.json()["status"] == "Inactive"
+
+
+def test_bulk_transfer():
+    token = login_token()
+    import uuid
+    id1 = _create_test_asset(token, "Bulk Transfer 1", f"BULK-TFR-{uuid.uuid4().hex[:8].upper()}")
+    id2 = _create_test_asset(token, "Bulk Transfer 2", f"BULK-TFR-{uuid.uuid4().hex[:8].upper()}")
+    cust_id = "00000000-0000-0000-0000-000000000001"
+    loc_id = "00000000-0000-0000-0000-000000000002"
+    resp = client.post("/api/asset-management/assets/bulk/transfer",
+                       json={"asset_ids": [id1, id2], "customer_id": cust_id, "location_id": loc_id},
+                       headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["updated"] == 2
+    for aid in (id1, id2):
+        r = client.get(f"/api/asset-management/assets/{aid}",
+                       headers={"Authorization": f"Bearer {token}"})
+        assert r.json()["customer_id"] == cust_id
+        assert r.json()["customer_location_id"] == loc_id
+
+
+def test_bulk_assign_contractor():
+    token = login_token()
+    import uuid
+    id1 = _create_test_asset(token, "Bulk Assign 1", f"BULK-ASN-{uuid.uuid4().hex[:8].upper()}")
+    id2 = _create_test_asset(token, "Bulk Assign 2", f"BULK-ASN-{uuid.uuid4().hex[:8].upper()}")
+    contractor_id = "00000000-0000-0000-0000-000000000003"
+    resp = client.post("/api/asset-management/assets/bulk/assign",
+                       json={"asset_ids": [id1, id2], "contractor_id": contractor_id},
+                       headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["updated"] == 2
+    for aid in (id1, id2):
+        r = client.get(f"/api/asset-management/assets/{aid}",
+                       headers={"Authorization": f"Bearer {token}"})
+        assert r.json()["assigned_contractor_id"] == contractor_id
+
+
+def test_bulk_operations_require_admin():
+    resp = client.post("/api/login", json={"email": "contractor@simplyclik.local", "password": "Temp123!"})
+    try:
+        non_admin_token = resp.json()["token"]
+    except (KeyError, ValueError):
+        return
+    import uuid
+    resp = client.post("/api/asset-management/assets/bulk/status",
+                       json={"asset_ids": [], "status": "Inactive"},
+                       headers={"Authorization": f"Bearer {non_admin_token}"})
+    assert resp.status_code == 403

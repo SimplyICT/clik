@@ -229,6 +229,44 @@ def transfer_asset(conn, asset_id, new_customer_id, new_location_id):
     cur.close()
     return get_asset(conn, asset_id)
 
+def bulk_update_status(conn, asset_ids, status, user_id=None):
+    sql = "UPDATE assets_v2 SET status = %s WHERE id = ANY(%s::uuid[])"
+    cur = conn.cursor()
+    cur.execute(sql, (status, asset_ids))
+    updated = cur.rowcount
+    cur.close()
+    for aid in asset_ids:
+        audit_db.log_event(conn, asset_id=aid, event_type="bulk_status_update",
+                           actor_id=user_id, details={"status": status})
+    return {"updated": updated}
+
+
+def bulk_transfer(conn, asset_ids, customer_id, location_id, user_id=None):
+    sql = "UPDATE assets_v2 SET customer_id = %s::uuid, customer_location_id = %s::uuid WHERE id = ANY(%s::uuid[])"
+    cur = conn.cursor()
+    cur.execute(sql, (customer_id, location_id, asset_ids))
+    updated = cur.rowcount
+    cur.close()
+    for aid in asset_ids:
+        audit_db.log_event(conn, asset_id=aid, event_type="bulk_transfer",
+                           actor_id=user_id,
+                           details={"customer_id": customer_id, "location_id": location_id})
+    return {"updated": updated}
+
+
+def bulk_assign_contractor(conn, asset_ids, contractor_id, user_id=None):
+    sql = "UPDATE assets_v2 SET assigned_contractor_id = %s::uuid WHERE id = ANY(%s::uuid[])"
+    cur = conn.cursor()
+    cur.execute(sql, (contractor_id, asset_ids))
+    updated = cur.rowcount
+    cur.close()
+    for aid in asset_ids:
+        audit_db.log_event(conn, asset_id=aid, event_type="bulk_assign_contractor",
+                           actor_id=user_id,
+                           details={"contractor_id": contractor_id})
+    return {"updated": updated}
+
+
 def list_parts(conn, asset_id=None):
     if asset_id:
         sql = f"SELECT {PART_COLS} FROM asset_parts WHERE asset_id = %s::uuid ORDER BY name ASC"
