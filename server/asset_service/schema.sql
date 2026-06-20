@@ -171,3 +171,14 @@ CREATE TABLE IF NOT EXISTS asset_work_orders (
 CREATE INDEX IF NOT EXISTS idx_asset_work_orders_asset_id ON asset_work_orders(asset_id);
 CREATE INDEX IF NOT EXISTS idx_asset_work_orders_status ON asset_work_orders(status);
 CREATE INDEX IF NOT EXISTS idx_asset_work_orders_assigned_contractor ON asset_work_orders(assigned_contractor_id);
+
+-- Permissions Matrix: per-user view/edit access per resource
+CREATE TABLE IF NOT EXISTS user_permissions (
+    user_id UUID NOT NULL,
+    resource TEXT NOT NULL,
+    can_view BOOLEAN NOT NULL DEFAULT false,
+    can_edit BOOLEAN NOT NULL DEFAULT false,
+    PRIMARY KEY (user_id, resource)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_permissions_user_id ON user_permissions(user_id);
