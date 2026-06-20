@@ -178,9 +178,18 @@ async def handle_login(request: Request):
             session_data = {"uid": str(uid), "email": db_email, "mode": "portal",
                            "customer_id": customer_id, "customer_ref": customer_ref}
             token = create_session(session_data)
-            return {"token": token, "user": {"id": str(uid), "email": db_email, "uid": str(uid)},
-                    "customer_ref": customer_ref, "customer_id": customer_id,
-                    "author_profile_id": author_profile_id, "customer_name": customer_name}
+            from asset_service.permissions import get_user_permissions, seed_manager_defaults, MANAGER_DEFAULTS
+            perms = get_user_permissions(str(uid))
+            if not perms:
+                profile_role = profile[0][0] if profile else None
+                if profile_role and profile_role.lower() == "manager":
+                    seed_manager_defaults(str(uid))
+                    perms = MANAGER_DEFAULTS
+            result = {"token": token, "user": {"id": str(uid), "email": db_email, "uid": str(uid)},
+                      "customer_ref": customer_ref, "customer_id": customer_id,
+                      "author_profile_id": author_profile_id, "customer_name": customer_name,
+                      "permissions": perms or {}}
+            return result
         else:
             role_rows = db("SELECT role FROM public.user_roles WHERE user_id = %s", (uid,))
             is_admin = bool(role_rows and role_rows[0][0] == "admin")

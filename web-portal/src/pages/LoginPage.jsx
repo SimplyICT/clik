@@ -35,6 +35,7 @@ export default function LoginPage() {
       if (d.customer_name) store('customer_name', d.customer_name);
       if (d.author_profile_id) store('author_profile_id', d.author_profile_id);
       if (d.is_admin) store('is_admin', JSON.stringify(d.is_admin));
+      if (d.permissions) store('permissions', JSON.stringify(d.permissions));
       nav('/dashboard', { replace: true });
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }

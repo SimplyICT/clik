@@ -49,3 +49,21 @@ export function customerFilter() {
   const cid = storage().getItem('customer_id') || '';
   return cid ? [{ field: 'customerId', value: cid }] : [];
 }
+
+export function getPermissions() {
+  try {
+    return JSON.parse(
+      localStorage.getItem('permissions') || sessionStorage.getItem('permissions') || '{}'
+    );
+  } catch { return {}; }
+}
+
+export function canView(resource) {
+  const perms = getPermissions();
+  return perms?.[resource]?.can_view === true;
+}
+
+export function canEdit(resource) {
+  const perms = getPermissions();
+  return perms?.[resource]?.can_edit === true;
+}

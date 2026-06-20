@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import { canView } from './api/client';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import LocationsPage from './pages/LocationsPage';
@@ -39,15 +40,18 @@ function RequireAuth({ children }) {
   return children;
 }
 
-const NAV = [
-  { path: '/dashboard', label: 'Dashboard' },
-  { path: '/my-assets', label: 'My Assets' },
-  { path: '/locations', label: 'Locations' },
-  { path: '/work-orders', label: 'Work Orders' },
-  { path: '/requests', label: 'Requests' },
-  { path: '/activity', label: 'Activity' },
-  { path: '/manage', label: 'Manage' },
-];
+function visibleNav() {
+  const all = [
+    { path: '/dashboard', label: 'Dashboard', resource: 'dashboard' },
+    { path: '/my-assets', label: 'My Assets', resource: 'assets' },
+    { path: '/locations', label: 'Locations', resource: 'locations' },
+    { path: '/work-orders', label: 'Work Orders', resource: 'work_orders' },
+    { path: '/requests', label: 'Requests', resource: 'requests' },
+    { path: '/activity', label: 'Activity', resource: 'activity' },
+    { path: '/manage', label: 'Manage', resource: 'customers' },
+  ];
+  return all.filter(n => canView(n.resource));
+}
 
 function Layout({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
@@ -59,7 +63,7 @@ function Layout({ children }) {
       <header className="header-compact" style={{ background: '#1a1a2e', color: '#fff', display: 'flex', alignItems: 'center', height: 52, padding: '0 20px', gap: 20 }}>
         <span className="font16" style={{ fontWeight: 700, fontSize: 16, whiteSpace: 'nowrap' }}>Simplyclik</span>
         <nav className="desktop-only" style={{ display: 'flex', gap: 12, flex: 1 }}>
-          {NAV.map(n => (
+          {visibleNav().map(n => (
             <Link key={n.path} to={n.path} style={{
               color: loc === n.path ? '#00d4ff' : '#ccc', textDecoration: 'none', fontSize: 13, fontWeight: 600
             }}>{n.label}</Link>
@@ -77,7 +81,7 @@ function Layout({ children }) {
       </header>
       {menuOpen && (
         <div style={{ background: '#1a1a2e', padding: '8px 16px 16px', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {NAV.map(n => (
+          {visibleNav().map(n => (
             <Link key={n.path} to={n.path} onClick={() => setMenuOpen(false)} style={{
               color: loc === n.path ? '#00d4ff' : '#ccc', textDecoration: 'none', fontSize: 14, fontWeight: 600, padding: '6px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: 4
             }}>{n.label}</Link>
