@@ -58,6 +58,7 @@ export async function login(email, password, remember) {
   s.setItem('token', d.token);
   s.setItem('user', JSON.stringify(d.user));
   s.setItem('is_admin', JSON.stringify(d.is_admin));
+  s.setItem('permissions', JSON.stringify(d.permissions || {}));
   if (d.customer_id) s.setItem('customer_id', d.customer_id);
   if (d.author_profile_id) s.setItem('author_profile_id', d.author_profile_id);
   if (d.customer_name) s.setItem('customer_name', d.customer_name);
@@ -72,4 +73,24 @@ export function getUser() {
 export function isAdmin() {
   const a = localStorage.getItem('is_admin') || sessionStorage.getItem('is_admin');
   try { return JSON.parse(a) === true; } catch { return false; }
+}
+
+export function getPermissions() {
+  try {
+    return JSON.parse(
+      localStorage.getItem('permissions') || sessionStorage.getItem('permissions') || '{}'
+    );
+  } catch { return {}; }
+}
+
+export function canView(resource) {
+  if (isAdmin()) return true;
+  const perms = getPermissions();
+  return perms?.[resource]?.can_view === true;
+}
+
+export function canEdit(resource) {
+  if (isAdmin()) return true;
+  const perms = getPermissions();
+  return perms?.[resource]?.can_edit === true;
 }
