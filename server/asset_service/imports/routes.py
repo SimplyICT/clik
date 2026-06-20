@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import Response
 
 from .models import ImportRequest
+from asset_service.permissions import require_permission
 
 router = APIRouter(tags=["asset-management-imports"])
 
@@ -31,11 +32,8 @@ async def import_template(session: dict = Depends(require_session)):
 @router.post("/api/asset-management/reports/import")
 async def import_csv(
     body: ImportRequest,
-    session: dict = Depends(require_session),
+    session: dict = Depends(require_permission("assets", "edit")),
 ):
-    if not session.get("is_admin"):
-        raise HTTPException(403, detail="Admin access required")
-
     if not body.csv_content or not body.csv_content.strip():
         raise HTTPException(400, detail="CSV content is required")
 

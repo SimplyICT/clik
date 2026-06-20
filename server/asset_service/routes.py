@@ -2,6 +2,7 @@ import os
 from fastapi import APIRouter, Depends, HTTPException, Query, Header
 from fastapi.responses import Response
 from . import db, models, qr
+from asset_service.permissions import require_permission
 
 router = APIRouter(tags=["asset-management"])
 APP_URL = os.environ.get("APP_URL", "https://pwa.simplyclik.com")
@@ -98,9 +99,7 @@ async def update_asset(asset_id: str, body: models.AssetUpdate, session: dict = 
 
 
 @router.post("/api/asset-management/assets/bulk/status")
-async def bulk_update_status(body: dict, session: dict = Depends(require_session)):
-    if not session.get("is_admin"):
-        raise HTTPException(403, detail="Only admins can perform bulk operations")
+async def bulk_update_status(body: dict, session: dict = Depends(require_permission("assets", "edit"))):
     if not body.get("asset_ids") or not isinstance(body["asset_ids"], list):
         raise HTTPException(400, detail="asset_ids must be a non-empty array")
     if not body.get("status"):
@@ -115,9 +114,7 @@ async def bulk_update_status(body: dict, session: dict = Depends(require_session
 
 
 @router.post("/api/asset-management/assets/bulk/transfer")
-async def bulk_transfer(body: dict, session: dict = Depends(require_session)):
-    if not session.get("is_admin"):
-        raise HTTPException(403, detail="Only admins can perform bulk operations")
+async def bulk_transfer(body: dict, session: dict = Depends(require_permission("assets", "edit"))):
     if not body.get("asset_ids") or not isinstance(body["asset_ids"], list):
         raise HTTPException(400, detail="asset_ids must be a non-empty array")
     if not body.get("customer_id"):
@@ -132,9 +129,7 @@ async def bulk_transfer(body: dict, session: dict = Depends(require_session)):
 
 
 @router.post("/api/asset-management/assets/bulk/assign")
-async def bulk_assign(body: dict, session: dict = Depends(require_session)):
-    if not session.get("is_admin"):
-        raise HTTPException(403, detail="Only admins can perform bulk operations")
+async def bulk_assign(body: dict, session: dict = Depends(require_permission("assets", "edit"))):
     if not body.get("asset_ids") or not isinstance(body["asset_ids"], list):
         raise HTTPException(400, detail="asset_ids must be a non-empty array")
     if not body.get("contractor_id"):
@@ -162,9 +157,7 @@ async def retire_asset(asset_id: str, session: dict = Depends(require_session)):
 
 
 @router.post("/api/asset-management/assets/{asset_id}/transfer")
-async def transfer_asset(asset_id: str, body: dict, session: dict = Depends(require_session)):
-    if not session.get("is_admin"):
-        raise HTTPException(403, detail="Only admins can transfer assets")
+async def transfer_asset(asset_id: str, body: dict, session: dict = Depends(require_permission("assets", "edit"))):
     conn = db.get_conn()
     try:
         asset = db.transfer_asset(conn, asset_id, body.get("customer_id"), body.get("location_id"))
@@ -304,9 +297,7 @@ async def update_part(part_id: str, body: models.PartUpdate, session: dict = Dep
 
 
 @router.delete("/api/asset-management/parts/{part_id}")
-async def delete_part(part_id: str, session: dict = Depends(require_session)):
-    if not session.get("is_admin"):
-        raise HTTPException(403, detail="Only admins can delete parts")
+async def delete_part(part_id: str, session: dict = Depends(require_permission("assets", "edit"))):
     conn = db.get_conn()
     try:
         db.delete_part(conn, part_id)
@@ -337,9 +328,7 @@ async def list_custom_fields(category: str = Query(None), session: dict = Depend
 
 
 @router.post("/api/asset-management/custom-fields", status_code=201)
-async def create_custom_field(body: models.CustomFieldDefCreate, session: dict = Depends(require_session)):
-    if not session.get("is_admin"):
-        raise HTTPException(403, detail="Only admins can create custom field definitions")
+async def create_custom_field(body: models.CustomFieldDefCreate, session: dict = Depends(require_permission("assets", "edit"))):
     conn = db.get_conn()
     try:
         field = db.create_custom_field_def(conn, body.model_dump())

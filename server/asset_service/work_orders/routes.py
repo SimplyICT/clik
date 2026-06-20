@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Header, Query
 from . import db, models
+from asset_service.permissions import require_permission
 
 router = APIRouter(tags=["asset-management-work-orders"])
 
@@ -94,9 +95,7 @@ async def update_work_order(
 
 
 @router.delete("/api/asset-management/work-orders/{wo_id}")
-async def delete_work_order_route(wo_id: str, session: dict = Depends(require_session)):
-    if not session.get("is_admin"):
-        raise HTTPException(403, detail="Only admins can delete work orders")
+async def delete_work_order_route(wo_id: str, session: dict = Depends(require_permission("work_orders", "edit"))):
     from asset_service.db import get_conn
     conn = get_conn()
     try:

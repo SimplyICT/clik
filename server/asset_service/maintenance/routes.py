@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Header
 from . import db, models
+from asset_service.permissions import require_permission
 
 router = APIRouter(tags=["asset-management-maintenance"])
 
@@ -110,9 +111,7 @@ async def complete_schedule(schedule_id: str, session: dict = Depends(require_se
 
 
 @router.delete("/api/asset-management/maintenance/{schedule_id}")
-async def delete_schedule(schedule_id: str, session: dict = Depends(require_session)):
-    if not session.get("is_admin"):
-        raise HTTPException(403, detail="Only admins can delete maintenance schedules")
+async def delete_schedule(schedule_id: str, session: dict = Depends(require_permission("assets", "edit"))):
     from asset_service.db import get_conn
     conn = get_conn()
     try:

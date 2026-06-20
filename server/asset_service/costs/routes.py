@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Header, Query
 from . import db, models
+from asset_service.permissions import require_permission
 
 router = APIRouter(tags=["asset-management-costs"])
 
@@ -36,10 +37,8 @@ async def list_costs(
 async def record_cost(
     asset_id: str,
     body: models.CostRecord,
-    session: dict = Depends(require_session),
+    session: dict = Depends(require_permission("assets", "edit")),
 ):
-    if not session.get("is_admin"):
-        raise HTTPException(403, detail="Only admins can record costs")
     from asset_service.db import get_conn
     conn = get_conn()
     try:
@@ -65,9 +64,7 @@ async def record_cost(
 
 
 @router.get("/api/asset-management/costs/summary")
-async def get_cost_summary(session: dict = Depends(require_session)):
-    if not session.get("is_admin"):
-        raise HTTPException(403, detail="Only admins can view cost summary")
+async def get_cost_summary(session: dict = Depends(require_permission("assets", "view"))):
     from asset_service.db import get_conn
     conn = get_conn()
     try:
