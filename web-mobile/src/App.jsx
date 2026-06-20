@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
-import { getUser, logout } from './api/client';
+import { getUser, logout, canView } from './api/client';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import JobsPage from './pages/JobsPage';
@@ -25,9 +25,16 @@ function Nav() {
   const loc = useLocation().pathname;
   const role = localStorage.getItem('role');
   const isContractor = role === 'contractor';
-  const tabs = isContractor
+  const allTabs = isContractor
     ? [{ p: '/', l: 'Jobs' }, { p: '/assets', l: 'Assets' }, { p: '/profile', l: 'Profile' }]
     : [{ p: '/', l: 'Sites' }, { p: '/requests', l: 'Requests' }, { p: '/assets', l: 'Assets' }, { p: '/profile', l: 'Profile' }];
+  const tabs = allTabs.filter(t => {
+    if (t.p === '/') return true;
+    if (t.p === '/profile') return true;
+    if (t.p === '/assets') return canView('assets');
+    if (t.p === '/requests') return canView('requests');
+    return true;
+  });
 
   return (
     <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#1a1a2e', display: 'flex', zIndex: 100, borderTop: '1px solid #333' }}>

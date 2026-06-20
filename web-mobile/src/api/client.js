@@ -35,6 +35,7 @@ export async function login(email, password, remember) {
   const { setRemember, setItem: st } = await import('./storage');
   setRemember(remember);
   st('token', d.token);
+  if (d.permissions) st('permissions', JSON.stringify(d.permissions));
   st('user', JSON.stringify(d.user));
   if (d.customer_id) st('customer_id', d.customer_id);
   if (d.author_profile_id) st('author_profile_id', d.author_profile_id);
@@ -53,3 +54,14 @@ export async function login(email, password, remember) {
 }
 export function logout() { clearAll(); window.location.href = '/mobile/login'; }
 export function getUser() { try { return JSON.parse(getItem('user')); } catch { return null; } }
+export function getPermissions() {
+  try { return JSON.parse(getItem('permissions') || '{}'); } catch { return {}; }
+}
+export function canView(resource) {
+  const perms = getPermissions();
+  return perms?.[resource]?.can_view === true;
+}
+export function canEdit(resource) {
+  const perms = getPermissions();
+  return perms?.[resource]?.can_edit === true;
+}
