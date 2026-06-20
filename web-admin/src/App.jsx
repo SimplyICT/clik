@@ -12,6 +12,7 @@ import LeadsPage from './pages/LeadsPage';
 import ActivityPage from './pages/ActivityPage';
 import HelpPage from './pages/HelpPage';
 import DevDocsPage from './pages/DevDocsPage';
+import UsersPage from './pages/UsersPage';
 
 const styles = document.createElement('style');
 styles.textContent = `
@@ -41,6 +42,7 @@ const NAV = [
   { path: '/assets', label: 'Asset Management' },
   { path: '/leads', label: 'Leads' },
   { path: '/activity', label: 'Activity' },
+  { path: '/users', label: 'Users' },
 ];
 
 function RequireAuth({ children }) {
@@ -104,6 +106,7 @@ function App() {
         <Route path="/activity" element={<RequireAuth><Layout><ActivityPage /></Layout></RequireAuth>} />
         <Route path="/help" element={<RequireAuth><Layout><HelpPage /></Layout></RequireAuth>} />
         <Route path="/devdocs" element={<RequireAuth><Layout><DevDocsPage /></Layout></RequireAuth>} />
+        <Route path="/users" element={<RequireAuth><Layout><UsersPage /></Layout></RequireAuth>} />
       </Routes>
     </BrowserRouter>
   );

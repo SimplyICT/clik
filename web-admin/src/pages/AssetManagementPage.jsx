@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getUser, isAdmin, q } from '../api/client';
+import { getUser, isAdmin, q, canView, canEdit } from '../api/client';
 
 const AP = '/api/asset-management';
 
@@ -57,19 +57,19 @@ function Fi({ label, v, s, type = 'text', error, placeholder }) {
 export default function AssetManagementPage() {
   const user = getUser();
   const admin = isAdmin();
-  const isManager = admin || storage().getItem('role') === 'manager';
+  const isManager = admin || canView('assets');
   const [tab, setTab] = useState(0);
 
   const tabs = [
     { label: 'All Assets', component: <AllAssetsTab key="a" admin={admin} isManager={isManager} /> },
-    { label: 'Parts Inventory', component: <PartsTab key="p" admin={admin} /> },
+    { label: 'Parts Inventory', component: <PartsTab key="p" /> },
   ];
-  if (isManager) tabs.push({ label: 'Custom Fields', component: <CustomFieldsTab key="c" admin={admin} /> });
+  if (canEdit('assets')) tabs.push({ label: 'Custom Fields', component: <CustomFieldsTab key="c" admin={admin} /> });
   if (admin) tabs.push({ label: 'Audit Log', component: <AuditLogTab key="l" /> });
-  if (isManager) tabs.push({ label: 'Work Orders', component: <WorkOrdersTab key="w" admin={admin} /> });
-  if (isManager) tabs.push({ label: 'Maintenance', component: <MaintenanceTab key="m" admin={admin} /> });
-  if (isManager) tabs.push({ label: 'Import/Export', component: <ImportExportTab key="ie" admin={admin} /> });
-  if (isManager) tabs.push({ label: 'QR Batch', component: <QRBatchTab key="qr" /> });
+  if (canView('work_orders')) tabs.push({ label: 'Work Orders', component: <WorkOrdersTab key="w" admin={admin} /> });
+  if (canEdit('assets')) tabs.push({ label: 'Maintenance', component: <MaintenanceTab key="m" admin={admin} /> });
+  if (canEdit('assets')) tabs.push({ label: 'Import/Export', component: <ImportExportTab key="ie" admin={admin} /> });
+  if (canEdit('assets')) tabs.push({ label: 'QR Batch', component: <QRBatchTab key="qr" /> });
 
   return (
     <div>
@@ -92,7 +92,7 @@ export default function AssetManagementPage() {
 }
 
 /* ─────────────── Tab 1: All Assets ─────────────── */
-function AllAssetsTab({ admin, isManager }) {
+function AllAssetsTab({ isManager }) {
   const [assets, setAssets] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [contractors, setContractors] = useState([]);
@@ -516,7 +516,7 @@ function AllAssetsTab({ admin, isManager }) {
 }
 
 /* ─────────────── Tab 2: Parts Inventory ─────────────── */
-function PartsTab({ admin }) {
+function PartsTab() {
   const [parts, setParts] = useState([]);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -649,7 +649,7 @@ function PartsTab({ admin }) {
                   <td style={{ padding: '6px 10px', whiteSpace: 'nowrap' }}>
                     <button onClick={() => openRecordUsage(p)} style={btnSmall}>Use</button>
                     <button onClick={() => openEdit(p)} style={btnSmall}>Edit</button>
-                    {admin && (
+                    {canEdit('assets') && (
                       <button onClick={() => handleDelete(p.id)} style={{ ...btnSmall, color: '#ef4444' }}>Delete</button>
                     )}
                   </td>
