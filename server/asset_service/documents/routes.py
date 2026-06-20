@@ -15,7 +15,7 @@ async def list_documents(
     asset_id: str,
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
-    session: dict = Depends(require_session),
+    session: dict = Depends(require_permission("assets", "view")),
 ):
     from asset_service.db import get_conn
     conn = get_conn()
@@ -37,7 +37,7 @@ async def list_documents(
 async def upload_document(
     asset_id: str,
     body: models.DocumentCreate,
-    session: dict = Depends(require_session),
+    session: dict = Depends(require_permission("assets", "edit")),
 ):
     from asset_service.db import get_conn
     conn = get_conn()

@@ -21,7 +21,7 @@ IMPORT_TEMPLATE = (
 
 
 @router.get("/api/asset-management/reports/import/template")
-async def import_template(session: dict = Depends(require_session)):
+async def import_template(session: dict = Depends(require_permission("assets", "view"))):
     return Response(
         content=IMPORT_TEMPLATE,
         media_type="text/csv",

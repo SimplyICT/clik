@@ -21,7 +21,7 @@ async def list_assets(
     search: str = Query(None),
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
-    session: dict = Depends(require_session),
+    session: dict = Depends(require_permission("assets", "view")),
 ):
     conn = db.get_conn()
     try:
@@ -43,7 +43,7 @@ async def count_assets(
     customer_id: str = Query(None),
     contractor_id: str = Query(None),
     search: str = Query(None),
-    session: dict = Depends(require_session),
+    session: dict = Depends(require_permission("assets", "view")),
 ):
     conn = db.get_conn()
     try:
@@ -60,7 +60,7 @@ async def count_assets(
 
 
 @router.get("/api/asset-management/assets/{asset_id}")
-async def get_asset(asset_id: str, session: dict = Depends(require_session)):
+async def get_asset(asset_id: str, session: dict = Depends(require_permission("assets", "view"))):
     conn = db.get_conn()
     try:
         asset = db.get_asset(conn, asset_id)
@@ -72,7 +72,7 @@ async def get_asset(asset_id: str, session: dict = Depends(require_session)):
 
 
 @router.post("/api/asset-management/assets", status_code=201)
-async def create_asset(body: models.AssetCreate, session: dict = Depends(require_session)):
+async def create_asset(body: models.AssetCreate, session: dict = Depends(require_permission("assets", "edit"))):
     conn = db.get_conn()
     try:
         asset = db.create_asset(conn, body.model_dump(), session.get("uid"))
@@ -83,7 +83,7 @@ async def create_asset(body: models.AssetCreate, session: dict = Depends(require
 
 
 @router.patch("/api/asset-management/assets/{asset_id}")
-async def update_asset(asset_id: str, body: models.AssetUpdate, session: dict = Depends(require_session)):
+async def update_asset(asset_id: str, body: models.AssetUpdate, session: dict = Depends(require_permission("assets", "edit"))):
     conn = db.get_conn()
     try:
         data = body.model_dump(exclude_unset=True)
@@ -144,7 +144,7 @@ async def bulk_assign(body: dict, session: dict = Depends(require_permission("as
 
 
 @router.post("/api/asset-management/assets/{asset_id}/retire")
-async def retire_asset(asset_id: str, session: dict = Depends(require_session)):
+async def retire_asset(asset_id: str, session: dict = Depends(require_permission("assets", "edit"))):
     conn = db.get_conn()
     try:
         asset = db.retire_asset(conn, asset_id)
@@ -170,7 +170,7 @@ async def transfer_asset(asset_id: str, body: dict, session: dict = Depends(requ
 
 
 @router.get("/api/asset-management/assets/{asset_id}/qr")
-async def get_asset_qr(asset_id: str, session: dict = Depends(require_session)):
+async def get_asset_qr(asset_id: str, session: dict = Depends(require_permission("assets", "view"))):
     conn = db.get_conn()
     try:
         asset = db.get_asset(conn, asset_id)
@@ -183,7 +183,7 @@ async def get_asset_qr(asset_id: str, session: dict = Depends(require_session)):
 
 
 @router.post("/api/asset-management/qr/batch")
-async def qr_batch(body: dict, session: dict = Depends(require_session)):
+async def qr_batch(body: dict, session: dict = Depends(require_permission("assets", "edit"))):
     from io import BytesIO
     from reportlab.lib.pagesizes import letter
     from reportlab.lib.units import inch
@@ -241,7 +241,7 @@ async def qr_batch(body: dict, session: dict = Depends(require_session)):
 
 
 @router.get("/api/asset-management/assets/{asset_id}/jobs")
-async def list_asset_jobs(asset_id: str, session: dict = Depends(require_session)):
+async def list_asset_jobs(asset_id: str, session: dict = Depends(require_permission("assets", "view"))):
     conn = db.get_conn()
     try:
         return db.list_asset_jobs(conn, asset_id)
@@ -250,7 +250,7 @@ async def list_asset_jobs(asset_id: str, session: dict = Depends(require_session
 
 
 @router.post("/api/asset-management/assets/{asset_id}/create-job", status_code=201)
-async def create_asset_job(asset_id: str, body: models.JobCreate, session: dict = Depends(require_session)):
+async def create_asset_job(asset_id: str, body: models.JobCreate, session: dict = Depends(require_permission("assets", "edit"))):
     conn = db.get_conn()
     try:
         job = db.create_asset_job(conn, asset_id, body.model_dump(), session.get("uid"))
@@ -261,7 +261,7 @@ async def create_asset_job(asset_id: str, body: models.JobCreate, session: dict 
 
 
 @router.get("/api/asset-management/parts")
-async def list_parts(asset_id: str = Query(None), session: dict = Depends(require_session)):
+async def list_parts(asset_id: str = Query(None), session: dict = Depends(require_permission("assets", "view"))):
     conn = db.get_conn()
     try:
         return db.list_parts(conn, asset_id)
@@ -270,7 +270,7 @@ async def list_parts(asset_id: str = Query(None), session: dict = Depends(requir
 
 
 @router.post("/api/asset-management/parts", status_code=201)
-async def create_part(body: models.PartCreate, session: dict = Depends(require_session)):
+async def create_part(body: models.PartCreate, session: dict = Depends(require_permission("assets", "edit"))):
     conn = db.get_conn()
     try:
         part = db.create_part(conn, body.model_dump())
@@ -281,7 +281,7 @@ async def create_part(body: models.PartCreate, session: dict = Depends(require_s
 
 
 @router.patch("/api/asset-management/parts/{part_id}")
-async def update_part(part_id: str, body: models.PartUpdate, session: dict = Depends(require_session)):
+async def update_part(part_id: str, body: models.PartUpdate, session: dict = Depends(require_permission("assets", "edit"))):
     conn = db.get_conn()
     try:
         data = body.model_dump(exclude_unset=True)
@@ -308,7 +308,7 @@ async def delete_part(part_id: str, session: dict = Depends(require_permission("
 
 
 @router.post("/api/asset-management/parts/record-usage", status_code=201)
-async def record_part_usage(body: models.PartUsageRecord, session: dict = Depends(require_session)):
+async def record_part_usage(body: models.PartUsageRecord, session: dict = Depends(require_permission("assets", "edit"))):
     conn = db.get_conn()
     try:
         usage = db.record_part_usage(conn, body.part_id, body.request_id, body.quantity, session.get("uid"))
@@ -319,7 +319,7 @@ async def record_part_usage(body: models.PartUsageRecord, session: dict = Depend
 
 
 @router.get("/api/asset-management/custom-fields")
-async def list_custom_fields(category: str = Query(None), session: dict = Depends(require_session)):
+async def list_custom_fields(category: str = Query(None), session: dict = Depends(require_permission("assets", "view"))):
     conn = db.get_conn()
     try:
         return db.get_custom_field_defs(conn, category)

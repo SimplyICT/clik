@@ -17,7 +17,7 @@ async def list_work_orders(
     contractor_id: str = Query(None),
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
-    session: dict = Depends(require_session),
+    session: dict = Depends(require_permission("work_orders", "view")),
 ):
     from asset_service.db import get_conn
     conn = get_conn()
@@ -30,7 +30,7 @@ async def list_work_orders(
 
 
 @router.get("/api/asset-management/work-orders/{wo_id}")
-async def get_work_order(wo_id: str, session: dict = Depends(require_session)):
+async def get_work_order(wo_id: str, session: dict = Depends(require_permission("work_orders", "view"))):
     from asset_service.db import get_conn
     conn = get_conn()
     try:
@@ -49,7 +49,7 @@ async def get_work_order(wo_id: str, session: dict = Depends(require_session)):
 @router.post("/api/asset-management/work-orders", status_code=201)
 async def create_work_order(
     body: models.WorkOrderCreate,
-    session: dict = Depends(require_session),
+    session: dict = Depends(require_permission("work_orders", "edit")),
 ):
     from asset_service.db import get_conn
     conn = get_conn()
@@ -74,7 +74,7 @@ async def create_work_order(
 async def update_work_order(
     wo_id: str,
     body: models.WorkOrderUpdate,
-    session: dict = Depends(require_session),
+    session: dict = Depends(require_permission("work_orders", "edit")),
 ):
     from asset_service.db import get_conn
     conn = get_conn()
@@ -118,7 +118,7 @@ async def list_work_orders_by_asset(
     asset_id: str,
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
-    session: dict = Depends(require_session),
+    session: dict = Depends(require_permission("work_orders", "view")),
 ):
     from asset_service.db import get_conn
     conn = get_conn()

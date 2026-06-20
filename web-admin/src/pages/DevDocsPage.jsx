@@ -21,7 +21,7 @@ const SECTIONS = [
 export default function DevDocsPage() {
   return (
     <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
-      <div style={{ width: 220, flexShrink: 0, background: '#fff', borderRadius: 8, border: '1px solid #e0e0e0', padding: '16px 0', position: 'sticky', top: 20 }}>
+      <div style={{ width: 220, flexShrink: 0, background: '#fff', borderRadius: 8, border: '1px solid #e0e0e0', padding: '16px 0' }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#888', textTransform: 'uppercase', padding: '0 16px 10px', borderBottom: '1px solid #f0f0f0', marginBottom: 8 }}>Dev Topics</div>
         {SECTIONS.map(s => (
           <a key={s.id} href={`#${s.id}`}
@@ -114,15 +114,15 @@ export default function DevDocsPage() {
               <tr><td><code>GET/POST /api/asset-management/parts</code></td><td>List / create parts</td></tr>
               <tr><td><code>PATCH/DELETE /api/asset-management/parts/{id}</code></td><td>Update / delete part (delete: admin only)</td></tr>
               <tr><td><code>POST /api/asset-management/parts/record-usage</code></td><td>Record part usage against a job</td></tr>
-              <tr><td><code>GET/POST /api/asset-management/custom-fields</code></td><td>List / create custom field definitions (create: admin only)</td></tr>
-              <tr><td><code>GET /api/asset-management/reports/dashboard</code></td><td>Dashboard KPIs (total assets, active, by status/category, active WOs, overdue maint, warranty, costs)</td></tr>
+              <tr><td><code>GET/POST /api/asset-management/custom-fields</code></td><td>List / create custom field definitions</td></tr>
+              <tr><td><code>GET /api/asset-management/reports/dashboard</code></td><td>Dashboard KPIs</td></tr>
               <tr><td><code>GET /api/asset-management/reports/export?type=</code></td><td>CSV export (assets, work_orders, costs)</td></tr>
               <tr><td><code>POST /api/asset-management/reports/import</code></td><td>CSV import with validation</td></tr>
               <tr><td><code>GET /api/asset-management/reports/import/template</code></td><td>Download CSV template</td></tr>
               <tr><td><code>GET/POST/PATCH/DELETE /api/asset-management/maintenance</code></td><td>Maintenance schedules CRUD</td></tr>
-              <tr><td><code>POST /api/asset-management/maintenance/{id}/complete</code></td><td>Complete maintenance schedule (updates last_completed, recalculates next_due)</td></tr>
+              <tr><td><code>POST /api/asset-management/maintenance/{id}/complete</code></td><td>Complete maintenance schedule</td></tr>
               <tr><td><code>GET/POST/PATCH/DELETE /api/asset-management/work-orders</code></td><td>Work orders CRUD</td></tr>
-              <tr><td><code>POST /api/asset-management/qr/batch</code></td><td>Generate printable PDF with QR codes for selected assets</td></tr>
+              <tr><td><code>POST /api/asset-management/qr/batch</code></td><td>Generate printable PDF with QR codes</td></tr>
             </tbody>
           </table>
         </Section>
@@ -133,7 +133,7 @@ export default function DevDocsPage() {
 
         <Section id="proxy" title="Supabase Proxy">
           <p style={{ fontSize: 13, lineHeight: 1.6 }}>The <code>ALLOWED_TABLES</code> set restricts which tables can be proxied (12 tables). Rate limiting at 100 req/min/IP. The <code>Prefer</code> header from the frontend is forwarded to Supabase (needed for <code>return=representation</code>).</p>
-          <p style={{ fontSize: 13, lineHeight: 1.6 }}><strong>Auto-assignment flow:</strong> The <code>requests</code> table is a VIEW backed by <code>requests_base</code>. An <code>INSTEAD OF INSERT</code> trigger (<code>requests_insert</code>) handles new requests: if <code>customerLocationProfileId</code> is provided but no <code>contractorProfileId</code>, it queries <code>customer_location_contractors</code> matching both location AND service type (via <code>service_types</code> array), assigns the first match, and upgrades status to <code>awaiting_acceptance</code>. The proxy then reads the returned row and fires Pushover/Web Push notifications when <code>contractorProfileId</code> is present.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.6 }}><strong>Auto-assignment flow:</strong> The <code>requests</code> table is a VIEW backed by <code>requests_base</code>. An <code>INSTEAD OF INSERT</code> trigger (<code>requests_insert</code>) handles new requests: if <code>customerLocationProfileId</code> is provided but no <code>contractorProfileId</code>, it queries <code>customer_location_contractors</code> matching both location AND service type, assigns the first match, and upgrades status to <code>awaiting_acceptance</code>. The proxy then reads the returned row and fires Pushover/Web Push notifications when <code>contractorProfileId</code> is present.</p>
         </Section>
 
         <Section id="state-machine" title="Request State Machine">
@@ -167,7 +167,7 @@ contractor_completed → completed / cancelled</pre>
             <li><strong>SSL:</strong> Let's Encrypt via certbot. Auto-renews via systemd timer.</li>
             <li><strong>Health:</strong> <code>/api/health</code> and <code>/api/health/db</code></li>
             <li><strong>Logging:</strong> Structured JSON via <code>server/logging.json</code></li>
-            <li><strong>Tests:</strong> <code>server/tests/test_api.py</code> + <code>server/tests/test_asset_management.py</code> — 17+ integration tests</li>
+            <li><strong>Tests:</strong> ~176+ integration tests across all asset modules</li>
             <li><strong>CI/CD:</strong> <code>.github/workflows/ci.yml</code></li>
           </ul>
         </Section>
@@ -205,18 +205,23 @@ contractor_completed → completed / cancelled</pre>
               <tr><td><code>customers</code></td><td>id, name, contactName, contactEmail, addressJson, billing</td></tr>
               <tr><td><code>customerLocations</code></td><td>id, companyName, customerId, reference, addressJson</td></tr>
               <tr><td><code>contractors</code></td><td>id, companyName, contactName, abn, addressJson</td></tr>
-              <tr><td><code>requests</code> (VIEW)</td><td>id, title, status, serviceType, priority, customerId, customerLocationProfileId, contractorProfileId, quoteAmount, invoiceAmount — backed by <code>requests_base</code> table, auto-assigns contractor via trigger on insert</td></tr>
+              <tr><td><code>requests</code> (VIEW)</td><td>id, title, status, serviceType, priority — backed by <code>requests_base</code>, auto-assigns contractor</td></tr>
               <tr><td><code>request_notes</code></td><td>id, request_id, author_profile_id, display_name, description</td></tr>
               <tr><td><code>request_invoices</code></td><td>request_id, invoice_number, amount, submit_date, auto_approve_date</td></tr>
               <tr><td><code>profiles</code></td><td>id, user_id, profile_type, company_name, customer_id</td></tr>
               <tr><td><code>sessions</code></td><td>token, user_id, data, expires_at (DB-backed, 30-day TTL)</td></tr>
               <tr><td><code>device_tokens</code></td><td>user_id, push_token, platform, is_active</td></tr>
               <tr><td><code>notifications</code></td><td>id, user_id, title, body, is_read, created_at</td></tr>
-              <tr><td><code>customer_location_contractors</code></td><td>customer_location_id, contractor_id, service_types (TEXT[]) — links contractors to locations with service type filters for auto-assignment</td></tr>
-              <tr><td><code>assets_v2</code></td><td>id, asset_name, asset_code, qr_code, category, status, lifecycle_status, criticality, manufacturer, model, serial_number, customer_id, customer_location_id, assigned_contractor_id, parent_asset_id, install_date, purchase_date, warranty_expiry_date, last_service_date, next_service_date, photo_urls (TEXT[]), custom_fields (JSONB), notes, created_by — new asset management table, separate from legacy <code>assets</code></td></tr>
-              <tr><td><code>asset_parts</code></td><td>id, asset_id (nullable FK), name, sku, quantity, min_threshold, unit, created_at — parts inventory for assets</td></tr>
-              <tr><td><code>asset_part_usage</code></td><td>id, part_id, request_id, quantity, used_by, used_at — tracks parts consumed during jobs</td></tr>
-              <tr><td><code>asset_custom_field_defs</code></td><td>id, category, field_name, field_label, field_type, options (JSONB), required, sort_order — per-category custom field schemas</td></tr>
+              <tr><td><code>customer_location_contractors</code></td><td>customer_location_id, contractor_id, service_types (TEXT[])</td></tr>
+              <tr><td><code>assets_v2</code></td><td>id, asset_name, asset_code, qr_code, category, status, ... extended columns</td></tr>
+              <tr><td><code>asset_parts</code></td><td>id, asset_id (nullable FK), name, sku, quantity, min_threshold</td></tr>
+              <tr><td><code>asset_part_usage</code></td><td>part_id, request_id, quantity, used_by</td></tr>
+              <tr><td><code>asset_custom_field_defs</code></td><td>category, field_name, field_label, field_type, options</td></tr>
+              <tr><td><code>asset_documents</code></td><td>asset_id, file_name, file_url, file_type, file_size</td></tr>
+              <tr><td><code>asset_maintenance_schedules</code></td><td>asset_id, title, frequency_type, frequency_value, last_completed, next_due</td></tr>
+              <tr><td><code>asset_work_orders</code></td><td>asset_id, schedule_id, type, title, priority, status, labor_hours, total_cost</td></tr>
+              <tr><td><code>asset_audit_log</code></td><td>asset_id, event_type, actor_id, details (JSONB)</td></tr>
+              <tr><td><code>asset_cost_history</code></td><td>asset_id, cost_type, amount, description, recorded_date</td></tr>
             </tbody>
           </table>
         </Section>
@@ -238,8 +243,7 @@ contractor_completed → completed / cancelled</pre>
             <li><strong>Mobile PWA:</strong> AssetsPage, AssetDetailPage, AssetFormPage, QRScannerPage, CreateJobPage, RecordPartsPage</li>
             <li><strong>Customer Portal:</strong> MyAssetsPage, AssetDetailView, MyWorkOrdersPage</li>
           </ul>
-          <p style={{ fontSize: 13, lineHeight: 1.6 }}><strong>Tests:</strong> <code>server/tests/test_asset_management.py</code>, <code>test_work_orders.py</code>, <code>test_maintenance.py</code>, <code>test_documents.py</code>, <code>test_costs.py</code>, <code>test_audit.py</code>, <code>test_cron.py</code>, <code>test_reports.py</code>, <code>test_imports.py</code> — ~176+ tests</p>
-          <p style={{ fontSize: 13, lineHeight: 1.6 }}><strong>DB schema:</strong> Run <code>server/asset_service/schema.sql</code> in Supabase SQL editor.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.6 }}><strong>Tests:</strong> ~176+ tests across 9 test files</p>
         </Section>
 
         <Section id="asset-submodules" title="Asset Sub-modules">

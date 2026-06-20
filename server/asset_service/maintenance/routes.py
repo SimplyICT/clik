@@ -15,7 +15,7 @@ async def list_schedules(
     asset_id: str | None = Query(None),
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
-    session: dict = Depends(require_session),
+    session: dict = Depends(require_permission("assets", "view")),
 ):
     from asset_service.db import get_conn
     conn = get_conn()
@@ -28,7 +28,7 @@ async def list_schedules(
 
 
 @router.get("/api/asset-management/maintenance/{schedule_id}")
-async def get_schedule(schedule_id: str, session: dict = Depends(require_session)):
+async def get_schedule(schedule_id: str, session: dict = Depends(require_permission("assets", "view"))):
     from asset_service.db import get_conn
     conn = get_conn()
     try:
@@ -47,7 +47,7 @@ async def get_schedule(schedule_id: str, session: dict = Depends(require_session
 @router.post("/api/asset-management/maintenance", status_code=201)
 async def create_schedule(
     body: models.MaintenanceScheduleCreate,
-    session: dict = Depends(require_session),
+    session: dict = Depends(require_permission("assets", "edit")),
 ):
     from asset_service.db import get_conn
     conn = get_conn()
@@ -72,7 +72,7 @@ async def create_schedule(
 async def update_schedule(
     schedule_id: str,
     body: models.MaintenanceScheduleUpdate,
-    session: dict = Depends(require_session),
+    session: dict = Depends(require_permission("assets", "edit")),
 ):
     from asset_service.db import get_conn
     conn = get_conn()
@@ -93,7 +93,7 @@ async def update_schedule(
 
 
 @router.post("/api/asset-management/maintenance/{schedule_id}/complete")
-async def complete_schedule(schedule_id: str, session: dict = Depends(require_session)):
+async def complete_schedule(schedule_id: str, session: dict = Depends(require_permission("assets", "edit"))):
     from asset_service.db import get_conn
     conn = get_conn()
     try:

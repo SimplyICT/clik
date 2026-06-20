@@ -15,7 +15,7 @@ async def list_costs(
     asset_id: str,
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
-    session: dict = Depends(require_session),
+    session: dict = Depends(require_permission("assets", "view")),
 ):
     from asset_service.db import get_conn
     conn = get_conn()

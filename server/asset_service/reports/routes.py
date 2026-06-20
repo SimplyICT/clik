@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from fastapi.responses import Response
 
 from . import db
+from asset_service.permissions import require_permission
 
 router = APIRouter(tags=["asset-management-reports"])
 
@@ -15,7 +16,7 @@ async def require_session(authorization: str | None = Header(None)):
 
 
 @router.get("/api/asset-management/reports/dashboard")
-async def dashboard(session: dict = Depends(require_session)):
+async def dashboard(session: dict = Depends(require_permission("assets", "view"))):
     from asset_service.db import get_conn
     conn = get_conn()
     try:
@@ -29,7 +30,7 @@ async def dashboard(session: dict = Depends(require_session)):
 @router.get("/api/asset-management/reports/warranty")
 async def warranty_report(
     days: int = Query(30, ge=1, le=365),
-    session: dict = Depends(require_session),
+    session: dict = Depends(require_permission("assets", "view")),
 ):
     from asset_service.db import get_conn
     conn = get_conn()
@@ -42,7 +43,7 @@ async def warranty_report(
 
 
 @router.get("/api/asset-management/reports/maintenance-overdue")
-async def maintenance_overdue(session: dict = Depends(require_session)):
+async def maintenance_overdue(session: dict = Depends(require_permission("assets", "view"))):
     from asset_service.db import get_conn
     conn = get_conn()
     try:
@@ -93,7 +94,7 @@ EXPORT_FIELDS = {
 @router.get("/api/asset-management/reports/export")
 async def export_report(
     type: str = Query(..., pattern="^(assets|work_orders|costs)$"),
-    session: dict = Depends(require_session),
+    session: dict = Depends(require_permission("assets", "view")),
 ):
     from asset_service.db import get_conn
     conn = get_conn()
