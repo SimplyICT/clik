@@ -1,0 +1,19 @@
+<h2>Standalone Service — what does that mean here?</h2>
+<p class="subtitle">Current server is one FastAPI file. Two options:</p>
+
+<div class="options">
+  <div class="option" data-choice="module" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>New Module in Same Server</h3>
+      <p>A dedicated <code>server/asset_service/</code> directory with its own router, DB tables, and API prefix (<code>/api/asset-management/*</code>). Lives in the same FastAPI process but is self-contained. Shares auth middleware and DB connection.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="microservice" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Separate Microservice</h3>
+      <p>Entirely separate Python service on its own port. Talks to a different Supabase project or schema. Communicates with main server via HTTP or message queue.</p>
+    </div>
+  </div>
+</div>

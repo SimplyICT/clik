@@ -9,6 +9,12 @@ import ManagerSitesPage from './pages/ManagerSitesPage';
 import ManagerRequestsPage from './pages/ManagerRequestsPage';
 import ProfilePage from './pages/ProfilePage';
 import PwaInstall from './pages/PwaInstall';
+import AssetsPage from './pages/AssetsPage';
+import AssetDetailPage from './pages/AssetDetailPage';
+import AssetFormPage from './pages/AssetFormPage';
+import QRScannerPage from './pages/QRScannerPage';
+import CreateJobPage from './pages/CreateJobPage';
+import RecordPartsPage from './pages/RecordPartsPage';
 
 function RequireAuth({ children }) {
   if (!getUser()) return <Navigate to="/login" replace />;
@@ -20,8 +26,8 @@ function Nav() {
   const role = localStorage.getItem('role');
   const isContractor = role === 'contractor';
   const tabs = isContractor
-    ? [{ p: '/', l: 'Jobs' }, { p: '/profile', l: 'Profile' }]
-    : [{ p: '/', l: 'Sites' }, { p: '/requests', l: 'Requests' }, { p: '/profile', l: 'Profile' }];
+    ? [{ p: '/', l: 'Jobs' }, { p: '/assets', l: 'Assets' }, { p: '/profile', l: 'Profile' }]
+    : [{ p: '/', l: 'Sites' }, { p: '/requests', l: 'Requests' }, { p: '/assets', l: 'Assets' }, { p: '/profile', l: 'Profile' }];
 
   return (
     <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#1a1a2e', display: 'flex', zIndex: 100, borderTop: '1px solid #333' }}>
@@ -66,6 +72,13 @@ export default function App() {
         <Route path="/requests" element={<RequireAuth><Layout title="Requests"><ManagerRequestsPage /></Layout></RequireAuth>} />
         <Route path="/requests/new" element={<RequireAuth><Layout title="New Request"><ManagerRequestsPage createMode /></Layout></RequireAuth>} />
         <Route path="/profile" element={<RequireAuth><Layout title="Profile"><ProfilePage /></Layout></RequireAuth>} />
+        <Route path="/assets" element={<RequireAuth><Layout title="Assets"><AssetsPage /></Layout></RequireAuth>} />
+        <Route path="/assets/new" element={<RequireAuth><Layout title="New Asset"><AssetFormPage /></Layout></RequireAuth>} />
+        <Route path="/assets/:id" element={<RequireAuth><Layout><AssetDetailPage /></Layout></RequireAuth>} />
+        <Route path="/assets/:id/edit" element={<RequireAuth><Layout title="Edit Asset"><AssetFormPage /></Layout></RequireAuth>} />
+        <Route path="/assets/:id/create-job" element={<RequireAuth><Layout title="Create Job"><CreateJobPage /></Layout></RequireAuth>} />
+        <Route path="/assets/:id/record-parts" element={<RequireAuth><Layout title="Record Parts"><RecordPartsPage /></Layout></RequireAuth>} />
+        <Route path="/qr-scanner" element={<RequireAuth><Layout title="Scan QR"><QRScannerPage /></Layout></RequireAuth>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

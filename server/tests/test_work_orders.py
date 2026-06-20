@@ -565,3 +565,125 @@ def test_api_delete_work_order_non_admin():
         headers={"Authorization": f"Bearer {token}"},
     )
     assert resp.status_code == 403
+
+
+def test_db_complete_work_order_updates_cost():
+    from asset_service.work_orders import db as wo_db
+    conn = _get_test_conn()
+    asset = None
+    try:
+        asset = _create_test_asset(conn)
+        wo = wo_db.create_work_order(conn, {
+            "asset_id": asset["id"],
+            "type": "corrective",
+            "title": "Complete cost test",
+        })
+        conn.commit()
+        updated = wo_db.update_work_order(conn, wo["id"], {
+            "status": "completed",
+            "completed_date": "2026-06-19",
+            "labor_hours": 5.0,
+            "labor_cost": 500.00,
+            "parts_cost": 200.00,
+            "total_cost": 700.00,
+        })
+        conn.commit()
+        assert updated["status"] == "completed"
+        assert updated["labor_hours"] == 5.0
+        assert updated["labor_cost"] == 500.00
+        assert updated["parts_cost"] == 200.00
+        assert updated["total_cost"] == 700.00
+    finally:
+        if asset:
+            _cleanup_test_asset(conn, asset["id"])
+        conn.close()
+
+
+def test_db_list_work_orders_filter_by_contractor():
+    from asset_service.work_orders import db as wo_db
+    conn = _get_test_conn()
+    asset = None
+    try:
+        asset = _create_test_asset(conn)
+        contractor_a = str(uuid.uuid4())
+        contractor_b = str(uuid.uuid4())
+        wo_db.create_work_order(conn, {
+            "asset_id": asset["id"],
+            "type": "preventive",
+            "title": "Contractor A WO",
+            "assigned_contractor_id": contractor_a,
+        })
+        wo_db.create_work_order(conn, {
+            "asset_id": asset["id"],
+            "type": "inspection",
+            "title": "Contractor B WO",
+            "assigned_contractor_id": contractor_b,
+        })
+        conn.commit()
+        results_a = wo_db.list_work_orders(conn, contractor_id=contractor_a)
+        assert len(results_a) == 1
+        assert results_a[0]["title"] == "Contractor A WO"
+        results_b = wo_db.list_work_orders(conn, contractor_id=contractor_b)
+        assert len(results_b) == 1
+        assert results_b[0]["title"] == "Contractor B WO"
+    finally:
+        if asset:
+            _cleanup_test_asset(conn, asset["id"])
+        conn.close()
+
+
+def test_api_create_work_order_requires_auth():
+    resp = client.post(
+        "/api/asset-management/work-orders",
+        json={"asset_id": "00000000-0000-0000-0000-000000000001", "type": "preventive", "title": "No auth"},
+    )
+    assert resp.status_code == 401
+
+
+def test_api_update_work_order_not_found():
+    token = login_token()
+    resp = client.patch(
+        "/api/asset-management/work-orders/00000000-0000-0000-0000-000000000099",
+        json={"title": "Nope"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 404
+
+
+def test_api_complete_work_order_with_costs():
+    token = login_token()
+    asset = _api_create_asset(token)
+    try:
+        create_resp = client.post(
+            "/api/asset-management/work-orders",
+            json={
+                "asset_id": asset["id"],
+                "type": "corrective",
+                "title": "Complete with costs",
+                "priority": "high",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert create_resp.status_code == 201
+        wo_id = create_resp.json()["id"]
+        resp = client.patch(
+            f"/api/asset-management/work-orders/{wo_id}",
+            json={
+                "status": "completed",
+                "completed_date": "2026-06-19",
+                "labor_hours": 4.0,
+                "labor_cost": 400.00,
+                "parts_cost": 150.00,
+                "total_cost": 550.00,
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "completed"
+        assert data["labor_hours"] == 4.0
+        assert data["labor_cost"] == 400.00
+        assert data["parts_cost"] == 150.00
+        assert data["total_cost"] == 550.00
+    finally:
+        _api_delete_asset(token, asset["id"])

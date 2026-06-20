@@ -1,0 +1,42 @@
+<h2>Design: API Endpoints</h2>
+<p class="subtitle">All under <code>/api/asset-management/*</code>, auth required</p>
+
+<div class="section">
+<h3>Assets</h3>
+<table style="width:100%;border-collapse:collapse;font-size:0.85em">
+<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px">Method</th><th style="text-align:left;padding:4px">Endpoint</th><th style="text-align:left;padding:4px">Description</th></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">GET</td><td style="padding:4px">/assets</td><td style="padding:4px">List (with filters: category, status, customer, contractor)</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">GET</td><td style="padding:4px">/assets/{id}</td><td style="padding:4px">Detail with service history</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">POST</td><td style="padding:4px">/assets</td><td style="padding:4px">Create (generates QR code)</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">PATCH</td><td style="padding:4px">/assets/{id}</td><td style="padding:4px">Update</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">POST</td><td style="padding:4px">/assets/{id}/retire</td><td style="padding:4px">Retire (manager only)</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">POST</td><td style="padding:4px">/assets/{id}/transfer</td><td style="padding:4px">Transfer customer (manager only)</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h3>Jobs (links asset to existing request)</h3>
+<table style="width:100%;border-collapse:collapse;font-size:0.85em">
+<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px">Method</th><th style="text-align:left;padding:4px">Endpoint</th><th style="text-align:left;padding:4px">Description</th></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">POST</td><td style="padding:4px">/assets/{id}/create-job</td><td style="padding:4px">Create request linked to asset, type = install/move/retire/inspect/repair/transfer</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">GET</td><td style="padding:4px">/assets/{id}/jobs</td><td style="padding:4px">List all jobs for this asset</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h3>Parts</h3>
+<table style="width:100%;border-collapse:collapse;font-size:0.85em">
+<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px">Method</th><th style="text-align:left;padding:4px">Endpoint</th><th style="text-align:left;padding:4px">Description</th></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">GET/POST/PATCH/DELETE</td><td style="padding:4px">/parts</td><td style="padding:4px">CRUD</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">POST</td><td style="padding:4px">/parts/{id}/record-usage</td><td style="padding:4px">Record parts used during a job</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h3>QR Codes</h3>
+<table style="width:100%;border-collapse:collapse;font-size:0.85em">
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">GET</td><td style="padding:4px">/assets/{id}/qr</td><td style="padding:4px">Returns QR code image (PNG)</td></tr>
+</table>
+</div>
+
+<p class="subtitle">Does this API structure look right?</p>

@@ -7,7 +7,7 @@ import DashboardPage from './pages/DashboardPage';
 import CustomersPage from './pages/CustomersPage';
 import ContractorsPage from './pages/ContractorsPage';
 import RequestsPage from './pages/RequestsPage';
-import AssetsPage from './pages/AssetsPage';
+import AssetManagementPage from './pages/AssetManagementPage';
 import LeadsPage from './pages/LeadsPage';
 import ActivityPage from './pages/ActivityPage';
 import HelpPage from './pages/HelpPage';
@@ -38,7 +38,7 @@ const NAV = [
   { path: '/customers', label: 'Customers' },
   { path: '/contractors', label: 'Contractors' },
   { path: '/requests', label: 'Requests' },
-  { path: '/assets', label: 'Assets' },
+  { path: '/assets', label: 'Asset Management' },
   { path: '/leads', label: 'Leads' },
   { path: '/activity', label: 'Activity' },
 ];
@@ -99,7 +99,7 @@ function App() {
         <Route path="/customers" element={<RequireAuth><Layout><CustomersPage /></Layout></RequireAuth>} />
         <Route path="/contractors" element={<RequireAuth><Layout><ContractorsPage /></Layout></RequireAuth>} />
         <Route path="/requests" element={<RequireAuth><Layout><RequestsPage /></Layout></RequireAuth>} />
-        <Route path="/assets" element={<RequireAuth><Layout><AssetsPage /></Layout></RequireAuth>} />
+        <Route path="/assets" element={<RequireAuth><Layout><AssetManagementPage /></Layout></RequireAuth>} />
         <Route path="/leads" element={<RequireAuth><Layout><LeadsPage /></Layout></RequireAuth>} />
         <Route path="/activity" element={<RequireAuth><Layout><ActivityPage /></Layout></RequireAuth>} />
         <Route path="/help" element={<RequireAuth><Layout><HelpPage /></Layout></RequireAuth>} />

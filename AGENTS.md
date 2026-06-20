@@ -1,8 +1,17 @@
 # Critical Rules - Must Follow
 
-## REsponses
+## Responses
 
-- Keep responses concise and to the point - unlesss the users asks otherwise
+- Keep responses concise and to the point - unless the user asks otherwise
+
+## Persistent Memory System
+
+You MUST follow the Persistent Memory Protocol defined in `~/.config/opencode/AGENTS.md` — it applies to all opencode sessions across all projects.
+
+For this project specifically:
+- Read `.opencode/memory.md` at session start for project context.
+- Update `.opencode/memory.md` at session end with progress, decisions, and state.
+- Update `~/.opencode/memory/global.md` with cross-project-relevant info.
 
 ## Planning Mode
 
@@ -14,7 +23,7 @@
 ## Change / Edit Mode
 
 - Never implement features yourself when possible - use sub-agents
-- Identify changes from the plan that can be implemented in parallel, and use sub-agents to implement te features efficiently
+- Identify changes from the plan that can be implemented in parallel, and use sub-agents to implement the features efficiently
 - when using sub-agents to implement features, act as a coordinator only
 - Use the best model available for the task 
 - After completing features (large and small), always run commands like lint, type check and next build to check code quality

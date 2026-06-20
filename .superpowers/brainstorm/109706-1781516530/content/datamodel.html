@@ -1,0 +1,31 @@
+<h2>Asset data model</h2>
+<p class="subtitle">Does the current asset schema work, or do you need new fields?</p>
+
+<div class="section">
+<h3>Current fields:</h3>
+<p class="subtitle">Name, Code, Category, SubCategory, Status, Criticality, Manufacturer, Model, Serial#, Customer, Location, Install/Purchase/Warranty/Service dates, Notes</p>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="extend" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Extend Current Schema</h3>
+      <p>Add a few new fields to the existing assets table. Keep the current API, update it.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="new-table" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>New Asset Management Table</h3>
+      <p>Separate table for the new system. Clean break from the old CRUD. Link to jobs/requests separately.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="add-fields" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Same Table, Very Different Fields</h3>
+      <p>Most current fields are fine but I need to describe what's different</p>
+    </div>
+  </div>
+</div>

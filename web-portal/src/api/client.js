@@ -4,7 +4,7 @@ function storage() {
   return localStorage.getItem('_remember') === 'true' ? localStorage : sessionStorage;
 }
 
-function authHeaders() {
+export function authHeaders() {
   const t = storage().getItem('token');
   return t ? { 'Authorization': `Bearer ${t}` } : {};
 }

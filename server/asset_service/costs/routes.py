@@ -19,7 +19,15 @@ async def list_costs(
     from asset_service.db import get_conn
     conn = get_conn()
     try:
+        from asset_service.db import get_asset
+        asset = get_asset(conn, asset_id)
+        if not asset:
+            raise HTTPException(404, detail="Asset not found")
         return db.list_costs(conn, asset_id, limit=limit, offset=offset)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to list costs: {str(e)}")
     finally:
         conn.close()
 
@@ -35,11 +43,23 @@ async def record_cost(
     from asset_service.db import get_conn
     conn = get_conn()
     try:
+        from asset_service.db import get_asset
+        asset = get_asset(conn, asset_id)
+        if not asset:
+            raise HTTPException(404, detail="Asset not found")
         data = body.model_dump()
         data["asset_id"] = asset_id
+        if not data.get("cost_type"):
+            raise HTTPException(400, detail="cost_type is required")
+        if data.get("amount") is None:
+            raise HTTPException(400, detail="amount is required")
         cost = db.record_cost(conn, data, session.get("uid"))
         conn.commit()
         return cost
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to record cost: {str(e)}")
     finally:
         conn.close()
 
@@ -52,5 +72,9 @@ async def get_cost_summary(session: dict = Depends(require_session)):
     conn = get_conn()
     try:
         return db.get_cost_summary(conn)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to get cost summary: {str(e)}")
     finally:
         conn.close()

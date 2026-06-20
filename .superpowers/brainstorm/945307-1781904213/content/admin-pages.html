@@ -1,0 +1,40 @@
+<h2>Which admin pages to build first?</h2>
+<p class="subtitle">All are listed in the spec. Pick your priority.</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="dashboard" onclick="toggleSelect(this)">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>Dashboard — KPI Cards &amp; Charts</h3>
+      <p>Asset KPIs: total assets, active WOs, overdue maintenance, warranty expiring. Charts: assets by status/category, maintenance trends, cost trends.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="workorders" onclick="toggleSelect(this)">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>Work Orders Tab</h3>
+      <p>Kanban board (pending → in_progress → completed) + list view toggle. Filters: status, asset, contractor, type, date range.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="maintenance" onclick="toggleSelect(this)">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>Maintenance Tab</h3>
+      <p>Calendar view of upcoming schedules, overdue alerts, schedule management (create/edit/complete).</p>
+    </div>
+  </div>
+  <div class="option" data-choice="import-export" onclick="toggleSelect(this)">
+    <div class="letter">4</div>
+    <div class="content">
+      <h3>Import / Export</h3>
+      <p>CSV upload with column mapping UI, template download, export assets / work orders / costs.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="qr-batch" onclick="toggleSelect(this)">
+    <div class="letter">5</div>
+    <div class="content">
+      <h3>QR Batch Generation</h3>
+      <p>Select assets → generate printable PDF with multiple QR code labels.</p>
+    </div>
+  </div>
+</div>

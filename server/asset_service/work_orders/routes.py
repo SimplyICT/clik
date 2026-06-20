@@ -22,6 +22,8 @@ async def list_work_orders(
     conn = get_conn()
     try:
         return db.list_work_orders(conn, asset_id, status, contractor_id, limit=limit, offset=offset)
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to list work orders: {str(e)}")
     finally:
         conn.close()
 
@@ -35,6 +37,10 @@ async def get_work_order(wo_id: str, session: dict = Depends(require_session)):
         if not wo:
             raise HTTPException(404, detail="Work order not found")
         return wo
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to get work order: {str(e)}")
     finally:
         conn.close()
 
@@ -48,9 +54,17 @@ async def create_work_order(
     conn = get_conn()
     try:
         data = body.model_dump()
+        if not data.get("asset_id"):
+            raise HTTPException(400, detail="asset_id is required")
+        if not data.get("title"):
+            raise HTTPException(400, detail="title is required")
         wo = db.create_work_order(conn, data, session.get("uid"))
         conn.commit()
         return wo
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to create work order: {str(e)}")
     finally:
         conn.close()
 
@@ -71,6 +85,10 @@ async def update_work_order(
         wo = db.update_work_order(conn, wo_id, data)
         conn.commit()
         return wo
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to update work order: {str(e)}")
     finally:
         conn.close()
 
@@ -88,6 +106,10 @@ async def delete_work_order_route(wo_id: str, session: dict = Depends(require_se
         db.delete_work_order(conn, wo_id)
         conn.commit()
         return {"ok": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to delete work order: {str(e)}")
     finally:
         conn.close()
 
@@ -103,5 +125,7 @@ async def list_work_orders_by_asset(
     conn = get_conn()
     try:
         return db.list_work_orders(conn, asset_id=asset_id, limit=limit, offset=offset)
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to list work orders for asset: {str(e)}")
     finally:
         conn.close()

@@ -398,3 +398,15 @@ def test_api_documents_require_auth():
 def test_api_delete_document_requires_auth():
     resp = client.delete("/api/asset-management/documents/00000000-0000-0000-0000-000000000001")
     assert resp.status_code == 401
+
+
+def test_api_upload_document_requires_auth():
+    resp = client.post(
+        "/api/asset-management/assets/00000000-0000-0000-0000-000000000001/documents",
+        json={
+            "asset_id": "00000000-0000-0000-0000-000000000001",
+            "file_name": "noauth.pdf",
+            "file_url": "https://example.com/noauth.pdf",
+        },
+    )
+    assert resp.status_code == 401

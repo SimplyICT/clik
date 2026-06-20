@@ -21,20 +21,24 @@ export default function AssetDetailView({ asset, onClose, onAssetUpdated }) {
   const [photoIndex, setPhotoIndex] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [docsLoading, setDocsLoading] = useState(false);
+  const [jobsError, setJobsError] = useState(null);
+  const [docsError, setDocsError] = useState(null);
 
   useEffect(() => {
     if (asset) {
       setJobsLoading(true);
       setDocsLoading(true);
+      setJobsError(null);
+      setDocsError(null);
       fetch(`${API}/assets/${asset.id}/jobs`, { headers: { ...authHeaders() } })
-        .then(r => r.ok ? r.json() : [])
+        .then(r => { if (!r.ok) throw new Error('Failed to load service history'); return r.json(); })
         .then(data => setJobs(Array.isArray(data) ? data : []))
-        .catch(() => setJobs([]))
+        .catch(err => { setJobs([]); setJobsError(err.message); })
         .finally(() => setJobsLoading(false));
       fetch(`${API}/assets/${asset.id}/documents`, { headers: { ...authHeaders() } })
-        .then(r => r.ok ? r.json() : [])
+        .then(r => { if (!r.ok) throw new Error('Failed to load documents'); return r.json(); })
         .then(data => setDocuments(Array.isArray(data) ? data : []))
-        .catch(() => setDocuments([]))
+        .catch(err => { setDocuments([]); setDocsError(err.message); })
         .finally(() => setDocsLoading(false));
     }
   }, [asset]);
@@ -148,6 +152,8 @@ export default function AssetDetailView({ asset, onClose, onAssetUpdated }) {
           <h4 style={{ fontSize: 14, marginBottom: 8, color: '#444' }}>Documents</h4>
           {docsLoading ? (
             <div style={{ color: '#888', fontSize: 13 }}>Loading...</div>
+          ) : docsError ? (
+            <div style={{ color: '#ef4444', fontSize: 13 }}>{docsError}</div>
           ) : documents.length === 0 ? (
             <div style={{ color: '#888', fontSize: 13 }}>No documents</div>
           ) : (
@@ -206,6 +212,8 @@ export default function AssetDetailView({ asset, onClose, onAssetUpdated }) {
           <h4 style={{ fontSize: 14, marginBottom: 8, color: '#444' }}>Service History</h4>
           {jobsLoading ? (
             <div style={{ color: '#888', fontSize: 13 }}>Loading...</div>
+          ) : jobsError ? (
+            <div style={{ color: '#ef4444', fontSize: 13 }}>{jobsError}</div>
           ) : jobs.length === 0 ? (
             <div style={{ color: '#888', fontSize: 13 }}>No service history</div>
           ) : (

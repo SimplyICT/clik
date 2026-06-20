@@ -10,6 +10,15 @@ const SECTIONS = [
   { id: 'activity', title: 'Activity Reports' },
   { id: 'mobile-pwa', title: 'Mobile App (PWA)' },
   { id: 'notifications', title: 'Notifications' },
+  { id: 'asset-parts', title: 'Parts Inventory' },
+  { id: 'custom-fields', title: 'Custom Fields' },
+  { id: 'asset-jobs', title: 'Creating Jobs from Assets' },
+  { id: 'asset-transfer', title: 'Transferring Assets' },
+  { id: 'asset-dashboard', title: 'Asset Dashboard KPIs' },
+  { id: 'work-orders', title: 'Work Orders' },
+  { id: 'maintenance', title: 'Maintenance Schedules' },
+  { id: 'import-export', title: 'Import / Export' },
+  { id: 'qr-batch', title: 'QR Batch Labels' },
 ];
 
 export default function HelpPage() {
@@ -64,7 +73,11 @@ export default function HelpPage() {
         </Section>
 
         <Section id="assets" title="Assets">
-          <p style={{ fontSize: 13, lineHeight: 1.7 }}>Equipment tracked per location (HVAC, electrical, fire systems, etc.). <strong>"+ Add Asset"</strong> or pencil icon to edit. Status colours: Active (green), Under Maintenance (amber), Out of Service (red), Retired (grey).</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>The <strong>Asset Management</strong> hub replaces the old asset list with a full lifecycle management system. Four tabs: <strong>All Assets</strong>, <strong>Parts Inventory</strong>, <strong>Custom Fields</strong>, and <strong>Dashboard</strong>.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>All Assets tab:</strong> Table with search, filters by category/status/customer/contractor. Click an asset to see full details including photos, parts list, service history, and QR code. Status colours: Active (green), Under Maintenance (amber), Out of Service (red), Retired (grey).</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Adding/Editing:</strong> <strong>"+ Add Asset"</strong> opens a form with fields: asset name, code, category, sub-category, status, criticality, manufacturer, model, serial number, customer/location assignment, dates (install, purchase, warranty, service), photos, and notes. Asset codes must be unique. A QR code is auto-generated on creation.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>QR Codes:</strong> Each asset gets a scannable QR code. View it in the asset detail panel (click the QR icon) — the image can be right-clicked to save/print. Scanning the QR code with the Mobile PWA opens the asset detail screen.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Lifecycle Actions:</strong> From the detail panel you can <strong>Create Job</strong> (opens a modal to select job type and description — creates a service request linked to the asset), <strong>Edit</strong>, <strong>Retire</strong> (marks as retired), or <strong>Transfer</strong> (manager-only: move asset to a different customer).</p>
         </Section>
 
         <Section id="leads" title="Leads">
@@ -84,6 +97,51 @@ export default function HelpPage() {
           <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Install as App (iOS):</strong> Open Safari → <code>https://pwa.simplyclik.com/mobile/</code> → Share → Add to Home Screen. This gives full-screen mode with no browser chrome and enables push notifications.</p>
           <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Install as App (Android):</strong> Open Chrome → <code>https://pwa.simplyclik.com/mobile/</code> → menu → Add to Home Screen. The PWA Install banner on the dashboard also triggers this.</p>
           <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Remember Me:</strong> Check the box on login to stay logged in across browser closes (token stored in localStorage). Uncheck to use session-only storage (cleared on close). Session TTL is 30 days.</p>
+        </Section>
+
+        <Section id="asset-parts" title="Parts Inventory">
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>Manage replacement parts and consumables in the <strong>Parts Inventory</strong> tab. Each part has a name, SKU (unique), quantity, minimum threshold, and unit (each, box, liter, etc.). Parts can be generic or assigned to a specific asset.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Low-stock warning:</strong> Parts where quantity is below the minimum threshold are highlighted in red. Restock by editing the part and increasing the quantity.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Usage tracking:</strong> When contractors perform work, they record parts used via the mobile app. Usage is deducted from inventory and logged to the job record.</p>
+        </Section>
+
+        <Section id="custom-fields" title="Custom Fields">
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>Manager-only tab for defining category-specific custom fields. For example, HVAC assets can have "BTU Rating" and "Refrigerant Type" fields, while Electrical assets can have "Voltage" and "Amperage".</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>Each custom field has: field name (internal), label (displayed), type (text, number, select, boolean), optional choices (for select type), required flag, and sort order. Once defined, these fields appear automatically when adding/editing assets of that category.</p>
+        </Section>
+
+        <Section id="asset-jobs" title="Creating Jobs from Assets">
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>From any asset detail view, click <strong>Create Job</strong> to open a modal. Select a job type (install, move, retire, inspect, repair, or transfer), add an optional description, and submit. This creates a new service request in the existing <strong>Service Requests</strong> system, linked to the asset via <code>asset_id</code>. The request then follows the normal lifecycle (assignment, status transitions, notifications, invoicing).</p>
+        </Section>
+
+        <Section id="asset-transfer" title="Transferring Assets">
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>Managers can transfer assets between customers. Click <strong>Transfer</strong> in the asset detail panel, select the target customer and optionally a location. The asset's lifecycle status changes to "transferred" and it becomes visible to the new customer in the Customer Portal.</p>
+        </Section>
+
+        <Section id="asset-dashboard" title="Asset Dashboard KPIs">
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>The main Dashboard now shows asset management KPIs below the existing count tiles. <strong>Asset Overview</strong> cards: Total Assets, Active Assets, Active Work Orders, Overdue Maintenance, Warranty Expiring Soon, and Total Costs. Two <strong>inline bar charts</strong> show Assets by Status and Assets by Category. No external chart library needed — rendered as SVG.</p>
+        </Section>
+
+        <Section id="work-orders" title="Work Orders">
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>The <strong>Work Orders</strong> tab in Asset Management shows all work orders in two views simultaneously: a <strong>Kanban board</strong> at the top (columns: Pending, In Progress, Completed, Cancelled) and a <strong>table list</strong> below with all work orders.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Filters:</strong> By status, type (preventive, reactive, inspection, repair, installation), and priority (low, medium, high, urgent).</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Actions:</strong> Click <strong>Start</strong> to begin a work order, <strong>Complete</strong> to finish it, or <strong>Cancel</strong> to cancel. Status updates are instant.</p>
+        </Section>
+
+        <Section id="maintenance" title="Maintenance Schedules">
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>The <strong>Maintenance</strong> tab shows all preventive maintenance schedules grouped by timeframe: <strong>Overdue</strong> (red), <strong>Due Within 30 Days</strong> (amber), <strong>Due Within 60 Days</strong> (blue), and <strong>Future</strong> (grey).</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Overdue alert:</strong> A red banner at the top shows the count of overdue schedules. Overdue dates are highlighted in red in the table.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Actions:</strong> Click <strong>Complete</strong> to mark a schedule as done (updates last_completed and recalculates next_due). <strong>"+ New Schedule"</strong> creates a new maintenance schedule linked to an asset with selectable frequency (daily, weekly, monthly, etc.) and optional auto-create work order.</p>
+        </Section>
+
+        <Section id="import-export" title="Import / Export">
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>The <strong>Import/Export</strong> tab provides two side-by-side panels:</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Export:</strong> Click to download CSV files for Assets, Work Orders, or Costs. Files download automatically.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Import:</strong> Download the CSV template first, fill it with your data, then paste the CSV content into the text area and click <strong>Import CSV</strong>. Success/error feedback is shown inline.</p>
+        </Section>
+
+        <Section id="qr-batch" title="QR Batch Labels">
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>The <strong>QR Batch</strong> tab lets you generate printable QR code labels for multiple assets at once. Search or browse assets, check the boxes for the ones you need, then click <strong>Generate PDF</strong>. The PDF contains QR codes in a 3×4 grid layout with asset names and codes printed below each QR code.</p>
         </Section>
 
         <Section id="notifications" title="Notifications">

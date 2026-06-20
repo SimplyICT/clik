@@ -2,6 +2,7 @@ const SECTIONS = [
   { id: 'getting-started', title: 'Getting Started' },
   { id: 'dashboard', title: 'Dashboard' },
   { id: 'sites', title: 'Service Sites' },
+  { id: 'my-assets', title: 'My Assets' },
   { id: 'requests', title: 'Service Requests' },
   { id: 'activity', title: 'Activity' },
   { id: 'manage', title: 'Manage Users' },
@@ -38,6 +39,11 @@ export default function HelpPage() {
 
         <Section id="sites" title="Service Sites">
           <p style={{ fontSize: 13, lineHeight: 1.7 }}>Lists all service sites on your account. Click a site to expand and see its details (contact name, email, phone) and all service requests for that site.</p>
+        </Section>
+
+        <Section id="my-assets" title="My Assets">
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>View all equipment and assets registered at your sites. The list shows asset name, code, category, and location. Filter by category or location using the dropdowns at the top.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>Click any asset to open a detail view showing: manufacturer, model, serial number, install/purchase/warranty dates, service history (past jobs), photos, custom fields, and notes. From the asset detail you can add notes or <strong>Request Service</strong> — this creates a new maintenance request linked to that specific asset.</p>
         </Section>
 
         <Section id="requests" title="Service Requests">

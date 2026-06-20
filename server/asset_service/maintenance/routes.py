@@ -20,6 +20,8 @@ async def list_schedules(
     conn = get_conn()
     try:
         return db.list_schedules(conn, asset_id, limit=limit, offset=offset)
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to list maintenance schedules: {str(e)}")
     finally:
         conn.close()
 
@@ -33,6 +35,10 @@ async def get_schedule(schedule_id: str, session: dict = Depends(require_session
         if not sched:
             raise HTTPException(404, detail="Schedule not found")
         return sched
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to get schedule: {str(e)}")
     finally:
         conn.close()
 
@@ -46,9 +52,17 @@ async def create_schedule(
     conn = get_conn()
     try:
         data = body.model_dump()
+        if not data.get("asset_id"):
+            raise HTTPException(400, detail="asset_id is required")
+        if not data.get("title"):
+            raise HTTPException(400, detail="title is required")
         sched = db.create_schedule(conn, data, session.get("uid"))
         conn.commit()
         return sched
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to create schedule: {str(e)}")
     finally:
         conn.close()
 
@@ -69,6 +83,28 @@ async def update_schedule(
         sched = db.update_schedule(conn, schedule_id, data)
         conn.commit()
         return sched
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to update schedule: {str(e)}")
+    finally:
+        conn.close()
+
+
+@router.post("/api/asset-management/maintenance/{schedule_id}/complete")
+async def complete_schedule(schedule_id: str, session: dict = Depends(require_session)):
+    from asset_service.db import get_conn
+    conn = get_conn()
+    try:
+        sched = db.complete_schedule(conn, schedule_id)
+        if not sched:
+            raise HTTPException(404, detail="Schedule not found")
+        conn.commit()
+        return sched
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to complete schedule: {str(e)}")
     finally:
         conn.close()
 
@@ -80,8 +116,15 @@ async def delete_schedule(schedule_id: str, session: dict = Depends(require_sess
     from asset_service.db import get_conn
     conn = get_conn()
     try:
+        existing = db.get_schedule(conn, schedule_id)
+        if not existing:
+            raise HTTPException(404, detail="Schedule not found")
         db.delete_schedule(conn, schedule_id)
         conn.commit()
         return {"ok": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to delete schedule: {str(e)}")
     finally:
         conn.close()

@@ -1,0 +1,19 @@
+<h2>Clarifying the data model</h2>
+<p class="subtitle">You chose standalone service + extend current schema — these conflict</p>
+
+<div class="options">
+  <div class="option" data-choice="standalone-db" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Standalone Service, New Tables</h3>
+      <p>Asset management gets its own fresh set of DB tables. Same field structure as current, but in new tables. Old assets table stays but is deprecated.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="modular" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Standalone Service, Current Tables</h3>
+      <p>Add a new service module that manages assets using the existing table + new tables (asset_parts). Old CRUD and new service coexist.</p>
+    </div>
+  </div>
+</div>

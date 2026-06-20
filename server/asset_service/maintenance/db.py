@@ -91,6 +91,21 @@ def update_schedule(conn, schedule_id, data):
     return get_schedule(conn, schedule_id)
 
 
+def complete_schedule(conn, schedule_id):
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+    sched = get_schedule(conn, schedule_id)
+    if not sched:
+        return None
+    from asset_service.cron.tasks import _compute_next_due
+    next_due = _compute_next_due(now, sched["frequency_type"], sched["frequency_value"])
+    cur = conn.cursor()
+    cur.execute("UPDATE asset_maintenance_schedules SET last_completed = %s, next_due = %s WHERE id = %s::uuid",
+                (now, next_due, schedule_id))
+    cur.close()
+    return get_schedule(conn, schedule_id)
+
+
 def delete_schedule(conn, schedule_id):
     cur = conn.cursor()
     cur.execute("DELETE FROM asset_maintenance_schedules WHERE id = %s::uuid", (schedule_id,))

@@ -1,0 +1,21 @@
+<h2>Two approaches</h2>
+
+<div class="section">
+<h3>Option A: Extend Current Stack <span class="label" style="background:var(--accent);color:var(--bg);padding:2px 8px;border-radius:4px;font-size:0.7em;">Recommended</span></h3>
+<p>Add columns to existing assets table, add <code>asset_id</code> to requests, build mobile views, new parts inventory table.</p>
+<div class="pros-cons">
+<div class="pros"><h4>Pros</h4><ul><li>Reuses existing request lifecycle, auth, notifications</li><li>Parts = clean new table, manageable scope</li><li>QR codes = URL-based, no hardware</li><li>Custom fields = JSONB, no schema migrations</li></ul></div>
+<div class="cons"><h4>Cons</h4><ul><li>Assets page needs full rewrite</li><li>Mobile needs new views</li><li>Parts inventory is net-new</li></ul></div>
+</div>
+</div>
+
+<div class="section">
+<h3>Option B: Standalone Asset Management Service</h3>
+<p>Dedicated Python service or module with its own DB tables. Separate from the existing assets CRUD entirely.</p>
+<div class="pros-cons">
+<div class="pros"><h4>Pros</h4><ul><li>Clean break from old CRUD</li><li>Independent schema evolution</li><li>Could become a standalone product</li></ul></div>
+<div class="cons"><h4>Cons</h4><ul><li>Much more work (auth duplication, sync, separate deployment)</li><li>Jobs still need to integrate with request system</li><li>Overkill for this stage</li></ul></div>
+</div>
+</div>
+
+<p class="subtitle">Which approach?</p>

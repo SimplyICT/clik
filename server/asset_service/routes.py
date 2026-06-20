@@ -101,6 +101,10 @@ async def update_asset(asset_id: str, body: models.AssetUpdate, session: dict = 
 async def bulk_update_status(body: dict, session: dict = Depends(require_session)):
     if not session.get("is_admin"):
         raise HTTPException(403, detail="Only admins can perform bulk operations")
+    if not body.get("asset_ids") or not isinstance(body["asset_ids"], list):
+        raise HTTPException(400, detail="asset_ids must be a non-empty array")
+    if not body.get("status"):
+        raise HTTPException(400, detail="status is required")
     conn = db.get_conn()
     try:
         result = db.bulk_update_status(conn, body["asset_ids"], body["status"], session.get("uid"))
@@ -114,6 +118,10 @@ async def bulk_update_status(body: dict, session: dict = Depends(require_session
 async def bulk_transfer(body: dict, session: dict = Depends(require_session)):
     if not session.get("is_admin"):
         raise HTTPException(403, detail="Only admins can perform bulk operations")
+    if not body.get("asset_ids") or not isinstance(body["asset_ids"], list):
+        raise HTTPException(400, detail="asset_ids must be a non-empty array")
+    if not body.get("customer_id"):
+        raise HTTPException(400, detail="customer_id is required for transfer")
     conn = db.get_conn()
     try:
         result = db.bulk_transfer(conn, body["asset_ids"], body.get("customer_id"), body.get("location_id"), session.get("uid"))
@@ -127,6 +135,10 @@ async def bulk_transfer(body: dict, session: dict = Depends(require_session)):
 async def bulk_assign(body: dict, session: dict = Depends(require_session)):
     if not session.get("is_admin"):
         raise HTTPException(403, detail="Only admins can perform bulk operations")
+    if not body.get("asset_ids") or not isinstance(body["asset_ids"], list):
+        raise HTTPException(400, detail="asset_ids must be a non-empty array")
+    if not body.get("contractor_id"):
+        raise HTTPException(400, detail="contractor_id is required for assignment")
     conn = db.get_conn()
     try:
         result = db.bulk_assign_contractor(conn, body["asset_ids"], body.get("contractor_id"), session.get("uid"))
@@ -173,6 +185,64 @@ async def get_asset_qr(asset_id: str, session: dict = Depends(require_session)):
             raise HTTPException(404, detail="Asset not found")
         qr_bytes = qr.generate_qr_bytes(asset_id, APP_URL)
         return Response(content=qr_bytes, media_type="image/png")
+    finally:
+        conn.close()
+
+
+@router.post("/api/asset-management/qr/batch")
+async def qr_batch(body: dict, session: dict = Depends(require_session)):
+    from io import BytesIO
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.units import inch
+    from reportlab.pdfgen import canvas
+
+    asset_ids = body.get("asset_ids", [])
+    if not asset_ids or not isinstance(asset_ids, list):
+        raise HTTPException(400, detail="asset_ids must be a non-empty array")
+
+    conn = db.get_conn()
+    try:
+        assets = []
+        for aid in asset_ids:
+            a = db.get_asset(conn, aid)
+            if a:
+                assets.append(a)
+
+        if not assets:
+            raise HTTPException(404, detail="No assets found for given IDs")
+
+        buf = BytesIO()
+        c = canvas.Canvas(buf, pagesize=letter)
+        page_width, page_height = letter
+        margin = 0.5 * inch
+        cols, rows = 3, 4
+        cell_w = (page_width - 2 * margin) / cols
+        cell_h = (page_height - 2 * margin) / rows
+
+        for i, asset in enumerate(assets):
+            if i > 0 and i % (cols * rows) == 0:
+                c.showPage()
+            col = i % cols
+            row = (i % (cols * rows)) // cols
+            x = margin + col * cell_w
+            y = page_height - margin - (row + 1) * cell_h
+
+            from reportlab.lib.utils import ImageReader
+            qr_bytes = qr.generate_qr_bytes(asset["id"], APP_URL)
+            qr_reader = ImageReader(BytesIO(qr_bytes))
+            qr_size = cell_h * 0.65
+            c.drawImage(qr_reader, x + (cell_w - qr_size) / 2, y + cell_h * 0.25, width=qr_size, height=qr_size)
+
+            c.setFont("Helvetica", 8)
+            name = (asset.get("asset_name") or "")[:30]
+            code = asset.get("asset_code") or ""
+            c.drawCentredString(x + cell_w / 2, y + cell_h * 0.12, name)
+            c.drawCentredString(x + cell_w / 2, y + cell_h * 0.04, code)
+
+        c.save()
+        pdf_bytes = buf.getvalue()
+        return Response(content=pdf_bytes, media_type="application/pdf",
+                        headers={"Content-Disposition": "attachment; filename=qr-batch.pdf"})
     finally:
         conn.close()
 

@@ -1,0 +1,33 @@
+<h2>Who does what?</h2>
+<p class="subtitle">Permissions by role</p>
+
+<div class="options">
+  <div class="option" data-choice="identical" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Identical Access</h3>
+      <p>Contractors and managers see & do exactly the same things with assets. No restrictions.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="manager-extra" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Managers Have Extra Controls</h3>
+      <p>Both can create/edit/retire assets. But only managers can: delete permanently, transfer ownership, view audit trails.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="contractor-limited" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Contractors Need Approval</h3>
+      <p>Contractors can suggest edits or retirements, but a manager must approve before changes take effect.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="custom-perm" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>Something Else</h3>
+      <p>Different permission model than these</p>
+    </div>
+  </div>
+</div>

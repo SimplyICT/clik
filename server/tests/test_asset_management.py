@@ -221,3 +221,29 @@ def test_bulk_operations_require_admin():
                        json={"asset_ids": [], "status": "Inactive"},
                        headers={"Authorization": f"Bearer {non_admin_token}"})
     assert resp.status_code == 403
+
+
+def test_asset_management_create_asset_duplicate_code():
+    token = login_token()
+    import uuid
+    import pytest
+    from pg8000.dbapi import IntegrityError
+    unique_code = f"DUP-{uuid.uuid4().hex[:8].upper()}"
+    resp = client.post("/api/asset-management/assets",
+                       json={"asset_name": "Original", "asset_code": unique_code, "category": "Test", "status": "Active"},
+                       headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 201
+
+    with pytest.raises(IntegrityError):
+        client.post("/api/asset-management/assets",
+                    json={"asset_name": "Duplicate", "asset_code": unique_code, "category": "Test", "status": "Active"},
+                    headers={"Authorization": f"Bearer {token}"})
+
+
+def test_asset_management_get_asset_not_found():
+    token = login_token()
+    resp = client.get(
+        "/api/asset-management/assets/00000000-0000-0000-0000-000000000099",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 404

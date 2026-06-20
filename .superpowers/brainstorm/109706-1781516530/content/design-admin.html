@@ -1,0 +1,28 @@
+<h2>Design: Admin Portal — Asset Management Hub</h2>
+
+<div class="section">
+<h3>New nav item: "Asset Management" — replaces current "Assets"</h3>
+</div>
+
+<div class="section">
+<h3>Tabs within the page:</h3>
+<table style="width:100%;border-collapse:collapse;font-size:0.85em">
+<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px">Tab</th><th style="text-align:left;padding:4px">Content</th></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">All Assets</td><td style="padding:4px">Full table with search, filters (category, status, customer, contractor), batch actions. Columns include QR code preview.</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">Asset Detail</td><td style="padding:4px">Full detail view with all fields, photo gallery, parts list, service history timeline. Action buttons: Create Job, Edit, Retire, Transfer, Print QR.</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">Parts Inventory</td><td style="padding:4px">Manage parts catalog. Add/edit parts, set thresholds, view usage history. Low-stock warnings.</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">Custom Fields</td><td style="padding:4px">Manager-only: Define which custom fields exist per category</td></tr>
+<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">Audit Log</td><td style="padding:4px">Manager-only: All asset lifecycle events (created, edited, retired, transferred, jobs created)</td></tr>
+</table>
+</div>
+
+<div class="section">
+<h3>Permission differences:</h3>
+<ul>
+<li>Contractor: Can create/edit/retire assets, create jobs, record parts usage</li>
+<li>Manager: Everything above + permanent delete, transfer ownership, view audit log, manage custom field definitions</li>
+<li>Customer: View their own assets + add notes, request service</li>
+</ul>
+</div>
+
+<p class="subtitle">Does the admin design look right?</p>

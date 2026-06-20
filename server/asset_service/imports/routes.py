@@ -36,10 +36,17 @@ async def import_csv(
     if not session.get("is_admin"):
         raise HTTPException(403, detail="Admin access required")
 
+    if not body.csv_content or not body.csv_content.strip():
+        raise HTTPException(400, detail="CSV content is required")
+
     from . import db as import_db
     from asset_service.db import get_conn
 
-    rows = import_db.parse_csv(body.csv_content)
+    try:
+        rows = import_db.parse_csv(body.csv_content)
+    except Exception as e:
+        raise HTTPException(400, detail=f"Failed to parse CSV: {str(e)}")
+
     if not rows:
         raise HTTPException(400, detail="CSV content is empty or invalid")
 
@@ -47,5 +54,7 @@ async def import_csv(
     try:
         result = import_db.import_assets(conn, rows, user_id=session.get("uid"))
         return result
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to import assets: {str(e)}")
     finally:
         conn.close()

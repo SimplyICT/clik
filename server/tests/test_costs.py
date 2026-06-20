@@ -410,3 +410,47 @@ def test_api_cost_summary_non_admin():
 def test_api_costs_require_auth():
     resp = client.get("/api/asset-management/assets/00000000-0000-0000-0000-000000000001/costs")
     assert resp.status_code == 401
+
+
+def test_db_get_cost_summary_multi_asset():
+    from asset_service.costs import db as cost_db
+    conn = _get_test_conn()
+    assets = []
+    try:
+        asset1 = _create_test_asset(conn)
+        asset2 = _create_test_asset(conn)
+        assets = [asset1, asset2]
+
+        cost_db.record_cost(conn, {
+            "asset_id": asset1["id"],
+            "cost_type": "maintenance",
+            "amount": 100.00,
+            "recorded_date": "2025-06-01",
+        })
+        cost_db.record_cost(conn, {
+            "asset_id": asset1["id"],
+            "cost_type": "repair",
+            "amount": 300.00,
+            "recorded_date": "2025-06-15",
+        })
+        cost_db.record_cost(conn, {
+            "asset_id": asset2["id"],
+            "cost_type": "maintenance",
+            "amount": 200.00,
+            "recorded_date": "2025-07-01",
+        })
+        conn.commit()
+
+        summary = cost_db.get_cost_summary(conn)
+        summary_map = {s["cost_type"]: s for s in summary}
+        assert "maintenance" in summary_map
+        assert summary_map["maintenance"]["count"] == 2
+        assert summary_map["maintenance"]["total"] == 300.00
+        assert "repair" in summary_map
+        assert summary_map["repair"]["count"] == 1
+        assert summary_map["repair"]["total"] == 300.00
+    finally:
+        for a in assets:
+            if a:
+                _cleanup_test_asset(conn, a["id"])
+        conn.close()

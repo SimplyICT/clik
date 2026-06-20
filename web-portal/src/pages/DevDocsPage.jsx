@@ -2,6 +2,7 @@ const SECTIONS = [
   { id: 'architecture', title: 'Architecture' },
   { id: 'api-client', title: 'API Client' },
   { id: 'request-workflow', title: 'Request Workflow' },
+  { id: 'asset-management', title: 'Asset Management' },
   { id: 'auth', title: 'Auth & Storage' },
   { id: 'server', title: 'Server (FastAPI)' },
   { id: 'notifications', title: 'Notifications' },
@@ -39,6 +40,16 @@ export default function DevDocsPage() {
         <Section id="api-client" title="API Client (src/api/client.js)">
           <p style={{ fontSize: 13, lineHeight: 1.6 }}>Shared client module with <code>q()</code>, <code>create()</code>, <code>update()</code>, <code>del()</code>, <code>customerFilter()</code>. All calls include Bearer token. Storage uses <code>_remember</code> flag to pick localStorage or sessionStorage.</p>
           <p style={{ fontSize: 13, lineHeight: 1.6 }}>Pages read data with <code>localStorage.getItem('key') || sessionStorage.getItem('key')</code> to handle both storage modes.</p>
+        </Section>
+
+        <Section id="asset-management" title="Asset Management">
+          <p style={{ fontSize: 13, lineHeight: 1.6 }}>Customer portal shows assets scoped to the logged-in customer's <code>customer_id</code>. Uses the <code>/api/asset-management/</code> endpoints (same FastAPI module as admin).</p>
+          <ul style={{ fontSize: 13, lineHeight: 1.6, paddingLeft: 20 }}>
+            <li><strong>MyAssetsPage.jsx:</strong> Fetches assets by <code>customer_id</code> filter, renders a filterable list with category/location dropdowns, opens detail in <strong>AssetDetailView.jsx</strong></li>
+            <li><strong>AssetDetailView.jsx:</strong> Shows all asset fields, photos, custom fields, service job history. Allows adding notes (PATCH assets) and creating service requests linked to the asset (POST requests).</li>
+            <li><strong>API calls:</strong> <code>GET /api/asset-management/assets?customer_id=X</code>, <code>GET /api/asset-management/assets/{id}</code>, <code>GET /api/asset-management/assets/{id}/jobs</code></li>
+            <li><strong>DB tables:</strong> <code>assets_v2</code>, <code>asset_parts</code>, <code>asset_part_usage</code>, <code>asset_custom_field_defs</code></li>
+          </ul>
         </Section>
 
         <Section id="request-workflow" title="Request Workflow">

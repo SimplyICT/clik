@@ -140,13 +140,27 @@ function ContractorView({ jobs, nav }) {
 }
 
 function ManagerView({ nav }) {
-  const sc = parseInt(localStorage.getItem('siteCount') || sessionStorage.getItem('siteCount') || '0');
-  const rc = parseInt(localStorage.getItem('requestCount') || sessionStorage.getItem('requestCount') || '0');
+  const [sc, setSc] = useState(0);
+  const [rc, setRc] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const cid = localStorage.getItem('customer_id') || sessionStorage.getItem('customer_id');
+
+  useEffect(() => {
+    Promise.all([
+      q('customerLocations', { select: 'id', filters: cid ? [{ field: 'customerId', value: cid }] : [] }).catch(() => []),
+      q('requests', { select: 'id', filters: cid ? [{ field: 'customerId', value: cid }] : [] }).catch(() => []),
+    ]).then(([locs, reqs]) => {
+      setSc(Array.isArray(locs) ? locs.length : 0);
+      setRc(Array.isArray(reqs) ? reqs.length : 0);
+      setLoading(false);
+    });
+  }, [cid]);
+
   return (
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-        <QuickTile label="Sites" value={sc} color="#00d4ff" onClick={() => nav('/sites')} />
-        <QuickTile label="Requests" value={rc} color="#ff9500" onClick={() => nav('/requests')} />
+        <QuickTile label="Sites" value={loading ? '…' : sc} color="#00d4ff" onClick={() => nav('/sites')} />
+        <QuickTile label="Requests" value={loading ? '…' : rc} color="#ff9500" onClick={() => nav('/requests')} />
       </div>
       <button onClick={() => nav('/requests/new')} style={{ width: '100%', padding: '14px', borderRadius: 8, border: 'none', background: '#00d4ff', color: '#000', fontWeight: 700, fontSize: 16, cursor: 'pointer' }}>+ New Request</button>
     </div>

@@ -620,3 +620,58 @@ def test_api_delete_non_admin_returns_403():
         assert resp.status_code == 403
     finally:
         _api_delete_asset(admin_token, asset["id"])
+
+
+def test_db_schedule_completion_updates_next_due():
+    from asset_service.maintenance import db as maint_db
+    from datetime import timezone
+    import datetime
+    conn = _get_test_conn()
+    asset = None
+    try:
+        asset = _create_test_asset(conn)
+        sched = maint_db.create_schedule(conn, {
+            "asset_id": asset["id"],
+            "title": "Completion Next Due Test",
+            "frequency_type": "monthly",
+            "frequency_value": 1,
+        })
+        conn.commit()
+
+        from asset_service.cron.tasks import _compute_next_due
+        last_completed = datetime.datetime.now(timezone.utc)
+        next_due = _compute_next_due(last_completed, "monthly", 1)
+        assert next_due is not None
+
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE asset_maintenance_schedules SET last_completed = %s, next_due = %s WHERE id = %s::uuid",
+            (last_completed, next_due, sched["id"]),
+        )
+        conn.commit()
+        cur.close()
+
+        updated = maint_db.get_schedule(conn, sched["id"])
+        assert updated["last_completed"] is not None
+        assert updated["next_due"] is not None
+    finally:
+        if asset:
+            _cleanup_test_asset(conn, asset["id"])
+        conn.close()
+
+
+def test_api_create_schedule_invalid_data():
+    token = login_token()
+    asset = _api_create_asset(token)
+    try:
+        resp = client.post(
+            "/api/asset-management/maintenance",
+            json={
+                "asset_id": asset["id"],
+                "title": "Bad Schedule",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 422
+    finally:
+        _api_delete_asset(token, asset["id"])

@@ -1,7 +1,7 @@
 import csv
 import io
 
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from fastapi.responses import Response
 
 from . import db
@@ -20,6 +20,8 @@ async def dashboard(session: dict = Depends(require_session)):
     conn = get_conn()
     try:
         return db.get_dashboard_kpis(conn)
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to load dashboard: {str(e)}")
     finally:
         conn.close()
 
@@ -33,6 +35,8 @@ async def warranty_report(
     conn = get_conn()
     try:
         return db.get_warranty_report(conn, days)
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to load warranty report: {str(e)}")
     finally:
         conn.close()
 
@@ -43,6 +47,8 @@ async def maintenance_overdue(session: dict = Depends(require_session)):
     conn = get_conn()
     try:
         return db.get_maintenance_overdue(conn)
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to load maintenance overdue report: {str(e)}")
     finally:
         conn.close()
 
@@ -100,5 +106,7 @@ async def export_report(
             media_type="text/csv",
             headers={"Content-Disposition": f'attachment; filename={cfg["filename"]}'},
         )
+    except Exception as e:
+        raise HTTPException(500, detail=f"Failed to export report: {str(e)}")
     finally:
         conn.close()

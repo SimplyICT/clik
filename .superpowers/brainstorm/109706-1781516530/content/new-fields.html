@@ -1,0 +1,52 @@
+<h2>What new fields are needed?</h2>
+<p class="subtitle">Beyond what's already in the assets table</p>
+
+<div class="section">
+<p class="subtitle">Current: Name, Code, Category, SubCategory, Status, Criticality, Manufacturer, Model, Serial#, Customer, Location, Install/Purchase/Warranty/Service dates, Notes</p>
+</div>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="qrcode" onclick="toggleSelect(this)">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>QR Code / Barcode</h3>
+      <p>Unique asset identifier for mobile scanning</p>
+    </div>
+  </div>
+  <div class="option" data-choice="photos" onclick="toggleSelect(this)">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>Photos / Documents</h3>
+      <p>Attach images, manuals, warranty PDFs</p>
+    </div>
+  </div>
+  <div class="option" data-choice="parts" onclick="toggleSelect(this)">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>Parts / Components</h3>
+      <p>Sub-assemblies or replaceable parts within the asset</p>
+    </div>
+  </div>
+  <div class="option" data-choice="contractor" onclick="toggleSelect(this)">
+    <div class="letter">4</div>
+    <div class="content">
+      <h3>Assigned Contractor</h3>
+      <p>Default contractor responsible for this asset</p>
+    </div>
+  </div>
+  <div class="option" data-choice="custom-fields" onclick="toggleSelect(this)">
+    <div class="letter">5</div>
+    <div class="content">
+      <h3>Custom Fields</h3>
+      <p>Category-specific fields (e.g., BTU for HVAC, voltage for Electrical)</p>
+    </div>
+  </div>
+  <div class="option" data-choice="other" onclick="toggleSelect(this)">
+    <div class="letter">6</div>
+    <div class="content">
+      <h3>Something Else</h3>
+      <p>I have different fields in mind</p>
+    </div>
+  </div>
+</div>
+<p class="subtitle">Select all that apply</p>

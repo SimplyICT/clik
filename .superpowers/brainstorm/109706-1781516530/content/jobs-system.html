@@ -1,0 +1,26 @@
+<h2>How do jobs relate to the existing request system?</h2>
+<p class="subtitle">We already have a request lifecycle (11 statuses).</p>
+
+<div class="options">
+  <div class="option" data-choice="same" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Same System, Asset-Enabled</h3>
+      <p>Just add an "asset_id" to the existing request. A job IS a request, but linked to an asset. Reuses all existing request workflows.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="separate" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>New Job System</h3>
+      <p>Jobs are separate from requests. A job has its own lifecycle: Created → Assigned → In Progress → Completed → Verified. Job and request can be linked but are distinct.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="hybrid" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Same Statuses, Job Terminology</h3>
+      <p>Reuse the request state machine but call it "job" in the UI. Link assets to requests via a new field. Keeps backend simpler.</p>
+    </div>
+  </div>
+</div>

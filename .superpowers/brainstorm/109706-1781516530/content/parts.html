@@ -1,0 +1,26 @@
+<h2>Parts & Components</h2>
+<p class="subtitle">How does this work?</p>
+
+<div class="options">
+  <div class="option" data-choice="tracked" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Tracked Sub-Assets</h3>
+      <p>Each part is its own asset record with a parent_id linking it to the main asset. Has its own QR code, service history, and lifecycle.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="inventory" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Inventory / Consumables</h3>
+      <p>Parts are inventory items (filters, belts, bulbs). Not individually tracked. Contractor records "used 2 filters" during a job.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="both-weird" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Both</h3>
+      <p>Major components are tracked as sub-assets. Consumables are inventory items. Different treatment for each.</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,38 @@
+<h2>Design: Database Schema</h2>
+
+<div class="section">
+<h3>New Tables</h3>
+<div class="pros-cons">
+<div class="pros"><h4><code>assets_v2</code></h4>
+<p>Same core fields as current (name, code, category, subCategory, status, criticality, manufacturer, model, serial#, customerId, locationId, dates, notes) <strong>plus:</strong></p>
+<ul>
+<li><code>qr_code</code> — unique identifier string</li>
+<li><code>photo_urls</code> — text[] (array of Supabase Storage URLs)</li>
+<li><code>assigned_contractor_id</code> — FK to contractors</li>
+<li><code>custom_fields</code> — JSONB (category-specific fields)</li>
+<li><code>lifecycle_status</code> — active/retired/moved/transferred</li>
+<li><code>parent_asset_id</code> — nullable FK, for component relationships</li>
+</ul>
+</div>
+<div class="cons"><h4><code>asset_parts</code></h4>
+<p>Inventory items used with assets</p>
+<ul>
+<li>id, asset_id (nullable), name, sku, quantity, min_threshold, unit</li>
+<li>Contractor records "used 2 filters" against a job</li>
+</ul>
+<h4><code>asset_part_usage</code></h4>
+<p>Tracks parts consumed during jobs</p>
+<ul>
+<li>id, part_id, request_id, quantity, used_by, used_at</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="section">
+<h3>Existing Table Changes</h3>
+<p><code>requests</code> — add nullable <code>asset_id</code> FK to <code>assets_v2</code></p>
+<p><code>assets</code> — left untouched, deprecated</p>
+</div>
+
+<p class="subtitle">Does this schema look right?</p>
