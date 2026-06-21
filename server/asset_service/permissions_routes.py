@@ -70,6 +70,13 @@ async def create_user(body: dict, session: dict = Depends(require_admin)):
             "INSERT INTO public.user_profiles (user_id, role) VALUES (%s::uuid, %s) ON CONFLICT (user_id) DO UPDATE SET role = %s",
             (uid, role, role)
         )
+        # Auto-create profiles entry for contractors so they appear in Contractors page
+        if role == "contractor":
+            profile_id = str(uuid.uuid4())
+            cur.execute(
+                "INSERT INTO public.profiles (id, user_id, profile_type, company_name, contact_name, contact_email, contact_phone_number, service_contact_name, service_contact_email, address_json) VALUES (%s::uuid, %s::uuid, 'contractor', '', '', %s, '', '', '', '{}') ON CONFLICT (user_id) DO NOTHING",
+                (profile_id, uid, email)
+            )
         conn.commit()
         cur.close()
         return {"ok": True, "user_id": uid, "email": email, "role": role}
@@ -112,6 +119,7 @@ async def update_user(user_id: str, body: dict, session: dict = Depends(require_
     role = body.get("role")
     if not role:
         raise HTTPException(400, detail="Role is required")
+    import uuid
     from asset_service.db import get_conn
     conn = get_conn()
     try:
@@ -122,6 +130,18 @@ async def update_user(user_id: str, body: dict, session: dict = Depends(require_
         )
         if cur.rowcount == 0:
             raise HTTPException(404, detail="User not found")
+        # Auto-create profiles entry if changing to contractor
+        if role == "contractor":
+            cur.execute("SELECT id FROM public.profiles WHERE user_id = %s::uuid", (user_id,))
+            if not cur.fetchone():
+                cur.execute("SELECT email FROM auth.users WHERE id = %s::uuid", (user_id,))
+                email_row = cur.fetchone()
+                email = email_row[0] if email_row else ""
+                profile_id = str(uuid.uuid4())
+                cur.execute(
+                    "INSERT INTO public.profiles (id, user_id, profile_type, company_name, contact_name, contact_email, contact_phone_number, service_contact_name, service_contact_email, address_json) VALUES (%s::uuid, %s::uuid, 'contractor', '', '', %s, '', '', '', '{}')",
+                    (profile_id, user_id, email)
+                )
         conn.commit()
         cur.close()
         return {"ok": True, "user_id": user_id, "role": role}
