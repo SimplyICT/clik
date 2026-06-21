@@ -32,9 +32,19 @@ Last updated: 2026-06-21 (session end)
 - Mobile: canEdit across 8 files, page-level guards on form pages
 - Mobile: replaced all `!isContractor` with `canEdit('assets')`
 
-### Service Worker Fix
-- Admin/portal SW: self-unregistering to clear old SW
-- Mobile SW: fixed fetch handler to fall back to cached shell
+### Auto-Provisioning
+- invite_tokens table with 7-day expiry
+- 3 API endpoints: send, accept, status
+- Accept-invite page at /invite/{token} with auto-redirect to mobile app
+- iOS browser detection + copyable link instructions for Safari
+- SMTP via SMTP2GO configured and verified
+- Session cookie bridge for iOS PWA auto-login
+- AuthGate component for race-condition-free auth flow
+
+### Contractor Profile Auto-Creation
+- Setting user role to "contractor" auto-creates profiles entry
+- Contractor immediately appears in Contractors page
+- Backward-compatible: existing contractors can be fixed via role update
 
 ## Project State
 - Firebase-to-Supabase migration: complete

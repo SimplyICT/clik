@@ -16,6 +16,10 @@ const SECTIONS = [
   { id: 'asset-submodules', title: 'Asset Sub-modules' },
   { id: 'asset-tables', title: 'Asset Database Tables' },
   { id: 'build-deploy', title: 'Build & Deploy' },
+  { id: 'permissions', title: 'Permissions System' },
+  { id: 'users', title: 'User Management' },
+  { id: 'auto-provisioning', title: 'Auto-Provisioning / Invite' },
+  { id: 'rate-limiting', title: 'Login Rate Limiting' },
 ];
 
 export default function DevDocsPage() {
@@ -290,6 +294,66 @@ contractor_completed → completed / cancelled</pre>
               <tr><td><code>python -m pytest server/tests/ -v</code></td><td>Run integration tests</td></tr>
             </tbody>
           </table>
+        </Section>
+
+        <Section id="permissions" title="Permissions System">
+          <p style={{ fontSize: 13, lineHeight: 1.6 }}>Role-based access control with per-resource view/edit permissions. Module in <code>server/permissions/</code>.</p>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead><tr style={{ borderBottom: '2px solid #e0e0e0' }}>
+              <th style={{ textAlign: 'left', padding: '4px 8px' }}>Endpoint</th><th style={{ textAlign: 'left', padding: '4px 8px' }}>Description</th>
+            </tr></thead>
+            <tbody>
+              <tr><td><code>GET /api/users/me/permissions</code></td><td>Get current user's permissions</td></tr>
+              <tr><td><code>GET /api/users/permissions/{user_id}</code></td><td>Admin: get user's permissions</td></tr>
+              <tr><td><code>PUT /api/users/permissions/{user_id}</code></td><td>Admin: set permissions</td></tr>
+              <tr><td><code>POST /api/users/permissions/{user_id}/seed</code></td><td>Admin: seed manager defaults</td></tr>
+            </tbody>
+          </table>
+          <p style={{ fontSize: 13, marginTop: 8 }}><strong>Backend dependency:</strong> <code>require_permission(resource, action)</code> — FastAPI dependency injected into routes. Resources: dashboard, assets, work_orders, requests, customers, contractors, locations, activity, users. Actions: view, edit.</p>
+          <p style={{ fontSize: 13 }}><strong>Database table:</strong> <code>user_permissions</code> — columns: user_id, resource, can_view, can_edit.</p>
+        </Section>
+
+        <Section id="users" title="User Management">
+          <p style={{ fontSize: 13, lineHeight: 1.6 }}>User CRUD with profile management, archiving, and permissions. Routes in <code>server/users.py</code>.</p>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead><tr style={{ borderBottom: '2px solid #e0e0e0' }}>
+              <th style={{ textAlign: 'left', padding: '4px 8px' }}>Endpoint</th><th style={{ textAlign: 'left', padding: '4px 8px' }}>Description</th>
+            </tr></thead>
+            <tbody>
+              <tr><td><code>POST /api/users</code></td><td>Create user (email, password, role)</td></tr>
+              <tr><td><code>PATCH /api/users/{user_id}</code></td><td>Update user role</td></tr>
+              <tr><td><code>DELETE /api/users/{user_id}</code></td><td>Delete user permanently</td></tr>
+              <tr><td><code>POST /api/users/{user_id}/archive</code></td><td>Archive user (soft delete)</td></tr>
+              <tr><td><code>GET /api/users/{user_id}/profile</code></td><td>Get profile details</td></tr>
+              <tr><td><code>PUT /api/users/{user_id}/profile</code></td><td>Update profile (name, phone, email, address)</td></tr>
+            </tbody>
+          </table>
+          <p style={{ fontSize: 13, marginTop: 8 }}>Setting <code>role=contractor</code> automatically creates a corresponding entry in the <code>profiles</code> table with <code>profile_type=contractor</code>.</p>
+        </Section>
+
+        <Section id="auto-provisioning" title="Auto-Provisioning / Invite">
+          <p style={{ fontSize: 13, lineHeight: 1.6 }}>Invite system sends magic-link emails for passwordless login. Module in <code>server/invite.py</code>.</p>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead><tr style={{ borderBottom: '2px solid #e0e0e0' }}>
+              <th style={{ textAlign: 'left', padding: '4px 8px' }}>Endpoint</th><th style={{ textAlign: 'left', padding: '4px 8px' }}>Description</th>
+            </tr></thead>
+            <tbody>
+              <tr><td><code>GET /api/invite/status/{user_id}</code></td><td>Check invite status</td></tr>
+              <tr><td><code>POST /api/invite/{user_id}</code></td><td>Send invite email</td></tr>
+              <tr><td><code>GET /api/invite/accept/{token}</code></td><td>Accept invite, creates session, sets cookie</td></tr>
+              <tr><td><code>GET /api/auth/cookie</code></td><td>Validate session cookie (for iOS PWA auto-login)</td></tr>
+            </tbody>
+          </table>
+          <p style={{ fontSize: 13, marginTop: 8 }}><strong>Database table:</strong> <code>invite_tokens</code> — columns: id, user_id, token, status (pending/accepted/expired), expires_at (7 days), created_at, accepted_at. Email sent via SMTP2GO (configured in <code>.env</code> as <code>SMTP_HOST</code> etc.).</p>
+        </Section>
+
+        <Section id="rate-limiting" title="Login Rate Limiting">
+          <p style={{ fontSize: 13, lineHeight: 1.6 }}>Rate limiting on the login endpoint to prevent brute-force attacks.</p>
+          <ul style={{ fontSize: 13, lineHeight: 1.6, paddingLeft: 20 }}>
+            <li><strong>Threshold:</strong> 5 failed attempts per IP per 60 seconds</li>
+            <li><strong>Config:</strong> <code>RATELIMIT_MAX</code> env var (defaults to 100 for API proxy)</li>
+            <li><strong>Implementation:</strong> In-memory counter tracked by IP, reset on successful login or timeout</li>
+          </ul>
         </Section>
       </div>
     </div>

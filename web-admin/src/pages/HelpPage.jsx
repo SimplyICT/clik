@@ -19,6 +19,9 @@ const SECTIONS = [
   { id: 'maintenance', title: 'Maintenance Schedules' },
   { id: 'import-export', title: 'Import / Export' },
   { id: 'qr-batch', title: 'QR Batch Labels' },
+  { id: 'permissions', title: 'Permissions' },
+  { id: 'users', title: 'User Management' },
+  { id: 'auto-provisioning', title: 'Invite & Auto-Provisioning' },
 ];
 
 export default function HelpPage() {
@@ -151,6 +154,26 @@ export default function HelpPage() {
             <li><strong>Web Push:</strong> Browser notifications on supported devices (Android Chrome, iOS PWA)</li>
             <li><strong>Pushover:</strong> Reliable iOS/Android push via Pushover app (configured server-side, requires Pushover app on phone)</li>
           </ul>
+        </Section>
+
+        <Section id="permissions" title="Permissions">
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>The permissions system lets you control which non-admin users can view and edit each area of the admin portal. Admin users have full access to everything by default.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Available resources:</strong> Dashboard, Assets, Work Orders, Requests, Customers, Contractors, Locations, Activity, Users.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>To manage permissions: navigate to <strong>Users</strong> page → select a user → use the <strong>View</strong>/<strong>Edit</strong> toggles in the matrix grid for each resource. The <strong>"Seed Manager Defaults"</strong> button fills in sensible defaults for manager roles. Changes take effect on next login or page refresh.</p>
+        </Section>
+
+        <Section id="users" title="User Management">
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>Manage user accounts from the <strong>Users</strong> page in the nav bar.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Create a user:</strong> Enter Email, Password, and select Role (admin/manager/user/contractor). Edit an existing user's role from the dropdown on their row.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Delete vs Archive:</strong> Delete removes the user permanently. Archive performs a soft delete — the user is disabled but their record is kept.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Profile editing:</strong> Click a user to edit their contact name, phone, email, and address. The address field includes autocomplete lookup — type an address and select from suggestions.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Permissions:</strong> Set per-user permissions from the matrix grid (see Permissions section). Search users by email.</p>
+        </Section>
+
+        <Section id="auto-provisioning" title="Invite &amp; Auto-Provisioning">
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>After creating a user, click <strong>Send Invite</strong> to email them a magic link. The link allows automatic login without entering a password.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>When a contractor clicks the link, they are auto-accepted and redirected to the mobile app, already logged in. On iOS, open the link in Safari for full PWA install support.</p>
+          <p style={{ fontSize: 13, lineHeight: 1.7 }}>Invite links expire in 7 days. Click <strong>Send Invite</strong> again to resend if the link has expired.</p>
         </Section>
       </div>
     </div>
