@@ -12,8 +12,6 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    fetch(e.request).catch(() =>
-      caches.match(e.request).then(r => r || caches.match('/'))
-    )
+    fetch(e.request).catch(() => caches.match('/'))
   );
 });
