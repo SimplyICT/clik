@@ -54,6 +54,8 @@ export default function UsersPage() {
   const [search, setSearch] = useState('');
   const [profileForm, setProfileForm] = useState({ contact_name: '', contact_phone: '', contact_email: '', address_line1: '', address_line2: '', city: '', state: '', postcode: '' });
   const [savingProfile, setSavingProfile] = useState(false);
+  const [inviteStatus, setInviteStatus] = useState({});
+  const [sendingInvite, setSendingInvite] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [lookupTimer, setLookupTimer] = useState(null);
@@ -65,6 +67,14 @@ export default function UsersPage() {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    if (!selectedUserId) return;
+    fetch(`/api/invite/status/${selectedUserId}`, { headers: { ...authHeaders() } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setInviteStatus(d); })
+      .catch(() => {});
+  }, [selectedUserId]);
 
   async function fetchUsers() {
     try {
@@ -245,6 +255,24 @@ export default function UsersPage() {
     }
   }
 
+  async function handleSendInvite() {
+    setSendingInvite(true);
+    setMessage(null);
+    try {
+      const resp = await fetch(`/api/invite/${selectedUserId}`, {
+        method: 'POST',
+        headers: { ...authHeaders() },
+      });
+      if (!resp.ok) throw new Error('Failed to send invite');
+      setInviteStatus(prev => ({ ...prev, invited: true, accepted: false }));
+      setMessage({ type: 'success', text: 'Invite sent successfully' });
+    } catch (e) {
+      setMessage({ type: 'error', text: 'Error sending invite: ' + e.message });
+    } finally {
+      setSendingInvite(false);
+    }
+  }
+
   async function handleCreate() {
     if (!createForm.email.trim() || !createForm.password.trim()) {
       setMessage({ type: 'error', text: 'Email and password are required' });
@@ -371,6 +399,17 @@ export default function UsersPage() {
               </div>
 
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  onClick={handleSendInvite}
+                  disabled={sendingInvite}
+                  style={{
+                    ...btnSecondary,
+                    color: inviteStatus.accepted ? '#22c55e' : '#f59e0b',
+                    borderColor: inviteStatus.accepted ? '#22c55e' : '#f59e0b',
+                  }}
+                >
+                  {sendingInvite ? 'Sending...' : inviteStatus.accepted ? '✓ Accepted' : inviteStatus.invited ? 'Resend Invite' : 'Send Invite'}
+                </button>
                 <button onClick={() => setShowDeleteConfirm(true)} style={btnDanger}>Delete User</button>
                 <button onClick={archiveUser} style={{ ...btnSecondary, color: '#f59e0b', borderColor: '#f59e0b' }}>Archive User</button>
                 <button onClick={seedDefaults} style={btnSecondary}>Reset to Manager Defaults</button>
