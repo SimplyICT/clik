@@ -43,10 +43,21 @@ Last updated: 2026-06-21 (session end)
 - User Management: create/edit/delete/archive/search + address autocomplete
 - ~186 tests across all modules
 
-## Next Session
-- **Auto-provisioning flow**: Email link → auto-register → PWA install → auto-login → full-screen mobile experience for contractors
-  - Generate unique invite link per user
-  - Click link creates account (no password)
-  - Auto-installs PWA icon
-  - Auto-signs in
-  - Full-screen mode like pwa.simplyclik.com/mobile
+## 2026-06-21 (Session 6 — Auto-Provisioning)
+- **Full auto-provisioning system**:
+  - `invite_tokens` table with 7-day expiry
+  - 3 API endpoints: send, accept, status
+  - Dedicated accept-invite page at `/invite/{token}` with PWA install prompt
+  - Invite button on UsersPage (Send / Resend / ✓ Accepted)
+  - SMTP configured (SMTP2GO: mail-au.smtp2go.com:2525)
+  - Email verified working
+  - Full flow tested end-to-end
+- Design spec: `docs/superpowers/specs/2026-06-21-auto-provisioning-design.md`
+- Implementation plan: `docs/superpowers/plans/2026-06-21-auto-provisioning.md`
+
+## Project State
+- All major systems complete
+- Permissions Matrix ✅
+- User Management ✅
+- Auto-Provisioning ✅
+- Infrastructure (CI/CD + rate limiting) ✅

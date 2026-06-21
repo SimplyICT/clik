@@ -59,6 +59,8 @@ async function init() {
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
     localStorage.setItem('_remember', 'true');
+    sessionStorage.setItem('invite_token', data.token);
+    sessionStorage.setItem('invite_user', JSON.stringify(data.user));
     document.getElementById('loading').style.display = 'none';
     document.getElementById('success').style.display = 'block';
   } catch (e) {
@@ -74,7 +76,8 @@ function installApp() {
 }
 
 function openApp() {
-  window.location.href = '/mobile/';
+  const t = localStorage.getItem('token');
+  window.location.href = '/mobile/' + (t ? '?token=' + t : '');
 }
 
 init();

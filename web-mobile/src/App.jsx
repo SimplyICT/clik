@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { getUser, logout, canView } from './api/client';
+import { setItem } from './api/storage';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import JobsPage from './pages/JobsPage';
@@ -15,6 +16,27 @@ import AssetFormPage from './pages/AssetFormPage';
 import QRScannerPage from './pages/QRScannerPage';
 import CreateJobPage from './pages/CreateJobPage';
 import RecordPartsPage from './pages/RecordPartsPage';
+
+function TokenHandler() {
+  const nav = useNavigate();
+  const loc = useLocation();
+  useEffect(() => {
+    const params = new URLSearchParams(loc.search);
+    const token = params.get('token');
+    if (token) {
+      setItem('token', token);
+      setItem('_remember', 'true');
+      const inviteUser = sessionStorage.getItem('invite_user');
+      if (inviteUser) {
+        try { setItem('user', inviteUser); } catch {}
+        sessionStorage.removeItem('invite_user');
+      }
+      sessionStorage.removeItem('invite_token');
+      nav(loc.pathname, { replace: true });
+    }
+  }, []);
+  return null;
+}
 
 function RequireAuth({ children }) {
   if (!getUser()) return <Navigate to="/login" replace />;
@@ -71,6 +93,7 @@ function Layout({ children, title }) {
 export default function App() {
   return (
     <BrowserRouter basename="/mobile">
+      <TokenHandler />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<RequireAuth><Layout><DashboardPage /></Layout></RequireAuth>} />
