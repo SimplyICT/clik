@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { q, create } from '../api/client';
+import { q, create, canEdit } from '../api/client';
 
 const ST_COLORS = { pending_approval:'#94a3b8', awaiting_acceptance:'#38bdf8', awaiting_quote:'#f59e0b', pending_quote_approval:'#f59e0b', accepted:'#22c55e', rfi:'#ef4444', in_progress:'#3b82f6', contractor_completed:'#22c55e', completed:'#22c55e', declined:'#ef4444', cancelled:'#ef4444' };
 const TYPES = ['Air Conditioning','Cleaning','Electrical','General Maintenance','Painting','Plumbing','Refrigeration'];
@@ -35,9 +35,9 @@ export default function RequestsPage() {
 
   return (
     <div>
-      <button onClick={() => setShowForm(!showForm)} style={{ width: '100%', padding: '12px', borderRadius: 8, border: 'none', background: '#00d4ff', color: '#000', fontWeight: 700, fontSize: 15, cursor: 'pointer', marginBottom: 12 }}>
+      {canEdit('requests') && <button onClick={() => setShowForm(!showForm)} style={{ width: '100%', padding: '12px', borderRadius: 8, border: 'none', background: '#00d4ff', color: '#000', fontWeight: 700, fontSize: 15, cursor: 'pointer', marginBottom: 12 }}>
         {showForm ? 'Cancel' : '+ New Request'}
-      </button>
+      </button>}
 
       {showForm && (
         <div style={{ background: '#fff', borderRadius: 10, padding: 16, marginBottom: 12 }}>

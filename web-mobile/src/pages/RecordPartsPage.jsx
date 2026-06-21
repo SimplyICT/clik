@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { canEdit } from '../api/client';
 
 const TOKEN = () => localStorage.getItem('token');
 const headers = () => ({ 'Authorization': `Bearer ${TOKEN()}`, 'Content-Type': 'application/json' });
@@ -19,6 +20,7 @@ async function apiPost(path, body) {
 export default function RecordPartsPage() {
   const { id } = useParams();
   const nav = useNavigate();
+  useEffect(() => { if (!canEdit('assets')) nav(-1); }, []);
   const [parts, setParts] = useState([]);
   const [selectedPart, setSelectedPart] = useState('');
   const [quantity, setQuantity] = useState(1);

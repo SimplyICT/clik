@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { q } from '../api/client';
+import { q, canEdit } from '../api/client';
 
 export default function ManagePage() {
   const [users, setUsers] = useState([]);
@@ -59,7 +59,9 @@ export default function ManagePage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2 style={{ fontSize: 20 }}>User Management ({users.length})</h2>
-        <button onClick={openAdd} style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>+ Add User</button>
+        {canEdit('users') && (
+          <button onClick={openAdd} style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>+ Add User</button>
+        )}
       </div>
 
       {users.length === 0 ? (
@@ -77,7 +79,9 @@ export default function ManagePage() {
                 <td style={{ padding: '10px 14px', fontWeight: 600 }}>{u.email}</td>
                 <td style={{ padding: '10px 14px' }}><span style={{ background: u.role === 'Manager' ? '#38bdf8' : u.role === 'Operator' ? '#f59e0b' : '#94a3b8', color: '#fff', padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 600 }}>{u.role}</span></td>
                 <td style={{ padding: '10px 14px' }}>
-                  <button onClick={() => openEdit(u)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16 }}>✏️</button>
+                  {canEdit('users') && (
+                    <button onClick={() => openEdit(u)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16 }}>✏️</button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -111,7 +115,9 @@ export default function ManagePage() {
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
               <button onClick={() => setShowModal(false)} style={{ padding: '8px 16px', borderRadius: 4, border: '1px solid #ddd', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
-              <button onClick={handleSave} disabled={saving} style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>{saving ? 'Saving...' : 'Save'}</button>
+              {canEdit('users') && (
+                <button onClick={handleSave} disabled={saving} style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>{saving ? 'Saving...' : 'Save'}</button>
+              )}
             </div>
           </div>
         </div>

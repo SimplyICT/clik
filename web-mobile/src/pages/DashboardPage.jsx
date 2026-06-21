@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { q } from '../api/client';
+import { q, canEdit } from '../api/client';
 import PushSetup from './PushSetup';
 
 const ST_COLORS = { pending_approval:'#94a3b8', awaiting_acceptance:'#38bdf8', awaiting_quote:'#f59e0b', pending_quote_approval:'#f59e0b', accepted:'#22c55e', rfi:'#ef4444', in_progress:'#3b82f6', contractor_completed:'#22c55e', completed:'#22c55e', declined:'#ef4444', cancelled:'#ef4444' };
@@ -162,7 +162,7 @@ function ManagerView({ nav }) {
         <QuickTile label="Sites" value={loading ? '…' : sc} color="#00d4ff" onClick={() => nav('/sites')} />
         <QuickTile label="Requests" value={loading ? '…' : rc} color="#ff9500" onClick={() => nav('/requests')} />
       </div>
-      <button onClick={() => nav('/requests/new')} style={{ width: '100%', padding: '14px', borderRadius: 8, border: 'none', background: '#00d4ff', color: '#000', fontWeight: 700, fontSize: 16, cursor: 'pointer' }}>+ New Request</button>
+      {canEdit('requests') && <button onClick={() => nav('/requests/new')} style={{ width: '100%', padding: '14px', borderRadius: 8, border: 'none', background: '#00d4ff', color: '#000', fontWeight: 700, fontSize: 16, cursor: 'pointer' }}>+ New Request</button>}
     </div>
   );
 }

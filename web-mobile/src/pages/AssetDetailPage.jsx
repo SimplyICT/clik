@@ -100,7 +100,7 @@ export default function AssetDetailPage() {
       <div style={{ background: '#fff', borderRadius: 10, padding: 14, marginBottom: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <h4 style={{ fontSize: 14, margin: 0 }}>Parts ({parts.length})</h4>
-          {!isContractor && (
+          {canEdit('assets') && (
             <button onClick={() => nav(`/assets/${id}/record-parts`)}
               style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: '#00d4ff', color: '#000', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
               + Record
@@ -134,8 +134,8 @@ export default function AssetDetailPage() {
       {/* Action Buttons */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
         {canEdit('assets') && <ActionBtn color="#22c55e" label="Create Job" onClick={() => nav(`/assets/${id}/create-job`)} />}
-        {!isContractor && <ActionBtn color="#00d4ff" label="Edit Asset" onClick={() => nav(`/assets/${id}/edit`)} />}
-        {!isContractor && asset.status !== 'retired' && asset.status !== 'disposed' && (
+        {canEdit('assets') && <ActionBtn color="#00d4ff" label="Edit Asset" onClick={() => nav(`/assets/${id}/edit`)} />}
+        {canEdit('assets') && asset.status !== 'retired' && asset.status !== 'disposed' && (
           <>
             {showRetireConfirm
               ? <div style={{ display: 'flex', gap: 8 }}>

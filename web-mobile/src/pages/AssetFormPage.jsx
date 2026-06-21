@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { canEdit } from '../api/client';
 import ImageUpload, { uploadImages } from './ImageUpload';
 
 const TOKEN = () => localStorage.getItem('token');
@@ -34,6 +35,7 @@ const CRITICALITY = ['low', 'medium', 'high', 'critical'];
 export default function AssetFormPage() {
   const { id } = useParams();
   const nav = useNavigate();
+  useEffect(() => { if (!canEdit('assets')) nav(-1); }, []);
   const isEdit = Boolean(id);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { q } from '../api/client';
+import { q, canEdit } from '../api/client';
 
 export default function ManagerSitesPage() {
   const [sites, setSites] = useState([]);
@@ -23,7 +23,7 @@ export default function ManagerSitesPage() {
 
   return (
     <div>
-      <button onClick={() => nav('/requests/new')} style={{ width: '100%', padding: '12px', borderRadius: 8, border: 'none', background: '#00d4ff', color: '#000', fontWeight: 700, fontSize: 15, cursor: 'pointer', marginBottom: 12 }}>+ New Request</button>
+      {canEdit('requests') && <button onClick={() => nav('/requests/new')} style={{ width: '100%', padding: '12px', borderRadius: 8, border: 'none', background: '#00d4ff', color: '#000', fontWeight: 700, fontSize: 15, cursor: 'pointer', marginBottom: 12 }}>+ New Request</button>}
       {sites.length === 0 ? <Centered>No sites assigned to your account</Centered> : sites.map(s => (
         <div key={s.id} onClick={() => setSelected(selected?.id === s.id ? null : s)} style={{ background: '#fff', borderRadius: 8, padding: '12px 14px', marginBottom: 6, border: '1px solid #e0e0e0', cursor: 'pointer' }}>
           <div style={{ fontWeight: 600, fontSize: 14 }}>{s.companyName}</div>

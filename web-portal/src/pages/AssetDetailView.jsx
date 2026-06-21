@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { authHeaders, create } from '../api/client';
+import { authHeaders, create, canEdit } from '../api/client';
 
 const API = '/api/asset-management';
 const SERVICE_TYPES = ['Air Conditioning','Cleaning','Electrical','General Maintenance','Painting','Plumbing','Refrigeration'];
@@ -201,10 +201,12 @@ export default function AssetDetailView({ asset, onClose, onAssetUpdated }) {
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
             <textarea value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Type your note..." rows={2}
               style={{ flex: 1, padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box', resize: 'vertical' }} />
-            <button onClick={addNote} disabled={!noteText.trim() || noteSaving}
-              style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontWeight: 600, fontSize: 13, opacity: noteText.trim() && !noteSaving ? 1 : 0.5 }}>
-              {noteSaving ? 'Saving...' : 'Add'}
-            </button>
+            {canEdit('assets') && (
+              <button onClick={addNote} disabled={!noteText.trim() || noteSaving}
+                style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontWeight: 600, fontSize: 13, opacity: noteText.trim() && !noteSaving ? 1 : 0.5 }}>
+                {noteSaving ? 'Saving...' : 'Add'}
+              </button>
+            )}
           </div>
         </div>
 
@@ -233,10 +235,12 @@ export default function AssetDetailView({ asset, onClose, onAssetUpdated }) {
           )}
         </div>
 
-        <button onClick={() => setShowRequestService(true)}
-          style={{ padding: '10px 24px', borderRadius: 4, border: 'none', background: '#1a1a2e', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
-          Request Service
-        </button>
+        {canEdit('requests') && (
+          <button onClick={() => setShowRequestService(true)}
+            style={{ padding: '10px 24px', borderRadius: 4, border: 'none', background: '#1a1a2e', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+            Request Service
+          </button>
+        )}
       </div>
 
       {showRequestService && (
@@ -257,9 +261,11 @@ export default function AssetDetailView({ asset, onClose, onAssetUpdated }) {
             </select>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
               <button onClick={() => setShowRequestService(false)} style={{ padding: '8px 16px', borderRadius: 4, border: '1px solid #ddd', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
-              <button onClick={handleRequestService} disabled={creating} style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
-                {creating ? 'Creating...' : 'Submit Request'}
-              </button>
+              {canEdit('requests') && (
+                <button onClick={handleRequestService} disabled={creating} style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+                  {creating ? 'Creating...' : 'Submit Request'}
+                </button>
+              )}
             </div>
           </div>
         </div>

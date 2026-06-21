@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { q, create, update, customerFilter } from '../api/client';
+import { q, create, update, customerFilter, canEdit } from '../api/client';
 
 const TABS = [
   { key: 'pending', label: 'Pending', statuses: ['pending_approval','rfi','awaiting_quote','pending_quote_approval'] },
@@ -136,7 +136,9 @@ export default function RequestsPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2 style={{ fontSize: 20 }}>Requests ({all.length})</h2>
-        <button onClick={() => setShowCreate(true)} style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>+ New Request</button>
+        {canEdit('requests') && (
+          <button onClick={() => setShowCreate(true)} style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>+ New Request</button>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
@@ -209,7 +211,7 @@ export default function RequestsPage() {
               </div>
             )}
 
-            {detail.status === 'pending_quote_approval' && (
+            {detail.status === 'pending_quote_approval' && canEdit('requests') && (
               <div style={{ marginBottom: 20, display: 'flex', gap: 8 }}>
                 <button onClick={() => doAction('awaiting_acceptance')} disabled={actionLoading}
                   style={{ padding: '10px 24px', borderRadius: 4, border: 'none', background: '#22c55e', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
@@ -221,7 +223,7 @@ export default function RequestsPage() {
                 </button>
               </div>
             )}
-            {detail.status === 'awaiting_acceptance' && (
+            {detail.status === 'awaiting_acceptance' && canEdit('requests') && (
               <div style={{ marginBottom: 20 }}>
                 <button onClick={() => doAction('accepted')} disabled={actionLoading}
                   style={{ padding: '10px 24px', borderRadius: 4, border: 'none', background: '#22c55e', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
@@ -229,7 +231,7 @@ export default function RequestsPage() {
                 </button>
               </div>
             )}
-            {detail.status === 'rfi' && (
+            {detail.status === 'rfi' && canEdit('requests') && (
               <div style={{ marginBottom: 20, padding: 16, background: '#fef2f2', borderRadius: 6, border: '1px solid #fecaca' }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#991b1b', marginBottom: 8 }}>Additional information needed</div>
                 <textarea value={noteText} onChange={e => setNoteText(e.target.value)} rows={2} placeholder="Type your response..."
@@ -262,10 +264,12 @@ export default function RequestsPage() {
                 <input value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Add a note..."
                   onKeyDown={e => e.key === 'Enter' && addNote()}
                   style={{ flex: 1, padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }} />
-                <button onClick={addNote} disabled={!noteText.trim()}
-                  style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontWeight: 600, fontSize: 13, opacity: noteText.trim() ? 1 : 0.5 }}>
-                  Add
-                </button>
+                {canEdit('requests') && (
+                  <button onClick={addNote} disabled={!noteText.trim()}
+                    style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontWeight: 600, fontSize: 13, opacity: noteText.trim() ? 1 : 0.5 }}>
+                    Add
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -297,7 +301,9 @@ export default function RequestsPage() {
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
               <button onClick={() => setShowCreate(false)} style={{ padding: '8px 16px', borderRadius: 4, border: '1px solid #ddd', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
-              <button onClick={handleCreate} disabled={creating} style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>{creating ? 'Creating...' : 'Create'}</button>
+              {canEdit('requests') && (
+                <button onClick={handleCreate} disabled={creating} style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>{creating ? 'Creating...' : 'Create'}</button>
+              )}
             </div>
           </div>
         </div>

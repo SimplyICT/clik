@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { canEdit } from '../api/client';
 
 const TOKEN = () => localStorage.getItem('token');
 const headers = () => ({ 'Authorization': `Bearer ${TOKEN()}`, 'Content-Type': 'application/json' });
@@ -24,6 +25,7 @@ const PRIORITIES = [
 export default function CreateJobPage() {
   const { id } = useParams();
   const nav = useNavigate();
+  useEffect(() => { if (!canEdit('assets')) nav(-1); }, []);
   const [jobType, setJobType] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('medium');
