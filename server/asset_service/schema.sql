@@ -1,3 +1,16 @@
+-- Invite tokens for auto-provisioning (magic link onboarding)
+CREATE TABLE IF NOT EXISTS invite_tokens (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL,
+    token TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '7 days',
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_by UUID
+);
+
+CREATE INDEX IF NOT EXISTS idx_invite_tokens_token ON invite_tokens(token);
+
 -- Asset Management System - Schema
 -- New tables only. No ALTER on existing tables.
 
