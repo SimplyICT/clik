@@ -28,5 +28,11 @@ Last updated: 2026-06-20 (session end)
 - ~186 tests across all modules
 
 ## Next Steps
-- Portal/mobile permission integration (currently admin-portal only)
-- Infrastructure hardening: rate limiting, CI/CD pipeline
+- (none — all items complete)
+
+## 2026-06-20 (Session 5 — Permissions polish + infrastructure)
+- Added login rate limiting (5 attempts/min per IP)
+- Created CI/CD pipeline: `.github/workflows/ci.yml` (lint + test + build on push/PR)
+- Portal: Added `canEdit` guards to AssetDetailView, RequestsPage, ManagePage
+- Mobile: Replaced `!isContractor` with `canEdit` across 8 files, added page-level guards
+- Pushed to https://github.com/SimplyICT/clik
