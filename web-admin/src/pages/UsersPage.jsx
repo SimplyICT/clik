@@ -36,6 +36,8 @@ const btnSecondary = {
   padding: '8px 20px', borderRadius: 6, border: '1px solid #d1d5db', background: '#f3f4f6', color: '#374151', cursor: 'pointer', fontWeight: 600, fontSize: 13,
 };
 
+let activeReq = 0;
+
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
@@ -68,6 +70,7 @@ export default function UsersPage() {
   }
 
   async function selectUser(user) {
+    const req = ++activeReq;
     setSelectedUserId(user.id);
     setSelectedUserData(user);
     setMessage(null);
@@ -77,6 +80,7 @@ export default function UsersPage() {
       });
       if (!resp.ok) throw new Error('Failed to fetch permissions');
       const data = await resp.json();
+      if (req !== activeReq) return;
       const perms = data.permissions || {};
       const filled = {};
       for (const r of RESOURCES) {
@@ -84,7 +88,9 @@ export default function UsersPage() {
       }
       setPermissions(filled);
     } catch (e) {
-      setMessage({ type: 'error', text: 'Error loading permissions: ' + e.message });
+      if (req === activeReq) {
+        setMessage({ type: 'error', text: 'Error loading permissions: ' + e.message });
+      }
     }
   }
 
