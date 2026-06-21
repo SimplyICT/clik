@@ -1,5 +1,11 @@
-const CACHE = 'simplyclik-admin-v1';
+const CACHE = 'simplyclik-admin-v2';
 const ASSETS = ['/', '/manifest.json', '/icon-192.svg'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS))); self.skipWaiting(); });
 self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
-self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request).catch(() => caches.match(e.request))); });
+self.addEventListener('fetch', (e) => {
+  e.respondWith(
+    fetch(e.request).catch(() =>
+      caches.match(e.request).then(r => r || caches.match('/'))
+    )
+  );
+});
