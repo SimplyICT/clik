@@ -121,6 +121,7 @@ export default function RequestsPage() {
             {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
           <button onClick={() => setShowCreate(true)} style={{ padding: '8px 16px', borderRadius: 4, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>+ New Request</button>
+          <button onClick={() => { console.log('TEST CLICK'); setDetail({id:'test', title:'Test Request', status:'pending_approval', serviceType:'Test', priority:'high', requestStartDate:null, description:'Test'}); }} style={{ padding: '8px 12px', borderRadius: 4, border: '1px solid #f00', cursor: 'pointer', fontSize: 12 }}>Test Detail Panel</button>
         </div>
       </div>
 
@@ -135,7 +136,7 @@ export default function RequestsPage() {
         </tr></thead>
         <tbody>
           {filtered.map(r => (
-            <tr key={r.id} style={{ borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }} onClick={() => { setDetail(r); setEditForm(null); }}>
+            <tr key={r.id} style={{ borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }} onClick={() => { console.log('ROW CLICKED', r.id); setDetail(r); setEditForm(null); }}>
               <td style={{ padding: '10px 14px', fontWeight: 600 }}>{r.title}</td>
               <td style={{ padding: '10px 14px' }}>
                 <span style={{ background: STATUS_MAP[r.status]?.color || '#94a3b8', color: '#fff', padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 600 }}>
