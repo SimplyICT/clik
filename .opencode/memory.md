@@ -1,38 +1,52 @@
 # SimplyClik — Project Memory
 
-Last updated: 2026-06-20 (session end)
+Last updated: 2026-06-21 (session end)
 
-## Active Tasks
-- **Permissions Matrix System** — Complete ✅
-  - Subagent-driven development with spec + code quality reviews per task
-  - 10 tasks, 10 commits
+## 2026-06-20/21 (Session 5+ — Permissions Matrix + Infrastructure + User Mgmt)
 
-## 2026-06-20 (Session 5 — Permissions Matrix System)
-- **Full implementation** of granular per-resource permissions:
-  - DB: `user_permissions` table (user_id, resource, can_view, can_edit)
-  - Backend: `permissions.py` with `has_permission`, `get_user_permissions`, `seed_manager_defaults`, `set_user_permissions`, `require_permission` dependency factory
-  - Backend: 4 new API endpoints (`GET/PUT /api/users/permissions/{id}`, `GET /api/users/me/permissions`, `POST .../seed`)
-  - Login response now includes `permissions` field; manager defaults auto-seeded on login
-  - Route guard migration: 12 endpoints across 6 route files migrated from ad-hoc `is_admin` checks to `require_permission`
-  - Frontend: `canView(resource)`/`canEdit(resource)` helpers in client.js
-  - Frontend: UsersPage with permission matrix UI (user list + resource×view/edit grid)
-  - Frontend: /users route + nav link, AssetManagementPage tab guards updated
-  - 10 new tests (all passing), ~186+ total tests
-- Design spec: `docs/superpowers/specs/2026-06-20-permissions-matrix-design.md`
-- Implementation plan: `docs/superpowers/plans/2026-06-20-permissions-matrix.md`
+### Permissions Matrix System — Complete ✅
+- DB: `user_permissions` table (user_id, resource, can_view, can_edit)
+- Backend: `has_permission`, `get_user_permissions`, `seed_manager_defaults`, `set_user_permissions`, `require_permission` dependency
+- 4 API endpoints for managing permissions
+- Login returns `permissions` field; manager defaults auto-seeded
+- Route guard migration: 12 endpoints across 6 files → `require_permission`
+- Frontend: `canView`/`canEdit` helpers, UsersPage with permission matrix
+
+### Infrastructure
+- Login rate limiting (5/min per IP)
+- CI/CD pipeline: `.github/workflows/ci.yml`
+- Pushed to https://github.com/SimplyICT/clik
+
+### User Management (UsersPage)
+- User CRUD API: create, list, update role, delete, archive
+- User profile: contact_name, contact_phone, contact_email
+- Address fields: address_line1, address_line2, city, state, postcode
+- Address autocomplete via OpenStreetMap Nominatim API
+- Search/filter user list
+- Archive (soft delete) + hard delete
+- Professional card-based UI with role badges
+- Requests detail panel: redesigned as centered modal with edit capability
+
+### Portal/Mobile Permission Gating
+- Portal: canEdit guards on AssetDetailView, RequestsPage, ManagePage
+- Mobile: canEdit across 8 files, page-level guards on form pages
+- Mobile: replaced all `!isContractor` with `canEdit('assets')`
+
+### Service Worker Fix
+- Admin/portal SW: self-unregistering to clear old SW
+- Mobile SW: fixed fetch handler to fall back to cached shell
 
 ## Project State
 - Firebase-to-Supabase migration: complete
-- Asset Management System v2: complete ✅ (all 4 phases, all polish)
-- Permissions Matrix System: complete ✅ (view/edit per resource, admin bypass, manager defaults, contractor custom)
+- Asset Management System v2: complete
+- Permissions Matrix System: complete
+- User Management: create/edit/delete/archive/search + address autocomplete
 - ~186 tests across all modules
 
-## Next Steps
-- (none — all items complete)
-
-## 2026-06-20 (Session 5 — Permissions polish + infrastructure)
-- Added login rate limiting (5 attempts/min per IP)
-- Created CI/CD pipeline: `.github/workflows/ci.yml` (lint + test + build on push/PR)
-- Portal: Added `canEdit` guards to AssetDetailView, RequestsPage, ManagePage
-- Mobile: Replaced `!isContractor` with `canEdit` across 8 files, added page-level guards
-- Pushed to https://github.com/SimplyICT/clik
+## Next Session
+- **Auto-provisioning flow**: Email link → auto-register → PWA install → auto-login → full-screen mobile experience for contractors
+  - Generate unique invite link per user
+  - Click link creates account (no password)
+  - Auto-installs PWA icon
+  - Auto-signs in
+  - Full-screen mode like pwa.simplyclik.com/mobile
