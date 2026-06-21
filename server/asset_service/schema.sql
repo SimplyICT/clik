@@ -182,3 +182,6 @@ CREATE TABLE IF NOT EXISTS user_permissions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_user_permissions_user_id ON user_permissions(user_id);
+
+-- User management: archived flag + profile fields
+ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS archived BOOLEAN NOT NULL DEFAULT false;
