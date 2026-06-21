@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { canEdit } from '../api/client';
 
 const TOKEN = () => localStorage.getItem('token');
 const headers = () => ({ 'Authorization': `Bearer ${TOKEN()}`, 'Content-Type': 'application/json' });
@@ -56,14 +57,18 @@ export default function AssetsPage() {
             style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: 'pointer', fontSize: 12 }}>
             {refreshing ? '...' : '↻'}
           </button>
-          <button onClick={() => nav('/qr-scanner')}
-            style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#1a1a2e', color: '#fff', cursor: 'pointer', fontSize: 12 }}>
-            QR Scan
-          </button>
-          <button onClick={() => nav('/assets/new')}
-            style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-            + New
-          </button>
+          {canEdit('assets') && (
+            <button onClick={() => nav('/qr-scanner')}
+              style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#1a1a2e', color: '#fff', cursor: 'pointer', fontSize: 12 }}>
+              QR Scan
+            </button>
+          )}
+          {canEdit('assets') && (
+            <button onClick={() => nav('/assets/new')}
+              style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#00d4ff', color: '#000', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+              + New
+            </button>
+          )}
         </div>
       </div>
 
