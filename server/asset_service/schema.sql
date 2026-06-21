@@ -185,3 +185,9 @@ CREATE INDEX IF NOT EXISTS idx_user_permissions_user_id ON user_permissions(user
 
 -- User management: archived flag + profile fields
 ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS archived BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS address_line1 TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS address_line2 TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS city TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS state TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS postcode TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_user_id ON public.profiles(user_id);

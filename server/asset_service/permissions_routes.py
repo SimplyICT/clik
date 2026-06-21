@@ -163,7 +163,8 @@ async def get_user_profile(user_id: str, session: dict = Depends(require_admin))
     try:
         cur = conn.cursor()
         cur.execute("""
-            SELECT up.role, up.archived, p.contact_name, p.contact_phone_number, p.contact_email, p.company_name, p.customer_id
+            SELECT up.role, up.archived, p.contact_name, p.contact_phone_number, p.contact_email,
+                   p.company_name, p.customer_id, p.address_line1, p.address_line2, p.city, p.state, p.postcode
             FROM public.user_profiles up
             LEFT JOIN public.profiles p ON p.user_id = up.user_id
             WHERE up.user_id = %s::uuid
@@ -171,7 +172,10 @@ async def get_user_profile(user_id: str, session: dict = Depends(require_admin))
         row = cur.fetchone()
         cur.close()
         if not row:
-            return {"user_id": user_id, "role": None, "archived": False, "contact_name": None, "contact_phone": None, "contact_email": None, "company_name": None, "customer_id": None}
+            return {"user_id": user_id, "role": None, "archived": False, "contact_name": None,
+                    "contact_phone": None, "contact_email": None, "company_name": None,
+                    "customer_id": None, "address_line1": None, "address_line2": None,
+                    "city": None, "state": None, "postcode": None}
         return {
             "user_id": user_id,
             "role": row[0],
@@ -181,6 +185,11 @@ async def get_user_profile(user_id: str, session: dict = Depends(require_admin))
             "contact_email": row[4],
             "company_name": row[5],
             "customer_id": str(row[6]) if row[6] else None,
+            "address_line1": row[7],
+            "address_line2": row[8],
+            "city": row[9],
+            "state": row[10],
+            "postcode": row[11],
         }
     except Exception as e:
         raise HTTPException(500, detail=str(e))
@@ -193,18 +202,32 @@ async def update_user_profile(user_id: str, body: dict, session: dict = Depends(
     contact_name = body.get("contact_name")
     contact_phone = body.get("contact_phone")
     contact_email = body.get("contact_email")
+    address_line1 = body.get("address_line1")
+    address_line2 = body.get("address_line2")
+    city = body.get("city")
+    state = body.get("state")
+    postcode = body.get("postcode")
     from asset_service.db import get_conn
     conn = get_conn()
     try:
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO public.profiles (user_id, profile_type, contact_name, contact_phone_number, contact_email)
-            VALUES (%s::uuid, 'user', %s, %s, %s)
+            INSERT INTO public.profiles (user_id, profile_type, contact_name, contact_phone_number,
+                contact_email, address_line1, address_line2, city, state, postcode)
+            VALUES (%s::uuid, 'user', %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (user_id) DO UPDATE SET
                 contact_name = COALESCE(%s, profiles.contact_name),
                 contact_phone_number = COALESCE(%s, profiles.contact_phone_number),
-                contact_email = COALESCE(%s, profiles.contact_email)
-        """, (user_id, contact_name, contact_phone, contact_email, contact_name, contact_phone, contact_email))
+                contact_email = COALESCE(%s, profiles.contact_email),
+                address_line1 = COALESCE(%s, profiles.address_line1),
+                address_line2 = COALESCE(%s, profiles.address_line2),
+                city = COALESCE(%s, profiles.city),
+                state = COALESCE(%s, profiles.state),
+                postcode = COALESCE(%s, profiles.postcode)
+        """, (user_id, contact_name, contact_phone, contact_email,
+              address_line1, address_line2, city, state, postcode,
+              contact_name, contact_phone, contact_email,
+              address_line1, address_line2, city, state, postcode))
         conn.commit()
         cur.close()
         return {"ok": True}

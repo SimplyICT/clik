@@ -52,8 +52,11 @@ export default function UsersPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [updatingRole, setUpdatingRole] = useState(false);
   const [search, setSearch] = useState('');
-  const [profileForm, setProfileForm] = useState({ contact_name: '', contact_phone: '', contact_email: '' });
+  const [profileForm, setProfileForm] = useState({ contact_name: '', contact_phone: '', contact_email: '', address_line1: '', address_line2: '', city: '', state: '', postcode: '' });
   const [savingProfile, setSavingProfile] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [lookupTimer, setLookupTimer] = useState(null);
 
   const filteredUsers = users.filter(u =>
     !search || u.email.toLowerCase().includes(search.toLowerCase())
@@ -109,6 +112,11 @@ export default function UsersPage() {
           contact_name: profData.contact_name || '',
           contact_phone: profData.contact_phone || '',
           contact_email: profData.contact_email || '',
+          address_line1: profData.address_line1 || '',
+          address_line2: profData.address_line2 || '',
+          city: profData.city || '',
+          state: profData.state || '',
+          postcode: profData.postcode || '',
         });
       }
     } catch(e) { /* ignore */ }
@@ -208,7 +216,7 @@ export default function UsersPage() {
       setSelectedUserId(null);
       setSelectedUserData(null);
       setPermissions({});
-      setProfileForm({ contact_name: '', contact_phone: '', contact_email: '' });
+      setProfileForm({ contact_name: '', contact_phone: '', contact_email: '', address_line1: '', address_line2: '', city: '', state: '', postcode: '' });
       setShowDeleteConfirm(false);
       setMessage({ type: 'success', text: 'User deleted successfully' });
     } catch (e) {
@@ -230,7 +238,7 @@ export default function UsersPage() {
       setSelectedUserId(null);
       setSelectedUserData(null);
       setPermissions({});
-      setProfileForm({ contact_name: '', contact_phone: '', contact_email: '' });
+      setProfileForm({ contact_name: '', contact_phone: '', contact_email: '', address_line1: '', address_line2: '', city: '', state: '', postcode: '' });
       setMessage({ type: 'success', text: 'User archived successfully' });
     } catch (e) {
       setMessage({ type: 'error', text: 'Error archiving user: ' + e.message });
@@ -390,6 +398,81 @@ export default function UsersPage() {
                 <input value={profileForm.contact_email} onChange={e => setProfileForm({...profileForm, contact_email: e.target.value})}
                   style={{ ...inputStyle }} placeholder="Contact email" />
               </div>
+
+              <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '14px 0' }} />
+
+              <label style={{ fontSize: 11, color: '#888' }}>Search Address</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  placeholder="Start typing an address..."
+                  onChange={e => {
+                    const q = e.target.value;
+                    if (lookupTimer) clearTimeout(lookupTimer);
+                    if (q.length < 3) { setSuggestions([]); setShowSuggestions(false); return; }
+                    setLookupTimer(setTimeout(async () => {
+                      try {
+                        const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=5`);
+                        if (!r.ok) return;
+                        setSuggestions(await r.json());
+                        setShowSuggestions(true);
+                      } catch {}
+                    }, 400));
+                  }}
+                  style={{ ...inputStyle }}
+                />
+                {showSuggestions && suggestions.length > 0 && (
+                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #ddd', borderRadius: 4, zIndex: 10, maxHeight: 200, overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                    {suggestions.map((s, i) => (
+                      <div key={i} onClick={() => {
+                        const ad = s.address || {};
+                        setProfileForm(prev => ({
+                          ...prev,
+                          address_line1: [ad.house_number, ad.road].filter(Boolean).join(' ') || s.display_name.split(',')[0],
+                          address_line2: [ad.suburb, ad.village, ad.town, ad.city_district].filter(Boolean).join(', '),
+                          city: ad.city || ad.town || ad.village || ad.county || '',
+                          state: ad.state || '',
+                          postcode: ad.postcode || '',
+                        }));
+                        setShowSuggestions(false);
+                      }}
+                        style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: i < suggestions.length - 1 ? '1px solid #f3f4f6' : 'none', fontSize: 13 }}>
+                        {s.display_name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ fontSize: 11, color: '#888' }}>Address Line 1</label>
+                  <input value={profileForm.address_line1} onChange={e => setProfileForm({...profileForm, address_line1: e.target.value})}
+                    style={{ ...inputStyle }} placeholder="Street address" />
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ fontSize: 11, color: '#888' }}>Address Line 2</label>
+                  <input value={profileForm.address_line2} onChange={e => setProfileForm({...profileForm, address_line2: e.target.value})}
+                    style={{ ...inputStyle }} placeholder="Suburb / district" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: '#888' }}>City</label>
+                  <input value={profileForm.city} onChange={e => setProfileForm({...profileForm, city: e.target.value})}
+                    style={{ ...inputStyle }} placeholder="City" />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div>
+                    <label style={{ fontSize: 11, color: '#888' }}>State</label>
+                    <input value={profileForm.state} onChange={e => setProfileForm({...profileForm, state: e.target.value})}
+                      style={{ ...inputStyle }} placeholder="State" />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, color: '#888' }}>Postcode</label>
+                    <input value={profileForm.postcode} onChange={e => setProfileForm({...profileForm, postcode: e.target.value})}
+                      style={{ ...inputStyle }} placeholder="Postcode" />
+                  </div>
+                </div>
+              </div>
+
               <button onClick={saveProfile} disabled={savingProfile}
                 style={{ ...btnPrimary, marginTop: 12 }}>
                 {savingProfile ? 'Saving...' : 'Save Details'}
