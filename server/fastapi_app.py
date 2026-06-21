@@ -30,6 +30,7 @@ from asset_service.work_orders.routes import router as work_orders_router
 from asset_service.reports.routes import router as reports_router
 from asset_service.imports.routes import router as imports_router
 from asset_service.permissions_routes import router as permissions_router
+from asset_service.invite_routes import router as invite_router
 
 mimetypes.add_type('application/javascript', '.js')
 mimetypes.add_type('text/css', '.css')
@@ -104,6 +105,7 @@ app.include_router(work_orders_router)
 app.include_router(reports_router)
 app.include_router(imports_router)
 app.include_router(permissions_router)
+app.include_router(invite_router)
 
 # ── helpers ───────────────────────────────────────────────────────────────
 import threading
