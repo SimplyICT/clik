@@ -32,7 +32,18 @@ function TokenHandler() {
         sessionStorage.removeItem('invite_user');
       }
       sessionStorage.removeItem('invite_token');
-      nav(loc.pathname, { replace: true });
+      nav(loc.pathname.replace(/[?&]token=[^&]*/, ''), { replace: true });
+    } else if (!getUser()) {
+      fetch('/api/auth/cookie', { credentials: 'include' })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d && d.token) {
+            setItem('token', d.token);
+            setItem('user', JSON.stringify(d.user));
+            setItem('_remember', 'true');
+            window.location.reload();
+          }
+        }).catch(() => {});
     }
   }, []);
   return null;

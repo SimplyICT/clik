@@ -1,6 +1,7 @@
 import os
 import secrets
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from asset_service.permissions import require_session
 
 router = APIRouter(tags=["invite"])
@@ -77,6 +78,17 @@ async def send_invite(user_id: str, session: dict = Depends(require_admin)):
         conn.close()
 
 
+@router.get("/api/auth/cookie")
+async def auth_from_cookie(request: Request):
+    token = request.cookies.get("session")
+    if not token:
+        raise HTTPException(401, detail="No session cookie")
+    from fastapi_app import validate_session
+    session = validate_session(token)
+    if not session:
+        raise HTTPException(401, detail="Invalid session")
+    return {"ok": True, "token": token, "user": {"id": session.get("uid"), "email": session.get("email"), "uid": session.get("uid")}}
+
 @router.get("/api/invite/accept/{token}")
 async def accept_invite(token: str):
     from asset_service.db import get_conn
@@ -103,11 +115,13 @@ async def accept_invite(token: str):
             "customer_ref": customer_ref,
         }
         session_token = create_session(session_data)
-        return {
+        resp = JSONResponse({
             "ok": True,
             "token": session_token,
             "user": {"id": str(uid), "email": email, "uid": str(uid)},
-        }
+        })
+        resp.set_cookie(key="session", value=session_token, max_age=2592000, httponly=True, samesite="lax", path="/")
+        return resp
     except HTTPException:
         raise
     except Exception as e:

@@ -71,6 +71,11 @@ async function init() {
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
     localStorage.setItem('_remember', 'true');
+    // Also store in Cache API for iOS PWA (which doesn't share localStorage with Safari)
+    try {
+      const cache = await caches.open('simplyclik-m-v2');
+      cache.put('/mobile/?token=' + data.token, new Response(''));
+    } catch {}
     document.getElementById('loading').style.display = 'none';
     document.getElementById('redirecting').style.display = 'block';
     window.location.href = '/mobile/?token=' + data.token;
