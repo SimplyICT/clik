@@ -142,8 +142,21 @@ async def require_session(authorization: str | None = Header(None)):
     return session
 
 # ── login ─────────────────────────────────────────────────────────────────
+LOGIN_RATELIMIT: dict[str, list[float]] = {}
+
+def _check_login_rate_limit(ip: str):
+    now = time.time()
+    window = 60.0
+    if ip not in LOGIN_RATELIMIT:
+        LOGIN_RATELIMIT[ip] = []
+    LOGIN_RATELIMIT[ip] = [t for t in LOGIN_RATELIMIT[ip] if now - t < window]
+    if len(LOGIN_RATELIMIT[ip]) >= 5:
+        raise HTTPException(429, detail="Too many login attempts. Try again later.")
+    LOGIN_RATELIMIT[ip].append(now)
+
 @app.post("/api/login")
 async def handle_login(request: Request):
+    _check_login_rate_limit(request.client.host if request.client else "unknown")
     body = await request.json()
     email = (body.get("email") or "").strip().lower()
     pw = body.get("password") or ""
