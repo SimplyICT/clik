@@ -34,10 +34,13 @@
   <div id="ios-warning" style="display:none">
     <h1>Use Safari</h1>
     <p class="error" style="text-align:left;margin-bottom:8px">On iPhone/iPad, web apps only install through <strong style="color:#fff">Safari</strong>.</p>
+    <div style="background:#0f3460;border-radius:8px;padding:12px;margin-bottom:12px;word-break:break-all;font-size:12px;color:#94a3b8;text-align:left" id="inviteUrlDisplay"></div>
+    <button onclick="copyLink()" class="btn" style="background:#00d4ff;color:#000;font-weight:700;padding:10px;border:none;border-radius:8px;font-size:14px;cursor:pointer;width:100%;margin-bottom:12px">Copy Link</button>
     <p style="color:#94a3b8;font-size:13px;text-align:left;line-height:1.7">
-      1. Tap the <strong style="color:#fff">Share</strong> button <span style="font-size:18px">⎙</span> at the bottom of Safari<br>
-      2. Scroll down and tap <strong style="color:#fff">Add to Home Screen</strong><br>
-      3. Tap <strong style="color:#fff">Add</strong>
+      1. Open <strong style="color:#fff">Safari</strong> on your iPhone<br>
+      2. Tap the address bar and <strong style="color:#fff">paste</strong> the link<br>
+      3. Tap <strong style="color:#fff">Go</strong> — you'll be auto-logged in<br>
+      4. Then tap <strong style="color:#fff">Share</strong> <span style="font-size:18px">⎙</span> → <strong style="color:#fff">Add to Home Screen</strong>
     </p>
   </div>
 </div>
@@ -54,9 +57,10 @@ function isSafari() {
 }
 
 async function init() {
-  // iOS but not Safari → warn user
+  // iOS but not Safari → warn user with copyable link
   if (isiOS() && !isSafari()) {
     document.getElementById('loading').style.display = 'none';
+    document.getElementById('inviteUrlDisplay').textContent = window.location.href;
     document.getElementById('ios-warning').style.display = 'block';
     return;
   }
@@ -76,6 +80,24 @@ async function init() {
   }
 }
 
+function copyLink() {
+  const url = window.location.href;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      document.querySelector('#ios-warning .btn').textContent = '✓ Copied!';
+    }).catch(() => fallbackCopy(url));
+  } else {
+    fallbackCopy(url);
+  }
+}
+function fallbackCopy(url) {
+  const ta = document.createElement('textarea');
+  ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  document.querySelector('#ios-warning .btn').textContent = '✓ Copied!';
+}
 init();
 </script>
 </body>

@@ -65,7 +65,7 @@ async def send_invite(user_id: str, session: dict = Depends(require_admin)):
         send_email(
             to=email,
             subject="You're invited to SimplyClik",
-            body=f"Hi there,\n\nYou've been invited to join SimplyClik. Click the link below to get started:\n\n{invite_url}\n\nThis link expires in 7 days.\n\nSimplyClik Team"
+            body=f"Hi there,\n\nYou've been invited to join SimplyClik. Open this link on your phone to get started:\n\n{invite_url}\n\nOn iPhone/iPad, open in Safari for the best experience.\nThis link expires in 7 days.\n\nSimplyClik Team"
         )
         return {"ok": True}
     except HTTPException:
