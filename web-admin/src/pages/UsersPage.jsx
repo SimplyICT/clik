@@ -51,6 +51,13 @@ export default function UsersPage() {
   const [creating, setCreating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [updatingRole, setUpdatingRole] = useState(false);
+  const [search, setSearch] = useState('');
+  const [profileForm, setProfileForm] = useState({ contact_name: '', contact_phone: '', contact_email: '' });
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  const filteredUsers = users.filter(u =>
+    !search || u.email.toLowerCase().includes(search.toLowerCase())
+  );
 
   useEffect(() => {
     fetchUsers();
@@ -92,6 +99,19 @@ export default function UsersPage() {
         setMessage({ type: 'error', text: 'Error loading permissions: ' + e.message });
       }
     }
+    // Load profile
+    try {
+      const profResp = await fetch(`/api/users/${user.id}/profile`, { headers: { ...authHeaders() } });
+      if (profResp.ok) {
+        const profData = await profResp.json();
+        if (req !== activeReq) return;
+        setProfileForm({
+          contact_name: profData.contact_name || '',
+          contact_phone: profData.contact_phone || '',
+          contact_email: profData.contact_email || '',
+        });
+      }
+    } catch(e) { /* ignore */ }
   }
 
   function togglePermission(resource, field) {
@@ -158,6 +178,24 @@ export default function UsersPage() {
     }
   }
 
+  async function saveProfile() {
+    setSavingProfile(true);
+    setMessage(null);
+    try {
+      const resp = await fetch(`/api/users/${selectedUserId}/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(profileForm),
+      });
+      if (!resp.ok) throw new Error('Failed to save details');
+      setMessage({ type: 'success', text: 'Details saved successfully' });
+    } catch (e) {
+      setMessage({ type: 'error', text: 'Error saving details: ' + e.message });
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
   async function deleteUser() {
     setMessage(null);
     try {
@@ -170,11 +208,32 @@ export default function UsersPage() {
       setSelectedUserId(null);
       setSelectedUserData(null);
       setPermissions({});
+      setProfileForm({ contact_name: '', contact_phone: '', contact_email: '' });
       setShowDeleteConfirm(false);
       setMessage({ type: 'success', text: 'User deleted successfully' });
     } catch (e) {
       setMessage({ type: 'error', text: 'Error deleting user: ' + e.message });
       setShowDeleteConfirm(false);
+    }
+  }
+
+  async function archiveUser() {
+    if (!confirm('Archive this user? They will be hidden from the list.')) return;
+    setMessage(null);
+    try {
+      const resp = await fetch(`/api/users/${selectedUserId}/archive`, {
+        method: 'POST',
+        headers: { ...authHeaders() },
+      });
+      if (!resp.ok) throw new Error('Failed to archive user');
+      setUsers(prev => prev.filter(u => u.id !== selectedUserId));
+      setSelectedUserId(null);
+      setSelectedUserData(null);
+      setPermissions({});
+      setProfileForm({ contact_name: '', contact_phone: '', contact_email: '' });
+      setMessage({ type: 'success', text: 'User archived successfully' });
+    } catch (e) {
+      setMessage({ type: 'error', text: 'Error archiving user: ' + e.message });
     }
   }
 
@@ -236,14 +295,20 @@ export default function UsersPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 20, alignItems: 'start' }}>
         <div style={cardStyle}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Users ({users.length})
+          <div style={{ padding: '8px 12px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ width: '100%', padding: '6px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' }}
+            />
           </div>
           {users.length === 0 ? (
             <div style={{ padding: 20, textAlign: 'center', color: '#888', fontSize: 13 }}>No users found</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {users.map(u => {
+              {filteredUsers.map(u => {
                 const role = roleMap[u.role] || roleMap.user;
                 const isSelected = selectedUserId === u.id;
                 return (
@@ -299,8 +364,36 @@ export default function UsersPage() {
 
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button onClick={() => setShowDeleteConfirm(true)} style={btnDanger}>Delete User</button>
+                <button onClick={archiveUser} style={{ ...btnSecondary, color: '#f59e0b', borderColor: '#f59e0b' }}>Archive User</button>
                 <button onClick={seedDefaults} style={btnSecondary}>Reset to Manager Defaults</button>
               </div>
+            </div>
+
+            <div style={cardStyle}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                User Details
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 11, color: '#888' }}>Contact Name</label>
+                  <input value={profileForm.contact_name} onChange={e => setProfileForm({...profileForm, contact_name: e.target.value})}
+                    style={{ ...inputStyle }} placeholder="Full name" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: '#888' }}>Phone Number</label>
+                  <input value={profileForm.contact_phone} onChange={e => setProfileForm({...profileForm, contact_phone: e.target.value})}
+                    style={{ ...inputStyle }} placeholder="Phone number" />
+                </div>
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <label style={{ fontSize: 11, color: '#888' }}>Contact Email</label>
+                <input value={profileForm.contact_email} onChange={e => setProfileForm({...profileForm, contact_email: e.target.value})}
+                  style={{ ...inputStyle }} placeholder="Contact email" />
+              </div>
+              <button onClick={saveProfile} disabled={savingProfile}
+                style={{ ...btnPrimary, marginTop: 12 }}>
+                {savingProfile ? 'Saving...' : 'Save Details'}
+              </button>
             </div>
 
             <div style={cardStyle}>
