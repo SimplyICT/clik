@@ -17,14 +17,15 @@ import QRScannerPage from './pages/QRScannerPage';
 import CreateJobPage from './pages/CreateJobPage';
 import RecordPartsPage from './pages/RecordPartsPage';
 
-function TokenHandler() {
+function AuthGate({ children }) {
+  const [ready, setReady] = useState(false);
   const nav = useNavigate();
   const loc = useLocation();
   useEffect(() => {
     const params = new URLSearchParams(loc.search);
-    const token = params.get('token');
-    if (token) {
-      setItem('token', token);
+    const t = params.get('token');
+    if (t) {
+      setItem('token', t);
       setItem('_remember', 'true');
       const inviteUser = sessionStorage.getItem('invite_user');
       if (inviteUser) {
@@ -33,20 +34,26 @@ function TokenHandler() {
       }
       sessionStorage.removeItem('invite_token');
       nav(loc.pathname.replace(/[?&]token=[^&]*/, ''), { replace: true });
-    } else if (!getUser()) {
+      setReady(true);
+    } else if (getUser()) {
+      setReady(true);
+    } else {
       fetch('/api/auth/cookie', { credentials: 'include' })
         .then(r => r.ok ? r.json() : null)
         .then(d => {
           if (d && d.token) {
             setItem('token', d.token);
             setItem('user', JSON.stringify(d.user));
-            setItem('_remember', 'true');
-            window.location.reload();
+            localStorage.setItem('_remember', 'true');
+            sessionStorage.setItem('_remember', 'true');
           }
-        }).catch(() => {});
+        })
+        .catch(() => {})
+        .finally(() => setReady(true));
     }
   }, []);
-  return null;
+  if (!ready) return <div style={{ padding: 40, textAlign: 'center', color: '#888', background: '#1a1a2e', minHeight: '100vh' }}>Loading...</div>;
+  return children;
 }
 
 function RequireAuth({ children }) {
@@ -104,7 +111,7 @@ function Layout({ children, title }) {
 export default function App() {
   return (
     <BrowserRouter basename="/mobile">
-      <TokenHandler />
+      <AuthGate>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<RequireAuth><Layout><DashboardPage /></Layout></RequireAuth>} />
@@ -122,6 +129,7 @@ export default function App() {
         <Route path="/qr-scanner" element={<RequireAuth><Layout title="Scan QR"><QRScannerPage /></Layout></RequireAuth>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </AuthGate>
     </BrowserRouter>
   );
 }
