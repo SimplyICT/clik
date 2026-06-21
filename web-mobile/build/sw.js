@@ -1,4 +1,4 @@
-const CACHE = 'simplyclik-m-v1';
+const CACHE = 'simplyclik-m-v2';
 const ASSETS = ['/mobile/', '/mobile/manifest.json', '/mobile/icon-192.svg'];
 
 self.addEventListener('install', (e) => {

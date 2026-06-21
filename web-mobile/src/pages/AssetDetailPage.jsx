@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { canEdit } from '../api/client';
 
 const TOKEN = () => localStorage.getItem('token');
 const headers = () => ({ 'Authorization': `Bearer ${TOKEN()}`, 'Content-Type': 'application/json' });
@@ -132,7 +133,7 @@ export default function AssetDetailPage() {
 
       {/* Action Buttons */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
-        <ActionBtn color="#22c55e" label="Create Job" onClick={() => nav(`/assets/${id}/create-job`)} />
+        {canEdit('assets') && <ActionBtn color="#22c55e" label="Create Job" onClick={() => nav(`/assets/${id}/create-job`)} />}
         {!isContractor && <ActionBtn color="#00d4ff" label="Edit Asset" onClick={() => nav(`/assets/${id}/edit`)} />}
         {!isContractor && asset.status !== 'retired' && asset.status !== 'disposed' && (
           <>
