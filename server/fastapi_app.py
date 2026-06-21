@@ -1007,6 +1007,15 @@ async def register_device(body: dict, session: dict = Depends(require_session)):
     """, (uid, profile_id, token, platform, app_version))
     return {"ok": True}
 
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+
+@app.get("/invite/{token}")
+async def invite_page(token: str):
+    idx = STATIC_DIR / "invite.html"
+    if idx.exists():
+        return FileResponse(str(idx), media_type="text/html")
+    raise HTTPException(404)
+
 # ── static file serving ───────────────────────────────────────────────────
 def _serve_file(filepath: str, build_dir: Path) -> Response:
     if not filepath:
