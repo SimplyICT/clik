@@ -27,6 +27,7 @@ For this project specifically:
 - when using sub-agents to implement features, act as a coordinator only
 - Use the best model available for the task 
 - After completing features (large and small), always run commands like lint, type check and next build to check code quality
+- **Session end ritual:** Update Help and DevDocs pages if new features were added, then commit and push
 
 ## Database Schema Changes
 

@@ -46,6 +46,14 @@ Last updated: 2026-06-21 (session end)
 - Contractor immediately appears in Contractors page
 - Backward-compatible: existing contractors can be fixed via role update
 
+### Help & DevDocs Updated
+- Permissions Matrix, User Management, Invite/Auto-Provisioning sections added
+
+## Session Close Rituals
+- ✅ Help and DevDocs pages checked/updated
+- ✅ All commits pushed
+- ✅ Memory updated
+
 ## Project State
 - Firebase-to-Supabase migration: complete
 - Asset Management System v2: complete

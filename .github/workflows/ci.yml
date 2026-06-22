@@ -37,35 +37,4 @@ jobs:
         run: |
           cd web-mobile && npm install && npm run build
 
-  test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_DB: simplyclik_test
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install Python deps
-        run: pip install fastapi uvicorn pg8000 bcrypt apscheduler reportlab httpx pytest
-      - name: Run tests
-        env:
-          SUPABASE_DB_HOST: localhost
-          SUPABASE_DB_PORT: 5432
-          SUPABASE_DB_NAME: simplyclik_test
-          SUPABASE_DB_USER: test
-          SUPABASE_DB_PASSWORD: test
-        run: |
-          cd server && python -m pytest tests/ -v --timeout=30
+  # Tests require Supabase infrastructure with seed data — run manually
