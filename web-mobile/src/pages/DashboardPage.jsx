@@ -102,11 +102,16 @@ export default function DashboardPage() {
   );
 }
 
+const PAGE_SIZE = 10;
+
 function ContractorView({ jobs, nav }) {
+  const [page, setPage] = useState(0);
   const needsAction = jobs.filter(j => ['awaiting_acceptance', 'awaiting_quote'].includes(j.status));
   const newJobs = jobs.filter(j => j.status === 'awaiting_acceptance').length;
   const activeJobs = jobs.filter(j => !['completed', 'declined', 'cancelled', 'awaiting_acceptance'].includes(j.status)).length;
   const completedJobs = jobs.filter(j => j.status === 'completed').length;
+  const totalPages = Math.max(1, Math.ceil(jobs.length / PAGE_SIZE));
+  const paginatedJobs = jobs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
     <div>
@@ -133,7 +138,18 @@ function ContractorView({ jobs, nav }) {
       )}
 
       <h3 style={{ fontSize: 14, marginBottom: 8, color: '#444' }}>All Jobs ({jobs.length})</h3>
-      {jobs.length === 0 ? <Centered>No jobs assigned yet. Waiting for new jobs...</Centered> : jobs.slice(0, 10).map(r => <JobCard key={r.id} job={r} onClick={() => nav(`/jobs/${r.id}`)} />)}
+      {jobs.length === 0 ? <Centered>No jobs assigned yet. Waiting for new jobs...</Centered> : paginatedJobs.map(r => <JobCard key={r.id} job={r} onClick={() => nav(`/jobs/${r.id}`)} />)}
+      {jobs.length > PAGE_SIZE && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginTop: 10 }}>
+          <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid #ccc', background: page === 0 ? '#f5f5f5' : '#fff', color: page === 0 ? '#bbb' : '#333', fontWeight: 600, fontSize: 13, cursor: page === 0 ? 'default' : 'pointer' }}>
+            ← Prev
+          </button>
+          <span style={{ fontSize: 13, color: '#888' }}>Page {page + 1} of {totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid #ccc', background: page >= totalPages - 1 ? '#f5f5f5' : '#fff', color: page >= totalPages - 1 ? '#bbb' : '#333', fontWeight: 600, fontSize: 13, cursor: page >= totalPages - 1 ? 'default' : 'pointer' }}>
+            Next →
+          </button>
+        </div>
+      )}
       <div style={{ textAlign: 'center', color: '#ccc', fontSize: 11, marginTop: 12 }}>Auto-refreshes every 15s</div>
     </div>
   );

@@ -18,6 +18,8 @@ async def list_assets(
     status: str = Query(None),
     customer_id: str = Query(None),
     contractor_id: str = Query(None),
+    customer_location_id: str = Query(None),
+    location_ids: str = Query(None),
     search: str = Query(None),
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
@@ -30,6 +32,8 @@ async def list_assets(
             "status": status,
             "customer_id": customer_id,
             "contractor_id": contractor_id,
+            "customer_location_id": customer_location_id,
+            "location_ids": location_ids,
             "search": search,
         }, limit=limit, offset=offset)
     finally:
@@ -42,19 +46,22 @@ async def count_assets(
     status: str = Query(None),
     customer_id: str = Query(None),
     contractor_id: str = Query(None),
+    customer_location_id: str = Query(None),
+    location_ids: str = Query(None),
     search: str = Query(None),
     session: dict = Depends(require_permission("assets", "view")),
 ):
     conn = db.get_conn()
     try:
-        count = db.count_assets(conn, {
+        return {"count": db.count_assets(conn, {
             "category": category,
             "status": status,
             "customer_id": customer_id,
             "contractor_id": contractor_id,
+            "customer_location_id": customer_location_id,
+            "location_ids": location_ids,
             "search": search,
-        })
-        return {"count": count}
+        })}
     finally:
         conn.close()
 

@@ -626,7 +626,8 @@ async def update_request(request_id: str, body: dict, session: dict = Depends(re
     fields, vals = [], []
     for key, col in [("title","title"),("description","description"),("serviceType","serviceType"),
                      ("priority","priority"),("purchaseOrder","purchaseOrder"),
-                     ("quoteAmount","quoteAmount"),("invoiceAmount","invoiceAmount"),
+                     ("quoteAmount","quoteAmount"),("quoteDescription","quoteDescription"),
+                     ("invoiceAmount","invoiceAmount"),
                      ("contractorProfileId","contractorProfileId"),
                      ("customerLocationProfileId","customerLocationProfileId"),
                      ("requestEndDate","requestEndDate")]:

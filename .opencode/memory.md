@@ -73,9 +73,17 @@ Last updated: 2026-06-21 (session end)
 - Design spec: `docs/superpowers/specs/2026-06-21-auto-provisioning-design.md`
 - Implementation plan: `docs/superpowers/plans/2026-06-21-auto-provisioning.md`
 
+## 2026-06-23 (Session 7 — Pagination + Quote Description + Asset Site Filtering)
+- **Dashboard pagination:** Contractor job list now has prev/next pagination (10 per page) with page indicator. Needs-action alerts stay at top.
+- **Quote description:** Added `quote_description` column to `requests` table + migration. Contractors can now enter a description when submitting a quote. Displayed alongside the quote amount.
+- **Asset site filtering:** Assets are now tied to customer locations. Contractors only see assets at sites they are assigned to via `customer_location_contractors`. Backend: added `customer_location_id` and `location_ids` (comma-separated) filters to the asset-management API. Frontend: mobile AssetsPage fetches contractor's assigned locations and filters assets accordingly.
+- **FastAPI whitelist:** Added `quoteDescription` to PATCH field whitelist.
+
 ## Project State
 - All major systems complete
 - Permissions Matrix ✅
 - User Management ✅
 - Auto-Provisioning ✅
 - Infrastructure (CI/CD + rate limiting) ✅
+- Asset Site Filtering ✅
+- Quote Description ✅

@@ -142,6 +142,15 @@ def list_assets(conn, filters=None, limit=50, offset=0):
     if filters.get("contractor_id"):
         clauses.append("assigned_contractor_id = %s::uuid")
         params.append(filters["contractor_id"])
+    if filters.get("customer_location_id"):
+        clauses.append("customer_location_id = %s::uuid")
+        params.append(filters["customer_location_id"])
+    if filters.get("location_ids"):
+        ids = [x.strip() for x in filters["location_ids"].split(",") if x.strip()]
+        if ids:
+            placeholders = ", ".join("%s::uuid" for _ in ids)
+            clauses.append(f"customer_location_id IN ({placeholders})")
+            params.extend(ids)
     if filters.get("search"):
         clauses.append("(asset_name ILIKE %s OR asset_code ILIKE %s OR serial_number ILIKE %s)")
         like = f"%{filters['search']}%"
@@ -169,6 +178,15 @@ def count_assets(conn, filters=None):
     if filters.get("contractor_id"):
         clauses.append("assigned_contractor_id = %s::uuid")
         params.append(filters["contractor_id"])
+    if filters.get("customer_location_id"):
+        clauses.append("customer_location_id = %s::uuid")
+        params.append(filters["customer_location_id"])
+    if filters.get("location_ids"):
+        ids = [x.strip() for x in filters["location_ids"].split(",") if x.strip()]
+        if ids:
+            placeholders = ", ".join("%s::uuid" for _ in ids)
+            clauses.append(f"customer_location_id IN ({placeholders})")
+            params.extend(ids)
     if filters.get("search"):
         clauses.append("(asset_name ILIKE %s OR asset_code ILIKE %s OR serial_number ILIKE %s)")
         like = f"%{filters['search']}%"

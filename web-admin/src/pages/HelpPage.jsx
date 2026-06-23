@@ -94,8 +94,9 @@ export default function HelpPage() {
         <Section id="mobile-pwa" title="Mobile App (PWA)">
           <p style={{ fontSize: 13, lineHeight: 1.7 }}>The mobile PWA at <code>https://pwa.simplyclik.com/mobile/</code> serves both contractors and managers with role-based views:</p>
           <ul style={{ fontSize: 13, lineHeight: 1.7, paddingLeft: 20 }}>
-            <li><strong>Contractors:</strong> See jobs assigned to them via <code>contractorProfileId</code>. Accept jobs, submit quotes with amounts and photos, upload invoices with purchase orders, add timeline notes, mark complete.</li>
+            <li><strong>Contractors:</strong> See jobs assigned to them via <code>contractorProfileId</code>. Accept jobs, submit quotes with amounts, description, and photos, upload invoices with purchase orders, add timeline notes, mark complete. Job list is paginated (10 per page) with prev/next controls.</li>
             <li><strong>Managers:</strong> Browse their assigned service locations, create maintenance requests with location/type/priority, optionally assign a contractor. Track all requests for their customer.</li>
+            <li><strong>Assets by Site:</strong> Contractors only see assets at the sites they are assigned to work at. Assets are tied to customer locations and filtered automatically based on the contractor's assigned sites.</li>
           </ul>
           <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Install as App (iOS):</strong> Open Safari → <code>https://pwa.simplyclik.com/mobile/</code> → Share → Add to Home Screen. This gives full-screen mode with no browser chrome and enables push notifications.</p>
           <p style={{ fontSize: 13, lineHeight: 1.7 }}><strong>Install as App (Android):</strong> Open Chrome → <code>https://pwa.simplyclik.com/mobile/</code> → menu → Add to Home Screen. The PWA Install banner on the dashboard also triggers this.</p>

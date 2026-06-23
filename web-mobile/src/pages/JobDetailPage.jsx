@@ -30,6 +30,7 @@ export default function JobDetailPage() {
   const [invNum, setInvNum] = useState('');
   const [invAmt, setInvAmt] = useState('');
   const [invPO, setInvPO] = useState('');
+  const [quoteDesc, setQuoteDesc] = useState('');
   const [quoteImages, setQuoteImages] = useState([]);
   const [completeImages, setCompleteImages] = useState([]);
   const [actionLoading, setActionLoading] = useState('');
@@ -79,9 +80,9 @@ export default function JobDetailPage() {
     setActionLoading('quote');
     try {
       const paths = await uploadImages(quoteImages, `requests/${id}/contractor`);
-      await update('requests', id, { quoteAmount: parseFloat(quoteAmt), status: 'pending_quote_approval' });
-      setJob({ ...job, quoteAmount: parseFloat(quoteAmt), status: 'pending_quote_approval' });
-      setQuoteAmt('');
+      await update('requests', id, { quoteAmount: parseFloat(quoteAmt), quoteDescription: quoteDesc.trim() || null, status: 'pending_quote_approval' });
+      setJob({ ...job, quoteAmount: parseFloat(quoteAmt), quoteDescription: quoteDesc.trim() || null, status: 'pending_quote_approval' });
+      setQuoteAmt(''); setQuoteDesc('');
     } catch (e) { alert('Failed: ' + e.message); }
     setActionLoading('');
   };
@@ -156,6 +157,9 @@ export default function JobDetailPage() {
       {job.quoteAmount && (
         <div style={{ background: '#f0f9ff', borderRadius: 10, padding: 14, marginBottom: 12, border: '1px solid #bae6fd' }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#0369a1' }}>Quote: ${Number(job.quoteAmount).toFixed(2)}</div>
+          {job.quoteDescription && (
+            <div style={{ fontSize: 13, color: '#0369a1', marginTop: 6, whiteSpace: 'pre-wrap', opacity: 0.85 }}>{job.quoteDescription}</div>
+          )}
         </div>
       )}
 
@@ -187,6 +191,7 @@ export default function JobDetailPage() {
                 style={{ width: '100%', padding: '10px 10px 10px 28px', borderRadius: 6, border: '1px solid #ddd', fontSize: 16, boxSizing: 'border-box' }} />
             </div>
           </div>
+          <textarea placeholder="Describe what the quote covers..." value={quoteDesc} onChange={e => setQuoteDesc(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: 6, border: '1px solid #ddd', fontSize: 14, marginBottom: 8, boxSizing: 'border-box', resize: 'vertical', minHeight: 64, fontFamily: 'inherit' }} />
           <ImageUpload onImagesChange={setQuoteImages} />
           <ActionBtn color="#00d4ff" label={actionLoading === 'quote' ? 'Submitting...' : 'Submit Quote'} onClick={handleQuoteSubmit} disabled={!quoteAmt} />
         </div>

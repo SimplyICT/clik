@@ -106,7 +106,7 @@ export default function DevDocsPage() {
               <th style={{ textAlign: 'left', padding: '4px 8px' }}>Endpoint</th><th style={{ textAlign: 'left', padding: '4px 8px' }}>Description</th>
             </tr></thead>
             <tbody>
-              <tr><td><code>GET /api/asset-management/assets</code></td><td>List assets (filters: category, status, customer_id, contractor_id, search)</td></tr>
+              <tr><td><code>GET /api/asset-management/assets</code></td><td>List assets (filters: category, status, customer_id, contractor_id, customer_location_id, location_ids, search, limit, offset)</td></tr>
               <tr><td><code>GET /api/asset-management/assets/{id}</code></td><td>Get asset detail</td></tr>
               <tr><td><code>POST /api/asset-management/assets</code></td><td>Create asset (auto-generates QR code)</td></tr>
               <tr><td><code>PATCH /api/asset-management/assets/{id}</code></td><td>Update asset</td></tr>
@@ -209,7 +209,7 @@ contractor_completed → completed / cancelled</pre>
               <tr><td><code>customers</code></td><td>id, name, contactName, contactEmail, addressJson, billing</td></tr>
               <tr><td><code>customerLocations</code></td><td>id, companyName, customerId, reference, addressJson</td></tr>
               <tr><td><code>contractors</code></td><td>id, companyName, contactName, abn, addressJson</td></tr>
-              <tr><td><code>requests</code> (VIEW)</td><td>id, title, status, serviceType, priority — backed by <code>requests_base</code>, auto-assigns contractor</td></tr>
+              <tr><td><code>requests</code> (VIEW)</td><td>id, title, status, serviceType, priority, quote_amount, quote_description — backed by <code>requests_base</code>, auto-assigns contractor</td></tr>
               <tr><td><code>request_notes</code></td><td>id, request_id, author_profile_id, display_name, description</td></tr>
               <tr><td><code>request_invoices</code></td><td>request_id, invoice_number, amount, submit_date, auto_approve_date</td></tr>
               <tr><td><code>profiles</code></td><td>id, user_id, profile_type, company_name, customer_id</td></tr>

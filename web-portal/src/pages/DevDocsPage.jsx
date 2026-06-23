@@ -47,7 +47,7 @@ export default function DevDocsPage() {
           <ul style={{ fontSize: 13, lineHeight: 1.6, paddingLeft: 20 }}>
             <li><strong>MyAssetsPage.jsx:</strong> Fetches assets by <code>customer_id</code> filter, renders a filterable list with category/location dropdowns, opens detail in <strong>AssetDetailView.jsx</strong></li>
             <li><strong>AssetDetailView.jsx:</strong> Shows all asset fields, photos, custom fields, service job history. Allows adding notes (PATCH assets) and creating service requests linked to the asset (POST requests).</li>
-            <li><strong>API calls:</strong> <code>GET /api/asset-management/assets?customer_id=X</code>, <code>GET /api/asset-management/assets/{id}</code>, <code>GET /api/asset-management/assets/{id}/jobs</code></li>
+            <li><strong>API calls:</strong> <code>GET /api/asset-management/assets?customer_id=X</code> (also supports <code>customer_location_id</code>, <code>location_ids</code> filters), <code>GET /api/asset-management/assets/{id}</code>, <code>GET /api/asset-management/assets/{id}/jobs</code></li>
             <li><strong>DB tables:</strong> <code>assets_v2</code>, <code>asset_parts</code>, <code>asset_part_usage</code>, <code>asset_custom_field_defs</code></li>
           </ul>
         </Section>
