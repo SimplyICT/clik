@@ -17,6 +17,8 @@ import QRScannerPage from './pages/QRScannerPage';
 import CreateJobPage from './pages/CreateJobPage';
 import RecordPartsPage from './pages/RecordPartsPage';
 import OnboardingPage from './pages/OnboardingPage';
+import WorkOrdersPage from './pages/WorkOrdersPage';
+import WorkOrderDetailPage from './pages/WorkOrderDetailPage';
 
 const CACHE_NAME = 'simplyclik-m-v2';
 
@@ -176,13 +178,14 @@ function Nav() {
   const role = localStorage.getItem('role');
   const isContractor = role === 'contractor';
   const allTabs = isContractor
-    ? [{ p: '/', l: 'Jobs' }, { p: '/assets', l: 'Assets' }, { p: '/profile', l: 'Profile' }]
+    ? [{ p: '/', l: 'Jobs' }, { p: '/work-orders', l: 'Work' }, { p: '/assets', l: 'Assets' }, { p: '/profile', l: 'Profile' }]
     : [{ p: '/', l: 'Sites' }, { p: '/requests', l: 'Requests' }, { p: '/assets', l: 'Assets' }, { p: '/profile', l: 'Profile' }];
   const tabs = allTabs.filter(t => {
     if (t.p === '/') return true;
     if (t.p === '/profile') return true;
     if (t.p === '/assets') return canView('assets');
     if (t.p === '/requests') return canView('requests');
+    if (t.p === '/work-orders') return canView('work_orders');
     return true;
   });
 
@@ -237,6 +240,8 @@ export default function App() {
         <Route path="/assets/:id/edit" element={<RequireAuth><Layout title="Edit Asset"><AssetFormPage /></Layout></RequireAuth>} />
         <Route path="/assets/:id/create-job" element={<RequireAuth><Layout title="Create Job"><CreateJobPage /></Layout></RequireAuth>} />
         <Route path="/assets/:id/record-parts" element={<RequireAuth><Layout title="Record Parts"><RecordPartsPage /></Layout></RequireAuth>} />
+        <Route path="/work-orders" element={<RequireAuth><Layout title="Work Orders"><WorkOrdersPage /></Layout></RequireAuth>} />
+        <Route path="/work-orders/:id" element={<RequireAuth><Layout title="Work Order"><WorkOrderDetailPage /></Layout></RequireAuth>} />
         <Route path="/qr-scanner" element={<RequireAuth><Layout title="Scan QR"><QRScannerPage /></Layout></RequireAuth>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

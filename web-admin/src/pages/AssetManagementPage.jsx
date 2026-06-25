@@ -32,6 +32,8 @@ const EMPTY_ASSET = {
   contractorId: '', contractorName: '',
   installDate: '', purchaseDate: '', warrantyExpiryDate: '',
   lastServiceDate: '', nextServiceDate: '', notes: '',
+  purchaseCost: '', replacementValue: '', depreciationMethod: 'none', usefulLifeYears: '',
+  locationName: '', hoursRun: '', meterReading: '',
 };
 
 function statusBadge(s) {
@@ -70,6 +72,7 @@ export default function AssetManagementPage() {
   if (canEdit('assets')) tabs.push({ label: 'Maintenance', component: <MaintenanceTab key="m" admin={admin} /> });
   if (canEdit('assets')) tabs.push({ label: 'Import/Export', component: <ImportExportTab key="ie" admin={admin} /> });
   if (canEdit('assets')) tabs.push({ label: 'QR Batch', component: <QRBatchTab key="qr" /> });
+  if (canView('assets')) tabs.push({ label: 'Cost History', component: <CostHistoryTab key="ch" /> });
 
   return (
     <div>
@@ -162,6 +165,9 @@ function AllAssetsTab({ isManager }) {
       lastServiceDate: a.lastServiceDate ? a.lastServiceDate.slice(0, 10) : '',
       nextServiceDate: a.nextServiceDate ? a.nextServiceDate.slice(0, 10) : '',
       notes: a.notes || '',
+      purchaseCost: a.purchaseCost ?? '', replacementValue: a.replacementValue ?? '',
+      depreciationMethod: a.depreciationMethod || 'none', usefulLifeYears: a.usefulLifeYears ?? '',
+      locationName: a.locationName || '', hoursRun: a.hoursRun ?? '', meterReading: a.meterReading ?? '',
     });
     setEditId(a.id);
     setModalMode('edit');
@@ -193,6 +199,9 @@ function AllAssetsTab({ isManager }) {
         warrantyExpiryDate: sanitize(form.warrantyExpiryDate),
         lastServiceDate: sanitize(form.lastServiceDate), nextServiceDate: sanitize(form.nextServiceDate),
         notes: form.notes,
+        purchaseCost: form.purchaseCost || null, replacementValue: form.replacementValue || null,
+        depreciationMethod: form.depreciationMethod || 'none', usefulLifeYears: form.usefulLifeYears || null,
+        locationName: form.locationName || null, hoursRun: form.hoursRun || null, meterReading: form.meterReading || null,
       };
       if (editId) {
         await assetApi(`/assets/${editId}`, { method: 'PATCH', body: JSON.stringify(payload) });
@@ -346,6 +355,18 @@ function AllAssetsTab({ isManager }) {
                   <div><strong>Last Service:</strong> {form.lastServiceDate ? form.lastServiceDate.slice(0, 10) : '-'}</div>
                   <div style={{ gridColumn: '1 / -1' }}><strong>Next Service:</strong> {form.nextServiceDate ? form.nextServiceDate.slice(0, 10) : '-'}</div>
                   {form.notes && <div style={{ gridColumn: '1 / -1' }}><strong>Notes:</strong><br />{form.notes}</div>}
+                  <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #e5e7eb', paddingTop: 8, marginTop: 4 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#888', marginBottom: 8, textTransform: 'uppercase' }}>Financial & Metering</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      <div><strong>Purchase Cost:</strong> {form.purchaseCost ? `$${form.purchaseCost}` : '-'}</div>
+                      <div><strong>Replacement Value:</strong> {form.replacementValue ? `$${form.replacementValue}` : '-'}</div>
+                      <div><strong>Depreciation:</strong> {form.depreciationMethod || 'None'}</div>
+                      <div><strong>Useful Life:</strong> {form.usefulLifeYears ? `${form.usefulLifeYears} yrs` : '-'}</div>
+                      <div><strong>Location Name:</strong> {form.locationName || '-'}</div>
+                      <div><strong>Hours Run:</strong> {form.hoursRun ?? '-'}</div>
+                      <div><strong>Meter Reading:</strong> {form.meterReading ?? '-'}</div>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div>
@@ -430,6 +451,30 @@ function AllAssetsTab({ isManager }) {
                     <label style={{ fontSize: 11, color: '#888' }}>Notes</label>
                     <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2}
                       style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box', resize: 'vertical' }} />
+                  </div>
+
+                  <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '14px 0' }} />
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#888', marginBottom: 10, textTransform: 'uppercase' }}>Financial & Metering</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <Fi label="Purchase Cost ($)" v={form.purchaseCost} s={v => setForm({ ...form, purchaseCost: v })} type="number" />
+                    <Fi label="Replacement Value ($)" v={form.replacementValue} s={v => setForm({ ...form, replacementValue: v })} type="number" />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div style={{ marginBottom: 10 }}>
+                      <label style={{ fontSize: 11, color: '#888' }}>Depreciation Method</label>
+                      <select value={form.depreciationMethod} onChange={e => setForm({ ...form, depreciationMethod: e.target.value })}
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
+                        <option value="none">None</option>
+                        <option value="straight_line">Straight Line</option>
+                        <option value="declining">Declining Balance</option>
+                      </select>
+                    </div>
+                    <Fi label="Useful Life (years)" v={form.usefulLifeYears} s={v => setForm({ ...form, usefulLifeYears: v })} type="number" />
+                  </div>
+                  <Fi label="Location Name" v={form.locationName} s={v => setForm({ ...form, locationName: v })} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <Fi label="Hours Run" v={form.hoursRun} s={v => setForm({ ...form, hoursRun: v })} type="number" step="0.01" />
+                    <Fi label="Meter Reading" v={form.meterReading} s={v => setForm({ ...form, meterReading: v })} type="number" step="0.01" />
                   </div>
                 </div>
               )}
@@ -902,30 +947,8 @@ function AuditLogTab() {
     setLoading(true);
     setLoadError(null);
     try {
-      const a = await assetApi('/assets');
-      const events = [];
-      (a || []).forEach(asset => {
-        events.push({
-          id: `created-${asset.id}`,
-          type: 'Created',
-          assetCode: asset.assetCode,
-          assetName: asset.assetName,
-          date: asset.created_at || asset.createdAt,
-          details: `Asset "${asset.assetName}" was created`,
-        });
-        if (asset.status === 'Retired') {
-          events.push({
-            id: `retired-${asset.id}`,
-            type: 'Retired',
-            assetCode: asset.assetCode,
-            assetName: asset.assetName,
-            date: asset.updated_at || asset.updatedAt,
-            details: `Asset "${asset.assetName}" was retired`,
-          });
-        }
-      });
-      events.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-      setLogs(events.slice(0, 100));
+      const data = await assetApi('/audit');
+      setLogs(Array.isArray(data) ? data : []);
     } catch (err) { setLoadError(err.message); }
     setLoading(false);
   }, []);
@@ -937,14 +960,14 @@ function AuditLogTab() {
 
   return (
     <div>
-      <div style={{ marginBottom: 16, fontSize: 14, color: '#888' }}>Recent asset lifecycle events</div>
+      <div style={{ marginBottom: 16, fontSize: 14, color: '#888' }}>Real asset audit trail from API</div>
       <div style={{ overflowX: 'auto', background: '#fff', borderRadius: 8 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ borderBottom: '2px solid #e0e0e0' }}>
               <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Event</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Asset Code</th>
-              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Asset Name</th>
+              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Asset</th>
+              <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Actor</th>
               <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Date</th>
               <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, color: '#888', textTransform: 'uppercase' }}>Details</th>
             </tr>
@@ -957,16 +980,16 @@ function AuditLogTab() {
               <tr key={e.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
                 <td style={{ padding: '10px 14px' }}>
                   <span style={{
-                    background: e.type === 'Created' ? '#22c55e' : e.type === 'Retired' ? '#ef4444' : '#f59e0b',
+                    background: e.event_type === 'created' ? '#22c55e' : e.event_type === 'retired' || e.event_type === 'deleted' ? '#ef4444' : '#f59e0b',
                     color: '#fff', padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 600,
                   }}>
-                    {e.type}
+                    {e.event_type ? e.event_type.replace(/_/g, ' ') : '-'}
                   </span>
                 </td>
-                <td style={{ padding: '10px 14px', fontWeight: 600, fontSize: 13 }}>{e.assetCode || '-'}</td>
-                <td style={{ padding: '10px 14px', fontSize: 13 }}>{e.assetName}</td>
-                <td style={{ padding: '10px 14px', fontSize: 13, color: '#666' }}>{e.date ? new Date(e.date).toLocaleDateString() : '-'}</td>
-                <td style={{ padding: '10px 14px', fontSize: 13, color: '#666' }}>{e.details}</td>
+                <td style={{ padding: '10px 14px', fontWeight: 600, fontSize: 13 }}>{e.asset_id ? e.asset_id.slice(0, 8) + '...' : '-'}</td>
+                <td style={{ padding: '10px 14px', fontSize: 13 }}>{e.actor_name || e.actor_id || '-'}</td>
+                <td style={{ padding: '10px 14px', fontSize: 13, color: '#666' }}>{e.created_at ? new Date(e.created_at).toLocaleString() : '-'}</td>
+                <td style={{ padding: '10px 14px', fontSize: 13, color: '#666' }}>{typeof e.details === 'object' ? JSON.stringify(e.details) : e.details || '-'}</td>
               </tr>
             ))}
           </tbody>
@@ -1478,6 +1501,70 @@ function ImportExportTab({ admin }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ─────────────── Tab: Cost History ──────────── */
+function CostHistoryTab() {
+  const [costs, setCosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState(null);
+  const [assetId, setAssetId] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [costList, sum] = await Promise.all([
+        assetId ? assetApi(`/assets/${assetId}/costs`) : Promise.resolve([]),
+        assetApi('/costs/summary').catch(() => null),
+      ]);
+      setCosts(Array.isArray(costList) ? costList : []);
+      setSummary(sum);
+    } catch (e) { /* ignore */ }
+    setLoading(false);
+  }, [assetId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  return (
+    <div>
+      {summary && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginBottom: 16 }}>
+          {summary.map(s => (
+            <div key={s.cost_type} style={{ background: '#fff', borderRadius: 8, padding: 12, border: '1px solid #e0e0e0', textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: '#2563eb' }}>${(s.total || 0).toLocaleString()}</div>
+              <div style={{ fontSize: 11, color: '#888', textTransform: 'capitalize', marginTop: 2 }}>{s.cost_type} (x{s.count})</div>
+            </div>
+          ))}
+        </div>
+      )}
+      <input placeholder="Filter by Asset ID (optional)" value={assetId} onChange={e => setAssetId(e.target.value)}
+        style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box', marginBottom: 12 }} />
+      {loading ? <div style={{ padding: 20, textAlign: 'center', color: '#888' }}>Loading...</div> : costs.length === 0 ? (
+        <div style={{ padding: 20, textAlign: 'center', color: '#888' }}>{assetId ? 'No costs recorded for this asset' : 'Enter an Asset ID above to view costs'}</div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead><tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+              <th style={{ textAlign: 'left', padding: '8px' }}>Date</th>
+              <th style={{ textAlign: 'left', padding: '8px' }}>Type</th>
+              <th style={{ textAlign: 'right', padding: '8px' }}>Amount</th>
+              <th style={{ textAlign: 'left', padding: '8px' }}>Description</th>
+            </tr></thead>
+            <tbody>
+              {costs.map(c => (
+                <tr key={c.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                  <td style={{ padding: '8px', whiteSpace: 'nowrap' }}>{c.recorded_date ? c.recorded_date.slice(0, 10) : '-'}</td>
+                  <td style={{ padding: '8px', textTransform: 'capitalize' }}>{c.cost_type}</td>
+                  <td style={{ padding: '8px', textAlign: 'right' }}>${(c.amount || 0).toFixed(2)}</td>
+                  <td style={{ padding: '8px' }}>{c.description || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
