@@ -1,16 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login, getUser } from '../api/client';
+import { login, getUser, cacheToken } from '../api/client';
+import { setItem } from '../api/storage';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [autoChecking, setAutoChecking] = useState(true);
   const [remember, setRemember] = useState(true);
   const nav = useNavigate();
 
-  if (getUser()) { nav('/dashboard', { replace: true }); return null; }
+  // Auto-check cookie bridge on mount (passwordless invite flow)
+  useEffect(() => {
+    if (getUser()) { nav('/', { replace: true }); return; }
+    fetch('/api/auth/cookie', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d && d.token) {
+          setItem('token', d.token);
+          cacheToken(d.token);
+          setItem('user', JSON.stringify(d.user));
+          if (d.permissions) setItem('permissions', JSON.stringify(d.permissions));
+          if (d.author_profile_id) setItem('author_profile_id', d.author_profile_id);
+          if (d.customer_id) setItem('customer_id', d.customer_id);
+          if (d.customer_name) setItem('customer_name', d.customer_name);
+          if (d.role) setItem('role', d.role);
+          nav('/', { replace: true });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setAutoChecking(false));
+  }, []);
+
+  if (getUser()) return null;
 
   const submit = async e => {
     e.preventDefault();
@@ -18,10 +42,18 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, pw, remember);
-      nav('/dashboard', { replace: true });
+      nav('/', { replace: true });
     } catch (err) { setError(err.message); }
     setLoading(false);
   };
+
+  if (autoChecking) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a2e', padding: 20 }}>
+        <div style={{ color: '#888', fontSize: 14 }}>Checking session...</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1a2e', padding: 20 }}>

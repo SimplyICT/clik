@@ -1,6 +1,6 @@
 # SimplyClik — Project Memory
 
-Last updated: 2026-06-21 (session end)
+Last updated: 2026-06-25 (session end)
 
 ## 2026-06-20/21 (Session 5+ — Permissions Matrix + Infrastructure + User Mgmt)
 
@@ -79,6 +79,42 @@ Last updated: 2026-06-21 (session end)
 - **Asset site filtering:** Assets are now tied to customer locations. Contractors only see assets at sites they are assigned to via `customer_location_contractors`. Backend: added `customer_location_id` and `location_ids` (comma-separated) filters to the asset-management API. Frontend: mobile AssetsPage fetches contractor's assigned locations and filters assets accordingly.
 - **FastAPI whitelist:** Added `quoteDescription` to PATCH field whitelist.
 
+## 2026-06-25 (Session 8 — Pushover + Onboarding + QR + Passwordless + Role fixes)
+
+### Per-User Pushover Notifications ✅
+- DB: `pushover_user_key` column on `public.user_profiles`
+- Backend: `POST/GET /api/pushover/save-key` + `GET /api/pushover/key`
+- `send_pushover()` accepts per-user `user_key` parameter
+- All notification triggers resolve per-user pushover key from profiles
+- Admin panel: Pushover key field in user create/edit form
+- Mobile profile: Pushover key management section
+
+### PWA Install + Onboarding Flow ✅
+- `OnboardingPage.jsx`: 3-step flow (install → pushover → done)
+- Shows after invite acceptance via `show_onboarding` sessionStorage flag
+- PWA install banner + Pushover key entry
+
+### QR Code Invites ✅
+- `GET /api/invite/{user_id}/qr` endpoint returns PNG QR code
+- QR Code button in admin UsersPage after sending invite
+- QR code embedded directly in invite email (HTML with base64)
+
+### Passwordless Auth Fixes ✅
+- `accept_invite` now returns `permissions`, `author_profile_id`, `customer_id`, `customer_name`, `role`
+- Cookie bridge (`/api/auth/cookie`) returns same fields
+- Cache API bridge stores + restores all fields (token, user, permissions, role, etc.)
+- `RequireAuth` always hits cookie bridge first before fallbacks
+- `LoginPage` auto-checks cookie bridge on mount
+
+### Password Management ✅
+- `POST /api/users/{user_id}/reset-password` endpoint
+- Reset Password button + modal in admin UsersPage
+
+### Bugfixes
+- `update_user_profile` INSERT used invalid `profile_type` enum value `'user'` → changed to UPDATE-only
+- Stale uvicorn processes blocking systemd restarts resolved
+- Fixed: user details save failing with 500
+
 ## Project State
 - All major systems complete
 - Permissions Matrix ✅
@@ -87,3 +123,6 @@ Last updated: 2026-06-21 (session end)
 - Infrastructure (CI/CD + rate limiting) ✅
 - Asset Site Filtering ✅
 - Quote Description ✅
+- Pushover Notifications ✅
+- PWA Onboarding + QR Invites ✅
+- Passwordless Auto-Login ✅

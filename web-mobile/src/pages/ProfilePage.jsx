@@ -8,6 +8,10 @@ export default function ProfilePage() {
   const role = localStorage.getItem('role') || sessionStorage.getItem('role');
   const cname = localStorage.getItem('customer_name') || sessionStorage.getItem('customer_name') || '';
   const [profile, setProfile] = useState(null);
+  const [pushoverKey, setPushoverKey] = useState('');
+  const [pushoverStatus, setPushoverStatus] = useState('loading');
+  const [savingPushover, setSavingPushover] = useState(false);
+  const [pushoverMsg, setPushoverMsg] = useState('');
 
   useEffect(() => {
     const pid = localStorage.getItem('author_profile_id') || sessionStorage.getItem('author_profile_id');
@@ -16,7 +20,48 @@ export default function ProfilePage() {
         if (Array.isArray(d) && d.length > 0) setProfile(d[0]);
       }).catch(() => {});
     }
+    fetchPushoverStatus();
   }, []);
+
+  async function fetchPushoverStatus() {
+    try {
+      const token = localStorage.getItem('token');
+      const resp = await fetch('/api/pushover/key', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (!resp.ok) { setPushoverStatus('error'); return; }
+      const data = await resp.json();
+      if (data.hasKey) {
+        setPushoverStatus('active');
+      } else {
+        setPushoverStatus('setup');
+      }
+    } catch {
+      setPushoverStatus('error');
+    }
+  }
+
+  async function handleSavePushover() {
+    if (!pushoverKey.trim()) return;
+    setSavingPushover(true);
+    setPushoverMsg('');
+    try {
+      const token = localStorage.getItem('token');
+      const resp = await fetch('/api/pushover/save-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ pushover_user_key: pushoverKey.trim() }),
+      });
+      if (!resp.ok) throw new Error('Failed');
+      setPushoverStatus('active');
+      setPushoverMsg('Pushover key saved!');
+      setPushoverKey('');
+    } catch {
+      setPushoverMsg('Failed to save key');
+    } finally {
+      setSavingPushover(false);
+    }
+  }
 
   return (
     <div>
@@ -39,6 +84,34 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      <div style={{ background: '#fff', borderRadius: 10, padding: 16, marginBottom: 12 }}>
+        <h4 style={{ fontSize: 14, margin: '0 0 10px' }}>Notifications</h4>
+        {pushoverStatus === 'loading' && <div style={{ fontSize: 13, color: '#888' }}>Loading...</div>}
+        {pushoverStatus === 'active' && (
+          <div style={{ fontSize: 13, color: '#22c55e', marginBottom: 8 }}>✓ Pushover connected</div>
+        )}
+        {pushoverStatus === 'setup' && (
+          <div style={{ fontSize: 13, color: '#f59e0b', marginBottom: 8 }}>
+            iOS uses Pushover for alerts. Install the Pushover app and enter your User Key.
+          </div>
+        )}
+        {(pushoverStatus === 'setup' || pushoverStatus === 'active') && (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              value={pushoverKey}
+              onChange={e => setPushoverKey(e.target.value)}
+              placeholder="Pushover User Key"
+              style={{ flex: 1, padding: '8px 10px', borderRadius: 6, border: '1px solid #ddd', fontSize: 13 }}
+            />
+            <button onClick={handleSavePushover} disabled={savingPushover}
+              style={{ padding: '8px 16px', borderRadius: 6, border: 'none', background: '#00d4ff', color: '#000', fontWeight: 600, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              {savingPushover ? '...' : 'Save'}
+            </button>
+          </div>
+        )}
+        {pushoverMsg && <div style={{ fontSize: 12, color: pushoverMsg.includes('saved') ? '#22c55e' : '#ef4444', marginTop: 6 }}>{pushoverMsg}</div>}
+      </div>
 
       <div style={{ background: '#fff', borderRadius: 10, padding: 16, marginBottom: 12 }}>
         <h4 style={{ fontSize: 14, margin: '0 0 8px' }}>About</h4>

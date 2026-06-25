@@ -287,14 +287,18 @@ async def supabase_proxy(path: str, request: Request, session: dict = Depends(re
                     data = data[0]
                 contr_id = data.get("contractorProfileId")
                 if contr_id:
-                    from notifications import send_push, send_pushover
+                    from notifications import send_push, send_pushover, user_id_from_profile, get_pushover_key
                     import asyncio
                     title = data.get('title', '')
                     asyncio.create_task(asyncio.to_thread(send_push, contr_id,
                         "New Job Available", f"'{title}' has been assigned to you"))
-                    job_url = f"https://pwa.simplyclik.com/mobile/jobs/{data.get('id','')}"
-                    asyncio.create_task(asyncio.to_thread(send_pushover,
-                        "New Job Available", f"'{title}' has been assigned to you", job_url, "Open Job"))
+                    uid = user_id_from_profile(contr_id)
+                    if uid:
+                        push_key = get_pushover_key(uid)
+                        if push_key:
+                            job_url = f"https://pwa.simplyclik.com/mobile/jobs/{data.get('id','')}"
+                            asyncio.create_task(asyncio.to_thread(send_pushover,
+                                "New Job Available", f"'{title}' has been assigned to you", job_url, "Open Job", push_key))
             except:
                 pass
         return Response(content=resp.content, status_code=resp.status_code, media_type="application/json")
@@ -1006,6 +1010,28 @@ async def register_device(body: dict, session: dict = Depends(require_session)):
         VALUES (%s::uuid, %s::uuid, %s, %s, %s, true, now())
         ON CONFLICT (push_token) DO UPDATE SET last_seen_at = now(), is_active = true, platform = EXCLUDED.platform
     """, (uid, profile_id, token, platform, app_version))
+    return {"ok": True}
+
+# ── Pushover per-user key endpoints ────────────────────────────────────
+@app.get("/api/pushover/key")
+async def get_pushover_key_status(session: dict = Depends(require_session)):
+    uid = session.get("uid")
+    if not uid:
+        raise HTTPException(400, detail="No user in session")
+    from notifications import get_pushover_key
+    key = get_pushover_key(uid)
+    return {"hasKey": bool(key)}
+
+@app.post("/api/pushover/save-key")
+async def save_pushover_key(body: dict, session: dict = Depends(require_session)):
+    uid = session.get("uid")
+    if not uid:
+        raise HTTPException(400, detail="No user in session")
+    push_key = (body.get("pushover_user_key") or "").strip()
+    if not push_key:
+        raise HTTPException(400, detail="pushover_user_key is required")
+    db("UPDATE public.user_profiles SET pushover_user_key = %s WHERE user_id = %s::uuid",
+       (push_key, uid))
     return {"ok": True}
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"

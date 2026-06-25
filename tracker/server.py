@@ -292,4 +292,4 @@ if __name__ == "__main__":
     print(f"\n  SimplyClik Project Tracker")
     print(f"  URL: http://0.0.0.0:{PORT}")
     print()
-    HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
+    HTTPServer(("127.0.0.1", PORT), Handler).serve_forever()

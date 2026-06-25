@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { getUser, logout, canView } from './api/client';
-import { setItem } from './api/storage';
+import { setItem, getItemAny } from './api/storage';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import JobsPage from './pages/JobsPage';
@@ -16,6 +16,24 @@ import AssetFormPage from './pages/AssetFormPage';
 import QRScannerPage from './pages/QRScannerPage';
 import CreateJobPage from './pages/CreateJobPage';
 import RecordPartsPage from './pages/RecordPartsPage';
+import OnboardingPage from './pages/OnboardingPage';
+
+const CACHE_NAME = 'simplyclik-m-v2';
+
+function cacheToken(t) {
+  try {
+    caches.open(CACHE_NAME).then(c => c.put('/mobile/.auth-token', new Response(t)));
+  } catch {}
+}
+
+async function getCachedToken() {
+  try {
+    const c = await caches.open(CACHE_NAME);
+    const r = await c.match('/mobile/.auth-token');
+    if (r) return await r.text();
+  } catch {}
+  return null;
+}
 
 function AuthGate({ children }) {
   const [ready, setReady] = useState(false);
@@ -26,6 +44,7 @@ function AuthGate({ children }) {
     const t = params.get('token');
     if (t) {
       setItem('token', t);
+      cacheToken(t);
       setItem('_remember', 'true');
       const inviteUser = sessionStorage.getItem('invite_user');
       if (inviteUser) {
@@ -33,23 +52,45 @@ function AuthGate({ children }) {
         sessionStorage.removeItem('invite_user');
       }
       sessionStorage.removeItem('invite_token');
+      sessionStorage.setItem('show_onboarding', 'true');
       nav(loc.pathname.replace(/[?&]token=[^&]*/, ''), { replace: true });
       setReady(true);
     } else if (getUser()) {
       setReady(true);
     } else {
-      fetch('/api/auth/cookie', { credentials: 'include' })
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
-          if (d && d.token) {
-            setItem('token', d.token);
-            setItem('user', JSON.stringify(d.user));
-            localStorage.setItem('_remember', 'true');
-            sessionStorage.setItem('_remember', 'true');
+      // Try Cache API bridge (iOS PWA shares cache with Safari)
+      getCachedToken().then(async cachedToken => {
+        if (cachedToken) {
+          try {
+            setItem('token', cachedToken);
+            // Also try to restore user from cache
+            const c = await caches.open(CACHE_NAME);
+            const userResp = await c.match('/mobile/.auth-user');
+            if (userResp) {
+              const userData = await userResp.text();
+              if (userData) setItem('user', userData);
+            }
+          } catch {}
+          if (getUser() || getItemAny('user')) {
+            setReady(true);
+            return;
           }
-        })
-        .catch(() => {})
-        .finally(() => setReady(true));
+        }
+        // Fallback: cookie bridge
+        fetch('/api/auth/cookie', { credentials: 'include' })
+          .then(r => r.ok ? r.json() : null)
+          .then(d => {
+            if (d && d.token) {
+              setItem('token', d.token);
+              cacheToken(d.token);
+              setItem('user', JSON.stringify(d.user));
+              localStorage.setItem('_remember', 'true');
+              sessionStorage.setItem('_remember', 'true');
+            }
+          })
+          .catch(() => {})
+          .finally(() => setReady(true));
+      });
     }
   }, []);
   if (!ready) return <div style={{ padding: 40, textAlign: 'center', color: '#888', background: '#1a1a2e', minHeight: '100vh' }}>Loading...</div>;
@@ -57,7 +98,76 @@ function AuthGate({ children }) {
 }
 
 function RequireAuth({ children }) {
+  const loc = useLocation();
+  const [checking, setChecking] = useState(false);
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    // Always try the cookie bridge first to get latest data (including role)
+    fetch('/api/auth/cookie', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d && d.token) {
+          setItem('token', d.token);
+          cacheToken(d.token);
+          setItem('user', JSON.stringify(d.user));
+          if (d.permissions) setItem('permissions', JSON.stringify(d.permissions));
+          if (d.author_profile_id) setItem('author_profile_id', d.author_profile_id);
+          if (d.customer_id) setItem('customer_id', d.customer_id);
+          if (d.customer_name) setItem('customer_name', d.customer_name);
+          if (d.role) setItem('role', d.role);
+        } else {
+          // Cookie failed — try Cache API as fallback
+          getCachedToken().then(async cachedToken => {
+            if (cachedToken) {
+              try {
+                setItem('token', cachedToken);
+                const c = await caches.open(CACHE_NAME);
+                const cacheKeys = [
+                  ['/mobile/.auth-user', 'user'],
+                  ['/mobile/.auth-permissions', 'permissions'],
+                  ['/mobile/.auth-profile-id', 'author_profile_id'],
+                  ['/mobile/.auth-customer-id', 'customer_id'],
+                  ['/mobile/.auth-customer-name', 'customer_name'],
+                  ['/mobile/.auth-role', 'role'],
+                ];
+                for (const [url, key] of cacheKeys) {
+                  const resp = await c.match(url);
+                  if (resp) {
+                    const val = await resp.text();
+                    if (val) setItem(key, val);
+                  }
+                }
+              } catch {}
+            }
+          });
+        }
+      })
+      .catch(() => {
+        // Network error — try cache
+        getCachedToken().then(async cachedToken => {
+          if (cachedToken) {
+            try {
+              setItem('token', cachedToken);
+              const c = await caches.open(CACHE_NAME);
+              const userResp = await c.match('/mobile/.auth-user');
+              if (userResp) {
+                const userData = await userResp.text();
+                if (userData) setItem('user', userData);
+              }
+            } catch {}
+          }
+        });
+      })
+      .finally(() => setChecked(true));
+  }, []);
+
+  if (!checked) return <div style={{ padding: 40, textAlign: 'center', color: '#888', background: '#1a1a2e', minHeight: '100vh' }}>Loading...</div>;
   if (!getUser()) return <Navigate to="/login" replace />;
+  const showOnboarding = sessionStorage.getItem('show_onboarding');
+  if (showOnboarding && loc.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
+  }
   return children;
 }
 
@@ -114,6 +224,7 @@ export default function App() {
       <AuthGate>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
         <Route path="/" element={<RequireAuth><Layout><DashboardPage /></Layout></RequireAuth>} />
         <Route path="/jobs/:id" element={<RequireAuth><Layout><JobDetailPage /></Layout></RequireAuth>} />
         <Route path="/sites" element={<RequireAuth><Layout title="Sites"><ManagerSitesPage /></Layout></RequireAuth>} />

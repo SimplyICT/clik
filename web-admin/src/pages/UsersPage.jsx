@@ -50,12 +50,17 @@ export default function UsersPage() {
   const [createForm, setCreateForm] = useState({ email: '', password: '', role: 'user' });
   const [creating, setCreating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showResetPw, setShowResetPw] = useState(false);
+  const [resetPwValue, setResetPwValue] = useState('');
+  const [resettingPw, setResettingPw] = useState(false);
   const [updatingRole, setUpdatingRole] = useState(false);
   const [search, setSearch] = useState('');
-  const [profileForm, setProfileForm] = useState({ contact_name: '', contact_phone: '', contact_email: '', address_line1: '', address_line2: '', city: '', state: '', postcode: '' });
+  const [profileForm, setProfileForm] = useState({ contact_name: '', contact_phone: '', contact_email: '', address_line1: '', address_line2: '', city: '', state: '', postcode: '', pushover_user_key: '' });
   const [savingProfile, setSavingProfile] = useState(false);
   const [inviteStatus, setInviteStatus] = useState({});
   const [sendingInvite, setSendingInvite] = useState(false);
+  const [showQr, setShowQr] = useState(false);
+  const [qrUrl, setQrUrl] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [lookupTimer, setLookupTimer] = useState(null);
@@ -127,6 +132,7 @@ export default function UsersPage() {
           city: profData.city || '',
           state: profData.state || '',
           postcode: profData.postcode || '',
+          pushover_user_key: profData.pushover_user_key || '',
         });
       }
     } catch(e) { /* ignore */ }
@@ -205,6 +211,7 @@ export default function UsersPage() {
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(profileForm),
       });
+      const updatedUser = await resp.json();
       if (!resp.ok) throw new Error('Failed to save details');
       setMessage({ type: 'success', text: 'Details saved successfully' });
     } catch (e) {
@@ -270,6 +277,30 @@ export default function UsersPage() {
       setMessage({ type: 'error', text: 'Error sending invite: ' + e.message });
     } finally {
       setSendingInvite(false);
+    }
+  }
+
+  async function handleResetPassword() {
+    if (!resetPwValue.trim() || resetPwValue.length < 6) {
+      setMessage({ type: 'error', text: 'Password must be at least 6 characters' });
+      return;
+    }
+    setResettingPw(true);
+    setMessage(null);
+    try {
+      const resp = await fetch(`/api/users/${selectedUserId}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ password: resetPwValue }),
+      });
+      if (!resp.ok) throw new Error('Failed to reset password');
+      setShowResetPw(false);
+      setResetPwValue('');
+      setMessage({ type: 'success', text: 'Password reset successfully' });
+    } catch (e) {
+      setMessage({ type: 'error', text: 'Error resetting password: ' + e.message });
+    } finally {
+      setResettingPw(false);
     }
   }
 
@@ -410,6 +441,15 @@ export default function UsersPage() {
                 >
                   {sendingInvite ? 'Sending...' : inviteStatus.accepted ? '✓ Accepted' : inviteStatus.invited ? 'Resend Invite' : 'Send Invite'}
                 </button>
+                {inviteStatus.invited && !inviteStatus.accepted && (
+                  <button onClick={() => {
+                    setQrUrl(`/api/invite/${selectedUserId}/qr?t=${Date.now()}`);
+                    setShowQr(true);
+                  }} style={{ ...btnSecondary }}>
+                    QR Code
+                  </button>
+                )}
+                <button onClick={() => { setResetPwValue(''); setShowResetPw(true); }} style={btnSecondary}>Reset Password</button>
                 <button onClick={() => setShowDeleteConfirm(true)} style={btnDanger}>Delete User</button>
                 <button onClick={archiveUser} style={{ ...btnSecondary, color: '#f59e0b', borderColor: '#f59e0b' }}>Archive User</button>
                 <button onClick={seedDefaults} style={btnSecondary}>Reset to Manager Defaults</button>
@@ -511,6 +551,15 @@ export default function UsersPage() {
                   </div>
                 </div>
               </div>
+
+              <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '14px 0' }} />
+
+              <label style={{ fontSize: 11, color: '#888', fontWeight: 600, display: 'block', marginBottom: 4 }}>Pushover User Key</label>
+              <div style={{ fontSize: 11, color: '#999', marginBottom: 6 }}>
+                User installs Pushover app → shares their User Key. Notifications will be sent here.
+              </div>
+              <input value={profileForm.pushover_user_key} onChange={e => setProfileForm({...profileForm, pushover_user_key: e.target.value})}
+                style={{ ...inputStyle }} placeholder="uAiD2e..." />
 
               <button onClick={saveProfile} disabled={savingProfile}
                 style={{ ...btnPrimary, marginTop: 12 }}>
@@ -624,6 +673,45 @@ export default function UsersPage() {
               <button onClick={() => setShowDeleteConfirm(false)} style={btnSecondary}>Cancel</button>
               <button onClick={deleteUser} style={btnDanger}>Delete</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showResetPw && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
+          onClick={() => setShowResetPw(false)}>
+          <div style={{ background: '#fff', borderRadius: 8, padding: 24, width: 380 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 4px', fontSize: 16 }}>Reset Password</h3>
+            <p style={{ margin: '0 0 16px', fontSize: 12, color: '#888' }}>
+              Set a new password for <strong>{selectedUserData?.email}</strong>
+            </p>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 11, color: '#888', fontWeight: 600, display: 'block', marginBottom: 4 }}>New Password</label>
+              <input type="password" placeholder="At least 6 characters" value={resetPwValue}
+                onChange={e => setResetPwValue(e.target.value)}
+                style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowResetPw(false)} style={btnSecondary}>Cancel</button>
+              <button onClick={handleResetPassword} disabled={resettingPw}
+                style={{ ...btnPrimary, opacity: resettingPw ? 0.7 : 1 }}>
+                {resettingPw ? 'Resetting...' : 'Reset Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showQr && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
+          onClick={() => setShowQr(false)}>
+          <div style={{ background: '#fff', borderRadius: 8, padding: 24, width: 340, textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 4px', fontSize: 16 }}>Invite QR Code</h3>
+            <p style={{ margin: '0 0 16px', fontSize: 12, color: '#888' }}>
+              Contractor scans this with their phone camera to accept the invite
+            </p>
+            <img src={qrUrl} alt="Invite QR Code" style={{ width: 240, height: 240, display: 'block', margin: '0 auto 16px', borderRadius: 8 }} />
+            <button onClick={() => setShowQr(false)} style={btnSecondary}>Close</button>
           </div>
         </div>
       )}

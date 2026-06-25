@@ -71,10 +71,21 @@ async function init() {
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
     localStorage.setItem('_remember', 'true');
+    if (data.permissions) localStorage.setItem('permissions', JSON.stringify(data.permissions));
+    if (data.author_profile_id) localStorage.setItem('author_profile_id', data.author_profile_id);
+    if (data.customer_id) localStorage.setItem('customer_id', data.customer_id);
+    if (data.customer_name) localStorage.setItem('customer_name', data.customer_name);
+    if (data.role) localStorage.setItem('role', data.role);
     // Also store in Cache API for iOS PWA (which doesn't share localStorage with Safari)
     try {
       const cache = await caches.open('simplyclik-m-v2');
-      cache.put('/mobile/?token=' + data.token, new Response(''));
+      cache.put('/mobile/.auth-token', new Response(data.token));
+      cache.put('/mobile/.auth-user', new Response(JSON.stringify(data.user)));
+      if (data.permissions) cache.put('/mobile/.auth-permissions', new Response(JSON.stringify(data.permissions)));
+      if (data.author_profile_id) cache.put('/mobile/.auth-profile-id', new Response(data.author_profile_id));
+      if (data.customer_id) cache.put('/mobile/.auth-customer-id', new Response(data.customer_id));
+      if (data.customer_name) cache.put('/mobile/.auth-customer-name', new Response(data.customer_name));
+      if (data.role) cache.put('/mobile/.auth-role', new Response(data.role));
     } catch {}
     document.getElementById('loading').style.display = 'none';
     document.getElementById('redirecting').style.display = 'block';

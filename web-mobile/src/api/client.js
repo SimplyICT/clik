@@ -1,6 +1,13 @@
 const API = '/api/supabase';
 import { getItem, setItem, removeItem, clearAll } from './storage';
 
+const CACHE_NAME = 'simplyclik-m-v2';
+export function cacheToken(t) {
+  try {
+    caches.open(CACHE_NAME).then(c => c.put('/mobile/.auth-token', new Response(t)));
+  } catch {}
+}
+
 function auth() { const t = getItem('token'); return t ? { 'Authorization': `Bearer ${t}` } : {}; }
 async function req(url, opts = {}) {
   const headers = { 'Content-Type': 'application/json', ...auth(), ...opts.headers };
@@ -35,11 +42,23 @@ export async function login(email, password, remember) {
   const { setRemember, setItem: st } = await import('./storage');
   setRemember(remember);
   st('token', d.token);
+  cacheToken(d.token);
   if (d.permissions) st('permissions', JSON.stringify(d.permissions));
   st('user', JSON.stringify(d.user));
   if (d.customer_id) st('customer_id', d.customer_id);
   if (d.author_profile_id) st('author_profile_id', d.author_profile_id);
   if (d.customer_name) st('customer_name', d.customer_name);
+  try {
+    caches.open(CACHE_NAME).then(c => {
+      c.put('/mobile/.auth-user', new Response(JSON.stringify(d.user)));
+      if (d.permissions) c.put('/mobile/.auth-permissions', new Response(JSON.stringify(d.permissions)));
+      if (d.author_profile_id) c.put('/mobile/.auth-profile-id', new Response(d.author_profile_id));
+      if (d.customer_id) c.put('/mobile/.auth-customer-id', new Response(d.customer_id));
+      if (d.customer_name) c.put('/mobile/.auth-customer-name', new Response(d.customer_name));
+      const role = localStorage.getItem('role') || sessionStorage.getItem('role') || '';
+      if (role) c.put('/mobile/.auth-role', new Response(role));
+    });
+  } catch {}
   // Detect role from author_profile_id -> profiles table
   try {
     const resp = await fetch('/api/supabase/profiles?select=profile_type&id=eq.' + d.author_profile_id, {

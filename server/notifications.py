@@ -27,7 +27,7 @@ FCM_CRED_PATH = os.environ.get("FCM_CREDENTIALS", "")
 
 # ── Pushover config ──────────────────────────────────────────────────────
 PUSHOVER_TOKEN = os.environ.get("PUSHOVER_TOKEN", "")
-PUSHOVER_USER = os.environ.get("PUSHOVER_USER", "")
+PUSHOVER_USER = os.environ.get("PUSHOVER_USER", "")  # fallback global user key
 
 # ── DB helper ─────────────────────────────────────────────────────────────
 def db(sql: str, params=None):
@@ -47,15 +47,21 @@ def db(sql: str, params=None):
         conn.close()
 
 # ── ns01: Email (SMTP) ────────────────────────────────────────────────────
-def send_email(to: str, subject: str, body: str) -> bool:
+def send_email(to: str, subject: str, body: str, html: str = None) -> bool:
     if not SMTP_HOST or not SMTP_USER:
         logger.warning("SMTP not configured, skipping email to %s", to)
         return False
     try:
-        msg = MIMEText(body, "plain", "utf-8")
+        from email.mime.multipart import MIMEMultipart
+        msg = MIMEMultipart('alternative') if html else MIMEText(body, "plain", "utf-8")
         msg["Subject"] = subject
         msg["From"] = SMTP_FROM
         msg["To"] = to
+        if html:
+            part1 = MIMEText(body, "plain", "utf-8")
+            part2 = MIMEText(html, "html", "utf-8")
+            msg.attach(part1)
+            msg.attach(part2)
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as s:
             s.starttls()
             s.login(SMTP_USER, SMTP_PASS)
@@ -111,16 +117,23 @@ def get_vapid_public_key() -> str:
 # ── Pushover (iOS/Android push notifications, no Firebase needed) ────────
 PUSHOVER_API = "https://api.pushover.net/1/messages.json"
 
-def send_pushover(title: str, body: str, url: str = "", url_title: str = ""):
-    """Send push notification via Pushover. Configure PUSHOVER_TOKEN and PUSHOVER_USER in .env"""
-    if not PUSHOVER_TOKEN or not PUSHOVER_USER:
-        logger.debug("Pushover not configured")
+def send_pushover(title: str, body: str, url: str = "", url_title: str = "", user_key: str = None):
+    """Send push notification via Pushover.
+    Requires PUSHOVER_TOKEN in env. If user_key is provided, sends to that user;
+    otherwise falls back to global PUSHOVER_USER.
+    """
+    if not PUSHOVER_TOKEN:
+        logger.debug("Pushover not configured (no token)")
+        return False
+    key = user_key or PUSHOVER_USER
+    if not key:
+        logger.debug("Pushover not configured (no user key)")
         return False
     try:
         import urllib.request, urllib.parse
         data = urllib.parse.urlencode({
             "token": PUSHOVER_TOKEN,
-            "user": PUSHOVER_USER,
+            "user": key,
             "title": title[:250],
             "message": body[:1024],
             "url": url[:512] if url else "",
@@ -129,7 +142,7 @@ def send_pushover(title: str, body: str, url: str = "", url_title: str = ""):
         }).encode()
         req = urllib.request.Request(PUSHOVER_API, data=data)
         resp = urllib.request.urlopen(req, timeout=10)
-        logger.info("Pushover sent: %s", title)
+        logger.info("Pushover sent to user %s: %s", key[:8], title)
         return True
     except Exception as e:
         logger.error("Pushover failed: %s", e)
@@ -214,6 +227,16 @@ def mark_read(notification_id: str):
     db("UPDATE notifications SET is_read = true WHERE id = %s::uuid", (notification_id,))
 
 # ── ns04: Trigger wiring ──────────────────────────────────────────────────
+def get_pushover_key(user_id: str) -> str:
+    """Look up a user's Pushover key from user_profiles."""
+    rows = db("SELECT pushover_user_key FROM public.user_profiles WHERE user_id = %s::uuid", (user_id,))
+    return rows[0][0] if rows and rows[0][0] else ""
+
+def user_id_from_profile(profile_id: str) -> str:
+    """Resolve a profile ID to a user ID."""
+    rows = db("SELECT user_id FROM public.profiles WHERE id = %s::uuid", (profile_id,))
+    return str(rows[0][0]) if rows else ""
+
 def notify_request_update(request_id: str, old_status: str, new_status: str, actor: dict):
     rows = db("SELECT title, \"customerId\", \"customerName\" FROM requests WHERE id = %s::uuid", (request_id,))
     if not rows:
@@ -254,9 +277,15 @@ def notify_request_update(request_id: str, old_status: str, new_status: str, act
         for (uid,) in users:
             send_push(uid, f"Request {label}", f"'{title}' is now {label}")
 
-    # Pushover (reliable iOS/Android push - one alert per event)
-    job_url = f"https://pwa.simplyclik.com/mobile/jobs/{request_id}"
-    send_pushover(f"Request {label}", f"'{title}' - {customer_name}", job_url, "Open Job")
+    # Pushover (reliable iOS/Android push - per-user)
+    contr_rows = db("SELECT \"contractorProfileId\" FROM requests WHERE id = %s::uuid", (request_id,))
+    if contr_rows and contr_rows[0][0]:
+        uid = user_id_from_profile(contr_rows[0][0])
+        if uid:
+            push_key = get_pushover_key(uid)
+            if push_key:
+                job_url = f"https://pwa.simplyclik.com/mobile/jobs/{request_id}"
+                send_pushover(f"Request {label}", f"'{title}' - {customer_name}", job_url, "Open Job", user_key=push_key)
 
 # ── Init ──────────────────────────────────────────────────────────────────
 def init_notifications(db_config: dict):
