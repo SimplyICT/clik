@@ -1,6 +1,6 @@
 # SimplyClik — Project Memory
 
-Last updated: 2026-06-25 (session end)
+Last updated: 2026-06-26 (session end)
 
 ## 2026-06-20/21 (Session 5+ — Permissions Matrix + Infrastructure + User Mgmt)
 
@@ -115,14 +115,43 @@ Last updated: 2026-06-25 (session end)
 - Stale uvicorn processes blocking systemd restarts resolved
 - Fixed: user details save failing with 500
 
+## 2026-06-26 (Session 9 — Mobile WO, Admin gaps, Bugfixes)
+### Mobile Work Orders ✅
+- `WorkOrdersPage.jsx` — list with status filters (pending/in_progress/completed)
+- `WorkOrderDetailPage.jsx` — detail view with status transitions + labor hours + notes
+- Nav tab "Work" added for contractors
+- Routes wired into App.jsx
+
+### Admin Asset Form Expansion ✅
+- Added purchaseCost, replacementValue, depreciationMethod, usefulLifeYears, locationName, hoursRun, meterReading to create/edit/view
+
+### Admin Cost History Tab ✅
+- Summary cards per cost type + per-asset cost list
+- Reads from `/api/asset-management/assets/{id}/costs` and `/costs/summary`
+
+### Admin Real Audit Log ✅
+- New `GET /api/asset-management/audit` endpoint
+- `AuditLogTab` now calls real API instead of client-side derivation
+
+### Admin Work Order Creation ✅
+- "+ Create Work Order" button with cascading Customer → Site → Asset dropdowns
+- Contractor assignment, type/priority/description fields
+- `asset_id` made optional in model
+
+### Fixes ✅
+- Mobile WO white screen (fetch variable shadowed global `fetch`)
+- Create job field mismatch (admin sent `title`, API expects `job_type`)
+- `requests_base` missing `asset_id` column (added + view recreated)
+- `customer_id` NOT NULL constraint (made nullable)
+- Contractor assignment in create_asset_job (with notification)
+- Auth timeout safety (5s AbortSignal + render timeout)
+- Stale process cleanup across all ports
+
 ## Project State
 - All major systems complete
-- Permissions Matrix ✅
-- User Management ✅
-- Auto-Provisioning ✅
-- Infrastructure (CI/CD + rate limiting) ✅
-- Asset Site Filtering ✅
-- Quote Description ✅
-- Pushover Notifications ✅
-- PWA Onboarding + QR Invites ✅
-- Passwordless Auto-Login ✅
+- Permissions Matrix ✅ | User Management ✅ | Auto-Provisioning ✅
+- Asset Site Filtering ✅ | Quote Description ✅
+- Pushover Notifications ✅ | PWA Onboarding + QR Invites ✅
+- Passwordless Auto-Login ✅ | Mobile Work Orders ✅
+- Admin Cost History ✅ | Real Audit Log ✅
+- Asset Form Expansion ✅
