@@ -14,8 +14,9 @@ export default function LoginPage() {
 
   // Auto-check cookie bridge on mount (passwordless invite flow)
   useEffect(() => {
-    if (getUser()) { nav('/', { replace: true }); return; }
-    fetch('/api/auth/cookie', { credentials: 'include' })
+    const timer = setTimeout(() => setAutoChecking(false), 3000);
+    if (getUser()) { clearTimeout(timer); nav('/', { replace: true }); return; }
+    fetch('/api/auth/cookie', { credentials: 'include', signal: AbortSignal.timeout(5000) })
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (d && d.token) {
@@ -31,7 +32,8 @@ export default function LoginPage() {
         }
       })
       .catch(() => {})
-      .finally(() => setAutoChecking(false));
+      .finally(() => { clearTimeout(timer); setAutoChecking(false); });
+    return () => clearTimeout(timer);
   }, []);
 
   if (getUser()) return null;

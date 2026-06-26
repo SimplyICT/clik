@@ -65,6 +65,7 @@ class JobCreate(BaseModel):
     job_type: str
     description: Optional[str] = None
     priority: Optional[str] = "medium"
+    assigned_contractor_id: Optional[str] = None
 
 class CustomFieldDefCreate(BaseModel):
     category: str

@@ -42,9 +42,12 @@ function AuthGate({ children }) {
   const nav = useNavigate();
   const loc = useLocation();
   useEffect(() => {
+    // Safety timeout: render after 5s no matter what
+    const timer = setTimeout(() => setReady(true), 5000);
     const params = new URLSearchParams(loc.search);
     const t = params.get('token');
     if (t) {
+      clearTimeout(timer);
       setItem('token', t);
       cacheToken(t);
       setItem('_remember', 'true');
@@ -58,6 +61,7 @@ function AuthGate({ children }) {
       nav(loc.pathname.replace(/[?&]token=[^&]*/, ''), { replace: true });
       setReady(true);
     } else if (getUser()) {
+      clearTimeout(timer);
       setReady(true);
     } else {
       // Try Cache API bridge (iOS PWA shares cache with Safari)
@@ -65,7 +69,6 @@ function AuthGate({ children }) {
         if (cachedToken) {
           try {
             setItem('token', cachedToken);
-            // Also try to restore user from cache
             const c = await caches.open(CACHE_NAME);
             const userResp = await c.match('/mobile/.auth-user');
             if (userResp) {
@@ -74,12 +77,13 @@ function AuthGate({ children }) {
             }
           } catch {}
           if (getUser() || getItemAny('user')) {
+            clearTimeout(timer);
             setReady(true);
             return;
           }
         }
         // Fallback: cookie bridge
-        fetch('/api/auth/cookie', { credentials: 'include' })
+        fetch('/api/auth/cookie', { credentials: 'include', signal: AbortSignal.timeout(5000) })
           .then(r => r.ok ? r.json() : null)
           .then(d => {
             if (d && d.token) {
@@ -91,9 +95,10 @@ function AuthGate({ children }) {
             }
           })
           .catch(() => {})
-          .finally(() => setReady(true));
+          .finally(() => { clearTimeout(timer); setReady(true); });
       });
     }
+    return () => clearTimeout(timer);
   }, []);
   if (!ready) return <div style={{ padding: 40, textAlign: 'center', color: '#888', background: '#1a1a2e', minHeight: '100vh' }}>Loading...</div>;
   return children;
@@ -101,12 +106,12 @@ function AuthGate({ children }) {
 
 function RequireAuth({ children }) {
   const loc = useLocation();
-  const [checking, setChecking] = useState(false);
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    // Always try the cookie bridge first to get latest data (including role)
-    fetch('/api/auth/cookie', { credentials: 'include' })
+    // Safety timeout: render after 5s no matter what
+    const timer = setTimeout(() => setChecked(true), 5000);
+    fetch('/api/auth/cookie', { credentials: 'include', signal: AbortSignal.timeout(5000) })
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (d && d.token) {
@@ -119,7 +124,6 @@ function RequireAuth({ children }) {
           if (d.customer_name) setItem('customer_name', d.customer_name);
           if (d.role) setItem('role', d.role);
         } else {
-          // Cookie failed — try Cache API as fallback
           getCachedToken().then(async cachedToken => {
             if (cachedToken) {
               try {
@@ -146,7 +150,6 @@ function RequireAuth({ children }) {
         }
       })
       .catch(() => {
-        // Network error — try cache
         getCachedToken().then(async cachedToken => {
           if (cachedToken) {
             try {
@@ -161,7 +164,8 @@ function RequireAuth({ children }) {
           }
         });
       })
-      .finally(() => setChecked(true));
+      .finally(() => { clearTimeout(timer); setChecked(true); });
+    return () => clearTimeout(timer);
   }, []);
 
   if (!checked) return <div style={{ padding: 40, textAlign: 'center', color: '#888', background: '#1a1a2e', minHeight: '100vh' }}>Loading...</div>;

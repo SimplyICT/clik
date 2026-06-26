@@ -393,10 +393,14 @@ def create_asset_job(conn, asset_id, data, user_id=None):
     title = data.get("job_type", "")
     desc = data.get("description")
     priority = data.get("priority", "medium")
+    # Determine contractor: explicit > asset's assigned > none
+    assigned_contractor_id = data.get("assigned_contractor_id")
     # Look up asset for customer info
     asset = get_asset(conn, asset_id)
     if not asset:
         return None
+    if not assigned_contractor_id:
+        assigned_contractor_id = asset.get("assigned_contractor_id")
     customer_id = asset.get("customer_id")
     asset_name = asset.get("asset_name", "")
     # Fallback: resolve customer from user's profile if asset has none
@@ -410,11 +414,12 @@ def create_asset_job(conn, asset_id, data, user_id=None):
         rows = _exec(conn, "SELECT name FROM public.customers WHERE id = %s::uuid", (customer_id,))
         if rows:
             customer_name = rows[0][0]
+    status = "awaiting_acceptance" if assigned_contractor_id else "pending_approval"
     job_title = f"{title} - {asset_name}"
-    sql = """INSERT INTO requests (title, description, priority, status, "serviceType", "customerId", "customerName", "assetId")
-             VALUES (%s, %s, %s, 'pending_approval', %s, %s::uuid, %s, %s::uuid) RETURNING id"""
+    sql = """INSERT INTO requests (title, description, priority, status, "serviceType", "customerId", "customerName", "assetId", "contractorProfileId")
+             VALUES (%s, %s, %s, %s, %s, %s::uuid, %s, %s::uuid, %s::uuid) RETURNING id"""
     cur = conn.cursor()
-    cur.execute(sql, (job_title, desc, priority, title, customer_id, customer_name, asset_id))
+    cur.execute(sql, (job_title, desc, priority, status, title, customer_id, customer_name, asset_id, assigned_contractor_id))
     row = cur.fetchone()
     cur.close()
     job_id = str(row[0]) if row else None

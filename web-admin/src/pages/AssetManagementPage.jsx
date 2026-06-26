@@ -223,7 +223,7 @@ function AllAssetsTab({ isManager }) {
 
   const openCreateJob = (a) => {
     setJobAsset(a);
-    setJobForm({ job_type: '', description: '', priority: 'medium' });
+    setJobForm({ job_type: '', description: '', priority: 'medium', assigned_contractor_id: a.contractorId || '' });
     setShowJobModal(true);
   };
 
@@ -520,6 +520,14 @@ function AllAssetsTab({ isManager }) {
                 <select value={jobForm.priority} onChange={e => setJobForm({ ...jobForm, priority: e.target.value })}
                   style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
                   {['urgent', 'high', 'medium', 'low'].map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, color: '#888' }}>Assign Contractor</label>
+                <select value={jobForm.assigned_contractor_id} onChange={e => setJobForm({ ...jobForm, assigned_contractor_id: e.target.value })}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
+                  <option value="">Auto (from asset) or none</option>
+                  {contractors.map(ct => <option key={ct.id} value={ct.id}>{ct.companyName}</option>)}
                 </select>
               </div>
             </div>
