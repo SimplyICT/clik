@@ -91,7 +91,7 @@ def _row_to_custom_field_def(r):
 
 REQUEST_COLS = """id,title,description,"serviceType",priority,status,"purchaseOrder",
     "customerId","customerName","customerLocationProfileId","contractorProfileId",
-    "quoteAmount","invoiceAmount","requestStartDate","requestEndDate",asset_id"""
+    "quoteAmount","invoiceAmount","requestStartDate","requestEndDate","assetId" """
 
 def _row_to_job(r):
     return {
@@ -393,11 +393,28 @@ def create_asset_job(conn, asset_id, data, user_id=None):
     title = data.get("job_type", "")
     desc = data.get("description")
     priority = data.get("priority", "medium")
-    user_id_str = str(user_id) if user_id else None
-    sql = """INSERT INTO requests (title, description, priority, status, asset_id, "customerId")
-             VALUES (%s, %s, %s, 'pending_approval', %s::uuid, %s::uuid) RETURNING id"""
+    # Look up asset for customer info
+    asset = get_asset(conn, asset_id)
+    if not asset:
+        return None
+    customer_id = asset.get("customer_id")
+    asset_name = asset.get("asset_name", "")
+    # Fallback: resolve customer from user's profile if asset has none
+    if not customer_id and user_id:
+        rows = _exec(conn, "SELECT p.customer_id FROM public.profiles p WHERE p.user_id = %s::uuid LIMIT 1", (user_id,))
+        if rows and rows[0][0]:
+            customer_id = str(rows[0][0])
+    # Resolve customer name
+    customer_name = ""
+    if customer_id:
+        rows = _exec(conn, "SELECT name FROM public.customers WHERE id = %s::uuid", (customer_id,))
+        if rows:
+            customer_name = rows[0][0]
+    job_title = f"{title} - {asset_name}"
+    sql = """INSERT INTO requests (title, description, priority, status, "serviceType", "customerId", "customerName", "assetId")
+             VALUES (%s, %s, %s, 'pending_approval', %s, %s::uuid, %s, %s::uuid) RETURNING id"""
     cur = conn.cursor()
-    cur.execute(sql, (title, desc, priority, asset_id, user_id_str))
+    cur.execute(sql, (job_title, desc, priority, title, customer_id, customer_name, asset_id))
     row = cur.fetchone()
     cur.close()
     job_id = str(row[0]) if row else None
