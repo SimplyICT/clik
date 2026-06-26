@@ -17,16 +17,19 @@ export default function WorkOrdersPage() {
   const [filter, setFilter] = useState('all');
   const nav = useNavigate();
 
-  const fetch = useCallback(() => {
+  const fetchOrders = useCallback(() => {
     const pid = getItemAny('author_profile_id');
     if (!pid) { setLoading(false); return; }
-    fetch(`/api/asset-management/work-orders?contractor_id=${pid}`)
+    const token = getItemAny('token');
+    window.fetch(`/api/asset-management/work-orders?contractor_id=${pid}`, {
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+    })
       .then(r => r.ok ? r.json() : [])
       .then(d => { setOrders(Array.isArray(d) ? d : []); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   const f = FILTERS.find(x => x.key === filter);
   const filtered = f?.status ? orders.filter(o => o.status === f.status) : orders;

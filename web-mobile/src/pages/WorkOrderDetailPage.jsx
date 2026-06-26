@@ -20,7 +20,10 @@ export default function WorkOrderDetailPage() {
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
-    fetch(`/api/asset-management/work-orders/${id}`)
+    const t = getItemAny('token');
+    window.fetch(`/api/asset-management/work-orders/${id}`, {
+      headers: t ? { 'Authorization': 'Bearer ' + t } : {},
+    })
       .then(r => r.ok ? r.json() : null)
       .then(d => { setWo(d); setLoading(false); })
       .catch(() => setLoading(false));

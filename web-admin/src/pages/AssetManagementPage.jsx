@@ -111,7 +111,7 @@ function AllAssetsTab({ isManager }) {
   const [form, setForm] = useState({ ...EMPTY_ASSET });
   const [showJobModal, setShowJobModal] = useState(false);
   const [jobAsset, setJobAsset] = useState(null);
-  const [jobForm, setJobForm] = useState({ title: '', description: '', priority: 'medium', contractorId: '', serviceType: 'General Maintenance' });
+  const [jobForm, setJobForm] = useState({ job_type: '', description: '', priority: 'medium' });
   const [showQr, setShowQr] = useState(null);
   const [qrData, setQrData] = useState(null);
   const [loadError, setLoadError] = useState(null);
@@ -223,12 +223,12 @@ function AllAssetsTab({ isManager }) {
 
   const openCreateJob = (a) => {
     setJobAsset(a);
-    setJobForm({ title: `Job for ${a.assetName}`, description: '', priority: 'medium', contractorId: '', serviceType: 'General Maintenance' });
+    setJobForm({ job_type: '', description: '', priority: 'medium' });
     setShowJobModal(true);
   };
 
   const handleCreateJob = async () => {
-    if (!jobForm.title.trim()) { alert('Job title is required'); return; }
+    if (!jobForm.job_type) { alert('Select a job type'); return; }
     try {
       await assetApi(`/assets/${jobAsset.id}/create-job`, { method: 'POST', body: JSON.stringify(jobForm) });
       setShowJobModal(false);
@@ -498,34 +498,28 @@ function AllAssetsTab({ isManager }) {
               <button onClick={() => setShowJobModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}>✕</button>
             </div>
             <div style={{ padding: 20 }}>
-              <Fi label="Title" v={jobForm.title} s={v => setJobForm({ ...jobForm, title: v })} />
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, color: '#888' }}>Job Type *</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                  {['Install', 'Move', 'Retire', 'Inspect', 'Repair', 'Transfer'].map(t => (
+                    <button key={t} onClick={() => setJobForm({ ...jobForm, job_type: t })} style={{
+                      padding: '8px 4px', borderRadius: 6, border: jobForm.job_type === t ? '2px solid #2563eb' : '1px solid #d1d5db',
+                      background: jobForm.job_type === t ? '#eff6ff' : '#fff', color: jobForm.job_type === t ? '#2563eb' : '#555',
+                      fontWeight: 600, fontSize: 12, cursor: 'pointer', textAlign: 'center'
+                    }}>{t}</button>
+                  ))}
+                </div>
+              </div>
               <div style={{ marginBottom: 10 }}>
                 <label style={{ fontSize: 11, color: '#888' }}>Description</label>
                 <textarea value={jobForm.description} onChange={e => setJobForm({ ...jobForm, description: e.target.value })} rows={3}
                   style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box', resize: 'vertical' }} />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div style={{ marginBottom: 10 }}>
-                  <label style={{ fontSize: 11, color: '#888' }}>Priority</label>
-                  <select value={jobForm.priority} onChange={e => setJobForm({ ...jobForm, priority: e.target.value })}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
-                    {['urgent', 'high', 'medium', 'low'].map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
-                <div style={{ marginBottom: 10 }}>
-                  <label style={{ fontSize: 11, color: '#888' }}>Service Type</label>
-                  <select value={jobForm.serviceType} onChange={e => setJobForm({ ...jobForm, serviceType: e.target.value })}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
-                    {['Air Conditioning', 'Cleaning', 'Electrical', 'General Maintenance', 'Painting', 'Plumbing', 'Refrigeration'].map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-              </div>
               <div style={{ marginBottom: 10 }}>
-                <label style={{ fontSize: 11, color: '#888' }}>Contractor</label>
-                <select value={jobForm.contractorId} onChange={e => setJobForm({ ...jobForm, contractorId: e.target.value })}
+                <label style={{ fontSize: 11, color: '#888' }}>Priority</label>
+                <select value={jobForm.priority} onChange={e => setJobForm({ ...jobForm, priority: e.target.value })}
                   style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
-                  <option value="">Select...</option>
-                  {contractors.map(ct => <option key={ct.id} value={ct.id}>{ct.companyName}</option>)}
+                  {['urgent', 'high', 'medium', 'low'].map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
             </div>
