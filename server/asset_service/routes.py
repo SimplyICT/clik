@@ -11,6 +11,25 @@ async def require_session(authorization: str | None = Header(None)):
     from fastapi_app import require_session as _rs
     return await _rs(authorization)
 
+def _user_scope(session, conn=None):
+    """Determine the user's scope: (customer_id, contractor_id).
+    Returns filters to restrict data to what the user should see.
+    Admins see everything (no filter)."""
+    if session.get("is_admin"):
+        return {}, True
+    uid = session.get("uid")
+    if not uid:
+        return {}, True
+    # Read role and profile_id from session (set during login)
+    role = session.get("role")
+    profile_id = session.get("profile_id")
+    if role == "contractor" and profile_id:
+        return {"contractor_id": profile_id}, False
+    cid = session.get("customer_id")
+    if cid:
+        return {"customer_id": cid}, False
+    return {}, True
+
 
 @router.get("/api/asset-management/assets")
 async def list_assets(
@@ -25,6 +44,10 @@ async def list_assets(
     offset: int = Query(0, ge=0),
     session: dict = Depends(require_permission("assets", "view")),
 ):
+    scope, is_admin = _user_scope(session)
+    if not is_admin:
+        customer_id = customer_id or scope.get("customer_id")
+        contractor_id = contractor_id or scope.get("contractor_id")
     conn = db.get_conn()
     try:
         return db.list_assets(conn, {
@@ -262,6 +285,22 @@ async def create_asset_job(asset_id: str, body: models.JobCreate, session: dict 
     try:
         job = db.create_asset_job(conn, asset_id, body.model_dump(), session.get("uid"))
         conn.commit()
+        # Fire notification if contractor was assigned
+        if job and job.get("contractorProfileId"):
+            try:
+                from notifications import send_push, send_pushover, user_id_from_profile, get_pushover_key
+                import asyncio
+                title = job.get("title", "New Job")
+                asyncio.create_task(asyncio.to_thread(send_push, job["contractorProfileId"],
+                    "New Job Available", f"'{title}' has been assigned to you"))
+                uid = user_id_from_profile(job["contractorProfileId"])
+                if uid:
+                    push_key = get_pushover_key(uid)
+                    if push_key:
+                        asyncio.create_task(asyncio.to_thread(send_pushover,
+                            "New Job Available", f"'{title}' has been assigned to you", "", "Open Job", push_key))
+            except:
+                pass
         return job
     finally:
         conn.close()

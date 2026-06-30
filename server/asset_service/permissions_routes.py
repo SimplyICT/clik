@@ -58,13 +58,13 @@ async def create_user(body: dict, session: dict = Depends(require_admin)):
     conn = get_conn()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT id FROM auth.users WHERE email = %s", (email,))
+        cur.execute("SELECT id FROM users WHERE email = %s", (email,))
         if cur.fetchone():
             raise HTTPException(409, detail="User with this email already exists")
         pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         uid = str(uuid.uuid4())
         cur.execute(
-            "INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at) VALUES (%s::uuid, %s, %s, NOW())",
+            "INSERT INTO users (id, email, password_hash, is_active, created_at, updated_at) VALUES (%s::uuid, %s, %s, true, NOW(), NOW())",
             (uid, email, pw_hash)
         )
         cur.execute(
@@ -99,7 +99,7 @@ async def delete_user(user_id: str, session: dict = Depends(require_admin)):
         cur.execute("DELETE FROM user_permissions WHERE user_id = %s::uuid", (user_id,))
         cur.execute("DELETE FROM public.user_profiles WHERE user_id = %s::uuid", (user_id,))
         cur.execute("DELETE FROM public.profiles WHERE user_id = %s::uuid", (user_id,))
-        cur.execute("DELETE FROM auth.users WHERE id = %s::uuid", (user_id,))
+        cur.execute("DELETE FROM users WHERE id = %s::uuid", (user_id,))
         if cur.rowcount == 0:
             conn.rollback()
             raise HTTPException(404, detail="User not found")
@@ -135,7 +135,7 @@ async def update_user(user_id: str, body: dict, session: dict = Depends(require_
         if role == "contractor":
             cur.execute("SELECT id FROM public.profiles WHERE user_id = %s::uuid", (user_id,))
             if not cur.fetchone():
-                cur.execute("SELECT email FROM auth.users WHERE id = %s::uuid", (user_id,))
+                cur.execute("SELECT email FROM users WHERE id = %s::uuid", (user_id,))
                 email_row = cur.fetchone()
                 email = email_row[0] if email_row else ""
                 profile_id = str(uuid.uuid4())
@@ -163,7 +163,7 @@ async def list_users(session: dict = Depends(require_admin)):
         cur = conn.cursor()
         cur.execute("""
             SELECT u.id, u.email, up.role
-            FROM auth.users u
+            FROM users u
             LEFT JOIN public.user_profiles up ON up.user_id = u.id
             WHERE up.archived IS NOT TRUE OR up.archived IS NULL
             ORDER BY u.email ASC
@@ -277,7 +277,7 @@ async def reset_user_password(user_id: str, body: dict, session: dict = Depends(
         pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         cur = conn.cursor()
         cur.execute(
-            "UPDATE auth.users SET encrypted_password = %s WHERE id = %s::uuid",
+            "UPDATE users SET password_hash = %s WHERE id = %s::uuid",
             (pw_hash, user_id)
         )
         if cur.rowcount == 0:

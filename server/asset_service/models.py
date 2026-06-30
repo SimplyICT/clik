@@ -20,11 +20,15 @@ class AssetCreate(BaseModel):
     install_date: Optional[date] = None
     purchase_date: Optional[date] = None
     warranty_expiry_date: Optional[date] = None
+    location: Optional[str] = None
     notes: Optional[str] = None
     custom_fields: Optional[dict] = None
 
 class AssetUpdate(BaseModel):
     asset_name: Optional[str] = None
+    asset_code: Optional[str] = None
+    category: Optional[str] = None
+    sub_category: Optional[str] = None
     status: Optional[str] = None
     criticality: Optional[str] = None
     manufacturer: Optional[str] = None
@@ -38,6 +42,8 @@ class AssetUpdate(BaseModel):
     warranty_expiry_date: Optional[date] = None
     last_service_date: Optional[date] = None
     next_service_date: Optional[date] = None
+    location: Optional[str] = None
+    location_name: Optional[str] = None
     notes: Optional[str] = None
     custom_fields: Optional[dict] = None
     photo_urls: Optional[List[str]] = None

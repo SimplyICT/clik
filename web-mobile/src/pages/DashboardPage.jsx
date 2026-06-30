@@ -14,14 +14,17 @@ function useJobPoller(isContractor) {
   const prevCount = useRef(0);
   const lastTitles = useRef('');
 
+  const [debugInfo, setDebugInfo] = useState('');
   const fetch = useCallback(() => {
     const pid = localStorage.getItem('author_profile_id') || sessionStorage.getItem('author_profile_id');
-    if (!pid && isContractor) { setLoading(false); return; }
+    setDebugInfo(`pid: ${pid?.slice(0,12) || 'NONE'} ${isContractor ? 'contr' : 'mgr'}`);
     if (isContractor) {
+      if (!pid) { setLoading(false); return; }
       q('requests', {
         select: 'id,title,status,serviceType,priority,customerName,customerLocationProfileId,quoteAmount,invoiceAmount,requestStartDate,description',
         filters: [{ field: 'contractorProfileId', value: pid }],
         order: 'requestStartDate.desc.nullslast',
+        limit: 200,
       }).then(d => {
         const arr = Array.isArray(d) ? d : [];
         const needsAction = arr.filter(j => ['awaiting_acceptance', 'awaiting_quote'].includes(j.status));
@@ -51,23 +54,24 @@ function useJobPoller(isContractor) {
   useEffect(() => {
     fetch();
     const interval = setInterval(fetch, POLL_MS);
-    const timeout = setTimeout(() => setLoading(false), 8000); // Force render after 8s even if queries hang
-    return () => { clearInterval(interval); clearTimeout(timeout); };
+    return () => clearInterval(interval);
   }, [fetch]);
 
-  return { jobs, loading, newJobs, clearNew: () => setNewJobs([]), refetch: fetch };
+  return { jobs, loading, newJobs, clearNew: () => setNewJobs([]), refetch: fetch, debugInfo };
 }
 
 export default function DashboardPage() {
   const nav = useNavigate();
   const role = localStorage.getItem('role') || sessionStorage.getItem('role');
   const isContractor = role === 'contractor';
-  const { jobs, loading, newJobs, clearNew, refetch } = useJobPoller(isContractor);
+  const { jobs, loading, newJobs, clearNew, refetch, debugInfo } = useJobPoller(isContractor);
 
-  if (loading) return <Centered>Loading...</Centered>;
+  if (loading) return <Centered>Loading... <br/><small>{debugInfo}</small></Centered>;
+  const dbg = <div style={{fontSize:10,color:'#aaa',textAlign:'center',marginBottom:8}}>{debugInfo} jobs:{jobs.length}</div>;
 
   return (
     <div>
+      {dbg}
       <PushSetup onSubscribed={refetch} />
 
       {/* Persistent notification banner - stays until dismissed */}

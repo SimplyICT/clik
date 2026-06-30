@@ -23,7 +23,7 @@ export default function JobsPage() {
   const fetch = useCallback(() => {
     const pid = localStorage.getItem('author_profile_id') || sessionStorage.getItem('author_profile_id');
     if (!pid) { setLoading(false); return; }
-    q('requests', { select: 'id,title,status,serviceType,priority,customerName,quoteAmount,invoiceAmount,requestStartDate,description', filters: [{ field: 'contractorProfileId', value: pid }], order: 'requestStartDate.desc.nullslast' }).then(d => {
+    q('requests', { select: 'id,title,status,serviceType,priority,customerName,quoteAmount,invoiceAmount,requestStartDate,description', filters: [{ field: 'contractorProfileId', value: pid }], order: 'requestStartDate.desc.nullslast', limit: 200 }).then(d => {
       const arr = Array.isArray(d) ? d : [];
       const needsAction = arr.filter(j => ['awaiting_acceptance', 'awaiting_quote'].includes(j.status));
       const currentTitles = needsAction.map(j => j.title).sort().join('|');

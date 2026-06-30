@@ -61,14 +61,17 @@ export default function AssetManagementPage() {
   const admin = isAdmin();
   const isManager = admin || canView('assets');
   const [tab, setTab] = useState(0);
+  const [customers, setCustomers] = useState([]);
+  const [customerLocs, setCustomerLocs] = useState([]);
+  const [contractors, setContractors] = useState([]);
 
   const tabs = [
-    { label: 'All Assets', component: <AllAssetsTab key="a" admin={admin} isManager={isManager} /> },
+    { label: 'All Assets', component: <AllAssetsTab key="a" admin={admin} isManager={isManager} onCustomersChange={setCustomers} onLocsChange={setCustomerLocs} onContractorsChange={setContractors} /> },
     { label: 'Parts Inventory', component: <PartsTab key="p" /> },
   ];
   if (canEdit('assets')) tabs.push({ label: 'Custom Fields', component: <CustomFieldsTab key="c" admin={admin} /> });
   if (admin) tabs.push({ label: 'Audit Log', component: <AuditLogTab key="l" /> });
-  if (canView('work_orders')) tabs.push({ label: 'Work Orders', component: <WorkOrdersTab key="w" admin={admin} /> });
+  if (canView('work_orders')) tabs.push({ label: 'Work Orders', component: <WorkOrdersTab key="w" admin={admin} customers={customers} sites={customerLocs} contractors={contractors} /> });
   if (canEdit('assets')) tabs.push({ label: 'Maintenance', component: <MaintenanceTab key="m" admin={admin} /> });
   if (canEdit('assets')) tabs.push({ label: 'Import/Export', component: <ImportExportTab key="ie" admin={admin} /> });
   if (canEdit('assets')) tabs.push({ label: 'QR Batch', component: <QRBatchTab key="qr" /> });
@@ -95,7 +98,7 @@ export default function AssetManagementPage() {
 }
 
 /* ─────────────── Tab 1: All Assets ─────────────── */
-function AllAssetsTab({ isManager }) {
+function AllAssetsTab({ isManager, onCustomersChange, onLocsChange, onContractorsChange }) {
   const [assets, setAssets] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [contractors, setContractors] = useState([]);
@@ -114,7 +117,10 @@ function AllAssetsTab({ isManager }) {
   const [jobForm, setJobForm] = useState({ job_type: '', description: '', priority: 'medium' });
   const [showQr, setShowQr] = useState(null);
   const [qrData, setQrData] = useState(null);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 25;
   const [loadError, setLoadError] = useState(null);
+  const [locContracts, setLocContracts] = useState([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -125,23 +131,34 @@ function AllAssetsTab({ isManager }) {
       if (statusFilter) params.set('status', statusFilter);
       if (custFilter) params.set('customer_id', custFilter);
       if (search) params.set('search', search);
-      const [a, c, conts, locs] = await Promise.all([
+      params.set('limit', String(PAGE_SIZE));
+      params.set('offset', String(page * PAGE_SIZE));
+      const [a, c, conts, locs, lc] = await Promise.all([
         assetApi(`/assets?${params}`),
         q('customers', { select: 'id,name', order: 'name.asc' }),
         q('contractors', { select: 'id,companyName', order: 'companyName.asc' }).catch(() => []),
         q('customerLocations', { select: 'id,companyName,customerId', limit: 500 }).catch(() => []),
+        q('customer_location_contractors', { select: '*', limit: 500 }).catch(() => []),
       ]);
       setAssets(a || []);
-      setCustomers(c || []);
       setContractors(conts || []);
       setCustomerLocs(locs || []);
+      setLocContracts(lc || []);
+      if (onCustomersChange) onCustomersChange(c || []);
+      if (onContractorsChange) onContractorsChange(conts || []);
+      if (onLocsChange) onLocsChange(locs || []);
     } catch (err) { setLoadError(err.message); }
     setLoading(false);
-  }, [search, catFilter, statusFilter, custFilter]);
+  }, [search, catFilter, statusFilter, custFilter, page]);
 
+  useEffect(() => { setPage(0); }, [search, catFilter, statusFilter, custFilter]);
   useEffect(() => { load(); }, [load]);
 
   const locsForCustomer = form.customerId ? customerLocs.filter(l => l.customerId === form.customerId) : [];
+  const contrForLocation = form.customerLocationId
+    ? locContracts.filter(lc => lc.customer_location_id === form.customerLocationId).map(lc => lc.contractor_id)
+    : [];
+  const filteredContractors = contrForLocation.length ? contractors.filter(c => contrForLocation.includes(c.id)) : [];
 
   const openAdd = () => {
     setForm({ ...EMPTY_ASSET });
@@ -326,6 +343,19 @@ function AllAssetsTab({ isManager }) {
         </table>
       </div>
 
+      {/* Pagination */}
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, margin: '16px 0' }}>
+        <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
+          style={{ padding: '8px 20px', borderRadius: 6, border: '1px solid #ddd', background: page === 0 ? '#f5f5f5' : '#fff', color: page === 0 ? '#bbb' : '#333', fontWeight: 600, fontSize: 13, cursor: page === 0 ? 'default' : 'pointer' }}>
+          ← Previous
+        </button>
+        <span style={{ fontSize: 13, color: '#888' }}>Page {page + 1}{assets.length >= PAGE_SIZE ? '+' : ''} ({assets.length} shown)</span>
+        <button onClick={() => { setPage(p => p + 1); }} disabled={assets.length < PAGE_SIZE}
+          style={{ padding: '8px 20px', borderRadius: 6, border: assets.length < PAGE_SIZE ? '1px solid #ddd' : '1px solid #ddd', background: assets.length < PAGE_SIZE ? '#f5f5f5' : '#fff', color: assets.length < PAGE_SIZE ? '#bbb' : '#333', fontWeight: 600, fontSize: 13, cursor: assets.length < PAGE_SIZE ? 'default' : 'pointer' }}>
+          Next →
+        </button>
+      </div>
+
       {/* Add/Edit/View Modal */}
       {showModal && (
         <div style={modalOverlay}>
@@ -418,7 +448,7 @@ function AllAssetsTab({ isManager }) {
                       </select>
                     </div>
                     <div style={{ marginBottom: 10 }}>
-                      <label style={{ fontSize: 11, color: '#888' }}>Location</label>
+                      <label style={{ fontSize: 11, color: '#888' }}>Location <small style={{color:'#aaa'}}>{dbgLocs}</small></label>
                       <select value={form.customerLocationId} onChange={e => {
                         const l = customerLocs.find(x => x.id === e.target.value);
                         setForm({ ...form, customerLocationId: e.target.value, customerLocationName: l?.companyName || '' });
@@ -430,12 +460,12 @@ function AllAssetsTab({ isManager }) {
                   </div>
                   <div style={{ marginBottom: 10 }}>
                     <label style={{ fontSize: 11, color: '#888' }}>Assigned Contractor</label>
-                    <select value={form.contractorId} onChange={e => {
-                      const ct = contractors.find(x => x.id === e.target.value);
-                      setForm({ ...form, contractorId: e.target.value, contractorName: ct?.companyName || '' });
-                    }} style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
-                      <option value="">Select...</option>
-                      {contractors.map(ct => <option key={ct.id} value={ct.id}>{ct.companyName}</option>)}
+                      <select value={form.contractorId} onChange={e => {
+                        const ct = (contractors||[]).find(x => x.id === e.target.value);
+                        setForm({ ...form, contractorId: e.target.value, contractorName: ct?.companyName || '' });
+                      }} style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
+                        <option value="">Select...</option>
+                        {(filteredContractors.length ? filteredContractors : contractors).map(ct => <option key={ct.id} value={ct.id}>{ct.companyName}</option>)}
                     </select>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -1002,7 +1032,7 @@ function AuditLogTab() {
 }
 
 /* ─────────────── Tab: Work Orders ─────────────── */
-function WorkOrdersTab({ admin }) {
+function WorkOrdersTab({ admin, customers = [], sites = [], contractors = [] }) {
   const [all, setAll] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -1011,6 +1041,14 @@ function WorkOrdersTab({ admin }) {
   const [priorityFilter, setPriorityFilter] = useState('');
   const [selected, setSelected] = useState(null);
   const [updateLoading, setUpdateLoading] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [woCustomers, setWoCustomers] = useState([]);
+  const [woSites, setWoSites] = useState([]);
+  const [woAssets, setWoAssets] = useState([]);
+  const [filteredAssets, setFilteredAssets] = useState([]);
+  const [woContractors, setWoContractors] = useState([]);
+  const [woForm, setWoForm] = useState({ customer_id: '', site_id: '', asset_id: '', title: '', description: '', type: 'preventive', priority: 'medium', assigned_contractor_id: '' });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1067,6 +1105,7 @@ function WorkOrdersTab({ admin }) {
       {/* Filters */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <span style={{ fontSize: 14, color: '#888' }}>{all.length} work orders</span>
+        <button onClick={() => setShowCreate(true)} style={{ ...btnPrimary, marginLeft: 'auto' }}>+ Create Work Order</button>
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           style={{ padding: '6px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
           <option value="">All Statuses</option>
@@ -1184,6 +1223,110 @@ function WorkOrdersTab({ admin }) {
           </tbody>
         </table>
       </div>
+
+      {showCreate && (
+        <div style={modalOverlay} onClick={() => setShowCreate(false)}>
+          <div style={{ ...modalBox, width: 480 }} onClick={e => e.stopPropagation()}>
+            <div style={modalHeader}>
+              <h3 style={{ fontSize: 16 }}>Create Work Order</h3>
+              <button onClick={() => setShowCreate(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}>✕</button>
+            </div>
+            <div style={{ padding: 20, maxHeight: '60vh', overflow: 'auto' }}>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, color: '#888' }}>Customer</label>
+                <select value={woForm.customer_id} onChange={async e => {
+                  const cid = e.target.value;
+                  setWoForm({ ...woForm, customer_id: cid, site_id: '', asset_id: '' });
+                  setFilteredAssets([]);
+                  if (cid) {
+                    const data = await assetApi(`/assets?customer_id=${cid}`).catch(() => []);
+                    setFilteredAssets(Array.isArray(data) ? data : []);
+                  }
+                }}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
+                  <option value="">Select customer...</option>
+                  {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, color: '#888' }}>Site</label>
+                <select value={woForm.site_id} onChange={e => setWoForm({...woForm, site_id: e.target.value})}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
+                  <option value="">All sites</option>
+                  {sites.filter(s => !woForm.customer_id || s.customerId === woForm.customer_id).map(s => <option key={s.id} value={s.id}>{s.companyName}</option>)}
+                </select>
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, color: '#888' }}>Asset</label>
+                <select value={woForm.asset_id} onChange={e => setWoForm({...woForm, asset_id: e.target.value})}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
+                  <option value="">Select asset (optional)</option>
+                  {filteredAssets
+                    .filter(a => !woForm.site_id || a.customerLocationId === woForm.site_id)
+                    .map(a => <option key={a.id} value={a.id}>{a.assetName}{a.assetCode ? ` (${a.assetCode})` : ''}</option>)}
+                </select>
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, color: '#888' }}>Title *</label>
+                <input value={woForm.title} onChange={e => setWoForm({...woForm, title: e.target.value})}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, color: '#888' }}>Type</label>
+                <select value={woForm.type} onChange={e => setWoForm({...woForm, type: e.target.value})}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
+                  {['preventive', 'corrective', 'inspection', 'emergency'].map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, color: '#888' }}>Description</label>
+                <textarea value={woForm.description} onChange={e => setWoForm({...woForm, description: e.target.value})} rows={3}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13, boxSizing: 'border-box', resize: 'vertical' }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={{ fontSize: 11, color: '#888' }}>Priority</label>
+                  <select value={woForm.priority} onChange={e => setWoForm({...woForm, priority: e.target.value})}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
+                    {['low', 'medium', 'high', 'urgent'].map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={{ fontSize: 11, color: '#888' }}>Assign Contractor</label>
+                  <select value={woForm.assigned_contractor_id} onChange={e => setWoForm({...woForm, assigned_contractor_id: e.target.value})}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: 13 }}>
+                    <option value="">Unassigned</option>
+                    {contractors.map(ct => <option key={ct.id} value={ct.id}>{ct.companyName}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div style={modalFooter}>
+              <button onClick={() => setShowCreate(false)} style={btnSecondary}>Cancel</button>
+              <button onClick={async () => {
+                if (!woForm.title.trim()) { alert('Title is required'); return; }
+                setCreating(true);
+                try {
+                  const payload = {
+                    title: woForm.title, type: woForm.type, description: woForm.description,
+                    priority: woForm.priority,
+                  };
+                  if (woForm.asset_id) payload.asset_id = woForm.asset_id;
+                  if (woForm.assigned_contractor_id) payload.assigned_contractor_id = woForm.assigned_contractor_id;
+                  await assetApi('/work-orders', { method: 'POST', body: JSON.stringify(payload) });
+                  setShowCreate(false);
+                  setWoForm({ customer_id: '', site_id: '', asset_id: '', title: '', description: '', type: 'preventive', priority: 'medium', assigned_contractor_id: '' });
+                  load();
+                } catch (err) { alert('Failed: ' + err.message); }
+                setCreating(false);
+              }} disabled={creating}
+                style={{ ...btnPrimary, opacity: creating ? 0.7 : 1 }}>
+                {creating ? 'Creating...' : 'Create'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

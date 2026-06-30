@@ -24,7 +24,10 @@ export function getRemember() {
 }
 
 export function getItem(key) {
-  return store().getItem(key);
+  const val = store().getItem(key);
+  if (val !== null) return val;
+  const alt = localStorage.getItem(REMEMBER_KEY) === 'true' ? sessionStorage : localStorage;
+  return alt.getItem(key);
 }
 
 export function setItem(key, value) {
@@ -41,7 +44,12 @@ export function clearAll() {
   sessionStorage.clear();
 }
 
-// Read a key from either localStorage or sessionStorage (whichever has it)
 export function getItemAny(key) {
   return localStorage.getItem(key) || sessionStorage.getItem(key) || '';
+}
+
+export function getAll(key) {
+  const l = localStorage.getItem(key);
+  const s = sessionStorage.getItem(key);
+  return l || s || null;
 }

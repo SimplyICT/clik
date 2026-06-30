@@ -19,6 +19,10 @@ async def list_work_orders(
     offset: int = Query(0, ge=0),
     session: dict = Depends(require_permission("work_orders", "view")),
 ):
+    from asset_service.routes import _user_scope
+    scope, is_admin = _user_scope(session)
+    if not is_admin:
+        contractor_id = contractor_id or scope.get("contractor_id")
     from asset_service.db import get_conn
     conn = get_conn()
     try:
@@ -55,8 +59,6 @@ async def create_work_order(
     conn = get_conn()
     try:
         data = body.model_dump()
-        if not data.get("asset_id"):
-            raise HTTPException(400, detail="asset_id is required")
         if not data.get("title"):
             raise HTTPException(400, detail="title is required")
         wo = db.create_work_order(conn, data, session.get("uid"))

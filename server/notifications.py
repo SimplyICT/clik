@@ -30,20 +30,33 @@ PUSHOVER_TOKEN = os.environ.get("PUSHOVER_TOKEN", "")
 PUSHOVER_USER = os.environ.get("PUSHOVER_USER", "")  # fallback global user key
 
 # ── DB helper ─────────────────────────────────────────────────────────────
+from db_pool import Pool
+
+_pool = None
+
+def _get_pool():
+    global _pool
+    if _pool is None:
+        import pg8000
+        _pool = Pool(lambda: pg8000.connect(**DB),
+                     size=int(os.environ.get("DB_POOL_SIZE", "5")))
+    return _pool
+
 def db(sql: str, params=None):
-    import pg8000
-    conn = pg8000.connect(**DB)
-    cur = conn.cursor()
-    cur.execute(sql, params or [])
+    conn = _get_pool().get()
     try:
-        rows = cur.fetchall()
-        conn.commit()
-        return rows
-    except:
-        conn.commit()
-        return []
+        cur = conn.cursor()
+        cur.execute(sql, params or [])
+        try:
+            rows = cur.fetchall()
+            conn.commit()
+            return rows
+        except:
+            conn.commit()
+            return []
+        finally:
+            cur.close()
     finally:
-        cur.close()
         conn.close()
 
 # ── ns01: Email (SMTP) ────────────────────────────────────────────────────
@@ -248,7 +261,7 @@ def notify_request_update(request_id: str, old_status: str, new_status: str, act
     # Email to customer
     if customer_id:
         users = db("""
-            SELECT u.email FROM auth.users u
+            SELECT u.email FROM users u
             JOIN public.user_profiles up ON up.user_id = u.id
             JOIN public.profiles p ON p.user_id = u.id
             WHERE p.customer_id = %s::uuid AND up.role IN ('Manager','Operator')
@@ -259,7 +272,7 @@ def notify_request_update(request_id: str, old_status: str, new_status: str, act
     # In-app notification
     if customer_id:
         users = db("""
-            SELECT u.id FROM auth.users u
+            SELECT u.id FROM users u
             JOIN public.user_profiles up ON up.user_id = u.id
             WHERE up.customer_ref = (SELECT up2.customer_ref FROM public.user_profiles up2 WHERE up2.user_id = %s::uuid LIMIT 1)
         """, (customer_id,))
@@ -269,7 +282,7 @@ def notify_request_update(request_id: str, old_status: str, new_status: str, act
     # Push notification (web push + FCM)
     if customer_id:
         users = db("""
-            SELECT u.id FROM auth.users u
+            SELECT u.id FROM users u
             JOIN public.user_profiles up ON up.user_id = u.id
             JOIN public.profiles p ON p.user_id = u.id
             WHERE p.customer_id = %s::uuid

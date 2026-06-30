@@ -16,8 +16,9 @@ ENV_PATH = Path(__file__).resolve().parent / ".env"
 if ENV_PATH.exists():
     load_dotenv(ENV_PATH)
 
-from fastapi import FastAPI, Request, HTTPException, Depends, Header
+from fastapi import FastAPI, Request, HTTPException, Depends, Header, Query
 from fastapi.responses import Response, FileResponse
+import re
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 from scheduler import init_scheduler, scheduler as sched
@@ -49,19 +50,22 @@ def _require_env(key: str) -> str:
         raise RuntimeError(f"Missing required environment variable: {key}")
     return val
 
-SUPABASE_URL = _require_env("SUPABASE_URL")
-ANON_KEY = _require_env("ANON_KEY")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+ANON_KEY = os.environ.get("ANON_KEY", "")
+DB_HOST = _require_env("DB_HOST")
 DB_CONFIG = dict(
-    host=_require_env("DB_HOST"),
+    host=DB_HOST,
     port=int(_require_env("DB_PORT")),
     database=_require_env("DB_NAME"),
     user=_require_env("DB_USER"),
-    password=_require_env("DB_PASSWORD"),
-    ssl_context=True,
+    password=os.environ.get("DB_PASSWORD", ""),
+    ssl_context=DB_HOST not in ("localhost", "127.0.0.1"),
 )
 
 # ── session store (DB-backed, survives restarts) ──────────────────────────
 SESSION_TTL = timedelta(days=30)  # localStorage persists, so extend session lifetime
+_SESSION_CACHE: dict[str, tuple[dict, float]] = {}
+_SESSION_CACHE_TTL = 30.0  # seconds
 
 def create_session(data: dict) -> str:
     token = secrets.token_hex(32)
@@ -72,19 +76,36 @@ def create_session(data: dict) -> str:
     return token
 
 def validate_session(token: str) -> dict | None:
+    now = datetime.utcnow()
+    # Check in-memory cache first
+    cached = _SESSION_CACHE.get(token[:24])
+    if cached:
+        sess, exp = cached
+        if now < exp:
+            return sess
+        _SESSION_CACHE.pop(token[:24], None)
     rows = db("SELECT data, expires_at FROM sessions WHERE token = %s", (token,))
     if not rows:
         return None
     data_str, expires_dt = rows[0]
-    if expires_dt and datetime.utcnow() > expires_dt.replace(tzinfo=None):
+    if expires_dt and now > expires_dt.replace(tzinfo=None):
         db("DELETE FROM sessions WHERE token = %s", (token,))
         return None
-    return json.loads(data_str) if isinstance(data_str, str) else data_str
+    sess = json.loads(data_str) if isinstance(data_str, str) else data_str
+    _SESSION_CACHE[token[:24]] = (sess, now + timedelta(seconds=_SESSION_CACHE_TTL))
+    return sess
+
+def clear_session_cache(token_prefix: str = None):
+    if token_prefix:
+        _SESSION_CACHE.pop(token_prefix, None)
+    else:
+        _SESSION_CACHE.clear()
 
 # ── lifespan ──────────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.http = httpx.AsyncClient(timeout=15)
+
     if MODE == "admin":
         init_scheduler(DB_CONFIG)
         sched.start()
@@ -110,27 +131,26 @@ app.include_router(permissions_router)
 app.include_router(invite_router)
 
 # ── helpers ───────────────────────────────────────────────────────────────
-import threading
-_db_local = threading.local()
+from db_pool import Pool
 
-def _get_conn():
-    if not hasattr(_db_local, "conn") or _db_local.conn is None:
-        _db_local.conn = pg8000.connect(**DB_CONFIG)
-    return _db_local.conn
+_db_pool = Pool(lambda: pg8000.connect(**DB_CONFIG), size=int(os.environ.get("DB_POOL_SIZE", "25")))
 
 def db(sql: str, params=None):
-    conn = _get_conn()
-    cur = conn.cursor()
-    cur.execute(sql, params or [])
+    conn = _db_pool.get()
     try:
-        rows = cur.fetchall()
-        conn.commit()
-        return rows
-    except:
-        conn.commit()
-        return []
+        cur = conn.cursor()
+        cur.execute(sql, params or [])
+        try:
+            rows = cur.fetchall()
+            conn.commit()
+            return rows
+        except:
+            conn.commit()
+            return []
+        finally:
+            cur.close()
     finally:
-        cur.close()
+        conn.close()
 
 def guess_ct(path: str) -> str:
     return mimetypes.guess_type(path)[0] or "application/octet-stream"
@@ -168,14 +188,13 @@ async def handle_login(request: Request):
         raise HTTPException(400, detail="Email and password required")
 
     try:
-        rows = db("SELECT id, email, encrypted_password FROM auth.users WHERE email = %s", (email,))
+        rows = db("SELECT id, email, password_hash FROM users WHERE email = %s", (email,))
         if not rows:
             raise HTTPException(401, detail="Invalid credentials")
         uid, db_email, pw_hash = rows[0]
         if not bcrypt.checkpw(pw.encode(), pw_hash.encode()):
             raise HTTPException(401, detail="Invalid credentials")
 
-        # Always fetch profile data for portal/mobile fields (contractor, customer_id, etc.)
         profile = db("""
             SELECT up.role, up.customer_ref, p.customer_id, p.id
             FROM public.user_profiles up
@@ -191,29 +210,32 @@ async def handle_login(request: Request):
             if c:
                 customer_name = c[0][0]
 
+        profile_role = profile[0][0] if profile else None
+        session_data = {"uid": str(uid), "email": db_email,
+                       "customer_id": customer_id, "customer_ref": customer_ref,
+                       "role": profile_role, "profile_id": author_profile_id}
+        token = create_session(session_data)
+
         if MODE in ("portal", "mobile"):
-            session_data = {"uid": str(uid), "email": db_email, "mode": "portal",
-                           "customer_id": customer_id, "customer_ref": customer_ref}
-            token = create_session(session_data)
+            session_data["mode"] = "portal"
+            # Update session with mode
+            db("UPDATE sessions SET data = %s WHERE token = %s", (json.dumps(session_data), token))
             from asset_service.permissions import get_user_permissions, seed_manager_defaults, MANAGER_DEFAULTS
             perms = get_user_permissions(str(uid))
             if not perms:
-                profile_role = profile[0][0] if profile else None
                 if profile_role and profile_role.lower() == "manager":
                     seed_manager_defaults(str(uid))
                     perms = MANAGER_DEFAULTS
             result = {"token": token, "user": {"id": str(uid), "email": db_email, "uid": str(uid)},
                       "customer_ref": customer_ref, "customer_id": customer_id,
                       "author_profile_id": author_profile_id, "customer_name": customer_name,
-                      "permissions": perms or {}}
-            return result
+                      "permissions": perms or {}, "role": profile_role}
         else:
+            session_data["mode"] = "admin"
             role_rows = db("SELECT role FROM public.user_roles WHERE user_id = %s", (uid,))
             is_admin = bool(role_rows and role_rows[0][0] == "admin")
-            session_data = {"uid": str(uid), "email": db_email, "mode": "admin", "is_admin": is_admin,
-                           "customer_id": customer_id, "customer_ref": customer_ref}
-            token = create_session(session_data)
-            result = {"token": token, "user": {"id": str(uid), "email": db_email, "uid": str(uid)}, "is_admin": is_admin}
+            session_data["is_admin"] = is_admin
+            result = {"token": token, "user": {"id": str(uid), "email": db_email, "uid": str(uid)}, "is_admin": is_admin, "role": profile_role}
             from asset_service.permissions import get_user_permissions, seed_manager_defaults, ADMIN_PERMISSIONS
             if is_admin:
                 result["permissions"] = ADMIN_PERMISSIONS
@@ -228,9 +250,15 @@ async def handle_login(request: Request):
             if customer_id:
                 result["customer_id"] = customer_id
                 result["customer_ref"] = customer_ref
-                result["author_profile_id"] = author_profile_id
                 result["customer_name"] = customer_name
-            return result
+            result["author_profile_id"] = author_profile_id
+
+        # Update session with the correct mode
+        db("UPDATE sessions SET data = %s WHERE token = %s", (json.dumps(session_data), token))
+
+        resp = json.dumps(result)
+        return Response(content=resp, media_type="application/json",
+                        headers={"Set-Cookie": f"session={token}; Path=/; Max-Age=2592000; SameSite=Lax"})
     except HTTPException:
         raise
     except Exception as e:
@@ -240,10 +268,22 @@ async def handle_login(request: Request):
 @app.post("/api/logout")
 async def handle_logout(authorization: str | None = Header(None)):
     if authorization and authorization.startswith("Bearer "):
-        db("DELETE FROM sessions WHERE token = %s", (authorization[7:],))
+        token = authorization[7:]
+        clear_session_cache(token[:24])
+        try:
+            from asset_service.permissions import _PERM_CACHE
+            _PERM_CACHE.pop(token[:36], None)
+        except:
+            pass
+        db("DELETE FROM sessions WHERE token = %s", (token,))
     return {"ok": True}
 
-# ── Supabase proxy (auth required, allowlisted tables, rate limited) ──────
+# ── Supabase proxy bypass: direct SQL for GET, REST proxy for writes ──────
+from urllib.parse import unquote
+from datetime import date
+from uuid import UUID
+from decimal import Decimal
+
 ALLOWED_TABLES = {
     "customers", "customerLocations", "contractors", "requests",
     "assets", "assets_v2", "leads", "request_notes", "request_invoices",
@@ -265,47 +305,209 @@ def _check_rate_limit(ip: str):
         raise HTTPException(429, detail="Rate limit exceeded")
     RATELIMIT[ip].append(now)
 
-@app.api_route("/api/supabase/{path:path}", methods=["GET", "POST", "PATCH", "DELETE"])
-async def supabase_proxy(path: str, request: Request, session: dict = Depends(require_session)):
-    table = path.split("/")[0].split("?")[0]
-    if table not in ALLOWED_TABLES:
-        raise HTTPException(403, detail=f"Table not allowed: {table}")
-    _check_rate_limit(request.client.host if request.client else "unknown")
+def _qcol(name):
+    """Quote identifier if it contains uppercase (case-sensitive in PG)."""
+    return f'"{name}"' if any(c.isupper() for c in name) else name
+
+def _qtable(name):
+    return f'"{name}"' if any(c.isupper() for c in name) else name
+
+def _serialize(v):
+    if isinstance(v, (datetime, date)):
+        return v.isoformat()
+    if isinstance(v, UUID):
+        return str(v)
+    if isinstance(v, Decimal):
+        return float(v)
+    return v
+
+async def _supabase_get(table: str, request: Request, session: dict = None):
+    params = dict(request.query_params)
+    select_raw = params.get("select", "*")
+    col_names = [c.strip() for c in select_raw.split(",")] if select_raw != "*" else None
+    cols = select_raw if select_raw == "*" else ", ".join(_qcol(c) for c in col_names)
+
+    where, wparams = [], []
+    # Auto-scope based on user session for sensitive tables
+    if session and not session.get("is_admin"):
+        uid = session.get("uid")
+        cid = session.get("customer_id")
+        if table == "customerLocations" and "customerId" not in params and "id" not in params:
+            if cid:
+                where.append('"customerId" = %s'); wparams.append(cid)
+            elif uid:
+                # Contractor: only see locations linked to their assigned requests
+                rows = db("""SELECT DISTINCT r."customerLocationProfileId" FROM requests r
+                    JOIN public.profiles p ON p.id = r."contractorProfileId"
+                    WHERE p.user_id = %s::uuid AND r."customerLocationProfileId" IS NOT NULL""", (uid,))
+                if rows:
+                    locs = [str(r[0]) for r in rows]
+                    if locs:
+                        ph = ", ".join("%s" for _ in locs)
+                        where.append(f'"id" IN ({ph})'); wparams.extend(locs)
+        if table == "requests":
+            has_cust = any("customerId" in k for k in params)
+            has_contr = any("contractorProfileId" in k for k in params)
+            if not has_cust and not has_contr:
+                if cid:
+                    where.append('"customerId" = %s'); wparams.append(cid)
+                elif uid:
+                    # Check if user is a contractor
+                    rows = db("SELECT id FROM public.profiles WHERE user_id = %s::uuid AND profile_type = 'contractor' LIMIT 1", (uid,))
+                    if rows:
+                        where.append('"contractorProfileId" = %s'); wparams.append(str(rows[0][0]))
+        if table == "profiles" and uid and "id" not in params:
+            where.append("user_id = %s"); wparams.append(uid)
+
+    for key, val in params.items():
+        if key in ("select", "order", "limit", "offset"):
+            continue
+        if "." in val:
+            op, _, rv = val.partition(".")
+            decoded = unquote(rv)
+            c = _qcol(key)
+            if op == "eq":
+                where.append(f"{c} = %s"); wparams.append(decoded)
+            elif op == "neq":
+                where.append(f"{c} != %s"); wparams.append(decoded)
+            elif op == "gt":
+                where.append(f"{c} > %s"); wparams.append(decoded)
+            elif op == "gte":
+                where.append(f"{c} >= %s"); wparams.append(decoded)
+            elif op == "lt":
+                where.append(f"{c} < %s"); wparams.append(decoded)
+            elif op == "lte":
+                where.append(f"{c} <= %s"); wparams.append(decoded)
+            elif op == "like":
+                where.append(f"{c} LIKE %s"); wparams.append(decoded)
+            elif op == "ilike":
+                where.append(f"{c} ILIKE %s"); wparams.append(decoded)
+            elif op == "is":
+                where.append(f"{c} IS NULL")
+            elif op == "in":
+                vals = decoded.split(",")
+                ph = ", ".join(["%s"] * len(vals))
+                where.append(f"{c} IN ({ph})"); wparams.extend(vals)
+
+    order = ""
+    if "order" in params:
+        parts = params["order"].split(".")
+        f = _qcol(parts[0])
+        d = "ASC"
+        n = ""
+        if len(parts) > 1 and parts[1].upper() in ("ASC", "DESC"):
+            d = parts[1].upper()
+        if len(parts) > 2:
+            nulls = parts[2].lower()
+            if nulls == "nullslast":
+                n = " NULLS LAST"
+            elif nulls == "nullsfirst":
+                n = " NULLS FIRST"
+        order = f" ORDER BY {f} {d}{n}"
+
+    sql = f"SELECT {cols} FROM {_qtable(table)}"
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    sql += order
+    if "limit" in params:
+        sql += f" LIMIT {int(params['limit'])}"
+    if "offset" in params:
+        sql += f" OFFSET {int(params['offset'])}"
+
+    rows = db(sql, wparams)
+    if not col_names:
+        # Query information_schema for column names
+        try:
+            t = _qtable(table)
+            q = f"SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '{table.strip(chr(34))}' ORDER BY ordinal_position"
+            meta = db(q)
+            col_names = [r[0] for r in meta]
+        except:
+            return [list(r) for r in rows]
+
+    return [{k: _serialize(v) for k, v in zip(col_names, r)} for r in rows]
+
+async def _supabase_write(table: str, request: Request):
+    body = await request.body()
+    data = json.loads(body) if body else {}
     qs = str(request.url).split("?")[1] if "?" in str(request.url) else ""
-    url = f"{SUPABASE_URL}/rest/v1/{path}?{qs}" if qs else f"{SUPABASE_URL}/rest/v1/{path}"
-    headers = {"apikey": ANON_KEY, "Content-Type": "application/json"}
-    # Forward the Prefer header from the frontend (needed for return=representation)
-    prefer = request.headers.get("prefer")
-    if prefer:
-        headers["Prefer"] = prefer
-    body = await request.body() if request.method in ("POST", "PATCH") else None
-    try:
-        resp = await app.state.http.request(request.method, url, content=body, headers=headers)
-        # After successful POST to requests, fire notification if contractor was assigned
-        if request.method == "POST" and resp.status_code == 201 and table == "requests":
-            try:
-                data = json.loads(resp.content)
-                if isinstance(data, list):
-                    data = data[0]
-                contr_id = data.get("contractorProfileId")
+
+    if request.method == "POST":
+        cols = ', '.join(f'"{k}"' if any(c.isupper() for c in k) else k for k in data.keys())
+        ph = ', '.join(['%s'] * len(data))
+        vals = [json.dumps(v) if isinstance(v, (dict, list)) else v for v in data.values()]
+        sql = f'INSERT INTO {_qtable(table)} ({cols}) VALUES ({ph}) RETURNING *'
+        # Get column names from information_schema
+        try:
+            meta = db(f"SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='{table.strip(chr(34))}' ORDER BY ordinal_position")
+            col_names = [r[0] for r in meta]
+        except:
+            col_names = list(data.keys())
+        rows = db(sql, vals)
+        if rows:
+            result = [{k: _serialize(v) for k, v in zip(col_names, r)} for r in rows]
+            # Fire notification if a request was created with a contractor assigned
+            if table == "requests" and result:
+                contr_id = result[0].get("contractorProfileId")
                 if contr_id:
                     from notifications import send_push, send_pushover, user_id_from_profile, get_pushover_key
                     import asyncio
-                    title = data.get('title', '')
+                    title = result[0].get('title', '')
                     asyncio.create_task(asyncio.to_thread(send_push, contr_id,
                         "New Job Available", f"'{title}' has been assigned to you"))
                     uid = user_id_from_profile(contr_id)
                     if uid:
                         push_key = get_pushover_key(uid)
                         if push_key:
-                            job_url = f"https://pwa.simplyclik.com/mobile/jobs/{data.get('id','')}"
+                            job_url = f"https://pwa.simplyclik.com/mobile/jobs/{result[0].get('id','')}"
                             asyncio.create_task(asyncio.to_thread(send_pushover,
                                 "New Job Available", f"'{title}' has been assigned to you", job_url, "Open Job", push_key))
-            except:
-                pass
-        return Response(content=resp.content, status_code=resp.status_code, media_type="application/json")
-    except httpx.HTTPStatusError as e:
-        return Response(content=e.response.content, status_code=e.response.status_code, media_type="application/json")
+            return Response(content=json.dumps(result[0] if len(result) == 1 else result),
+                          status_code=201, media_type="application/json")
+        return Response(content=json.dumps(data), status_code=201, media_type="application/json")
+
+    elif request.method == "PATCH":
+        # Parse filter from query string (e.g. id=eq.xxx)
+        filters = {}
+        if qs:
+            for part in qs.split("&"):
+                if "=" in part:
+                    fk, fv = part.split("=", 1)
+                    if ".eq." in fv:
+                        filters[fk] = fv.split(".eq.", 1)[1]
+        if not filters:
+            return Response(content=json.dumps({"error": "no filter"}), status_code=400, media_type="application/json")
+        sets = ', '.join(f'"{k}" = %s' if any(c.isupper() for c in k) else f'{k} = %s' for k in data.keys())
+        wh = ' AND '.join(f'"{k}" = %s' if any(c.isupper() for c in k) else f'{k} = %s' for k in filters.keys())
+        vals = list(data.values()) + list(filters.values())
+        sql = f'UPDATE {_qtable(table)} SET {sets} WHERE {wh}'
+        db(sql, vals)
+        return Response(content=json.dumps({"ok": True}), media_type="application/json")
+
+    elif request.method == "DELETE":
+        filters = {}
+        if qs:
+            for part in qs.split("&"):
+                if "=" in part:
+                    fk, fv = part.split("=", 1)
+                    if ".eq." in fv:
+                        filters[fk] = fv.split(".eq.", 1)[1]
+        if not filters:
+            return Response(content=json.dumps({"error": "no filter"}), status_code=400, media_type="application/json")
+        wh = ' AND '.join(f'"{k}" = %s' if any(c.isupper() for c in k) else f'{k} = %s' for k in filters.keys())
+        sql = f'DELETE FROM {_qtable(table)} WHERE {wh}'
+        db(sql, list(filters.values()))
+        return Response(content=json.dumps({"ok": True}), media_type="application/json")
+
+@app.api_route("/api/supabase/{path:path}", methods=["GET", "POST", "PATCH", "DELETE"])
+async def supabase_proxy(path: str, request: Request, session: dict = Depends(require_session)):
+    table = path.split("/")[0].split("?")[0]
+    if table not in ALLOWED_TABLES:
+        raise HTTPException(403, detail=f"Table not allowed: {table}")
+    _check_rate_limit(request.client.host if request.client else "unknown")
+    if request.method == "GET":
+        return await _supabase_get(table, request, session)
+    return await _supabase_write(table, request)
 
 # ── Customer CRUD (api05) ─────────────────────────────────────────────────
 CUSTOMER_COLS = "id,name,\"contactName\",\"contactEmail\",\"contactPhoneNumber\",\"addressJson\",\"serviceContactName\",\"serviceContactEmail\",\"paymentEmail\",billing,\"createdAt\",\"updatedAt\""
@@ -330,9 +532,10 @@ def _customer_filter(session):
     return ""
 
 @app.get("/api/customers")
-async def list_customers(session: dict = Depends(require_session)):
+async def list_customers(limit: int = Query(500, ge=1, le=1000), offset: int = Query(0, ge=0),
+                         session: dict = Depends(require_session)):
     where = _customer_filter(session)
-    rows = db(f"SELECT {CUSTOMER_COLS} FROM customers {where} ORDER BY name ASC")
+    rows = db(f"SELECT {CUSTOMER_COLS} FROM customers {where} ORDER BY name ASC LIMIT %s OFFSET %s", (limit, offset))
     return [_row_to_customer(r) for r in rows]
 
 @app.get("/api/customers/summary")
@@ -561,13 +764,15 @@ def _row_to_request(r):
             "requestEndDate": r[14].isoformat() if r[14] else None}
 
 @app.get("/api/requests")
-async def list_requests(session: dict = Depends(require_session)):
+async def list_requests(limit: int = Query(200, ge=1, le=1000), offset: int = Query(0, ge=0),
+                        session: dict = Depends(require_session)):
     where = ""
     if session.get("mode") == "portal":
         cid = session.get("customer_id")
         if cid:
             where = f'WHERE "customerId" = \'{cid}\'::uuid'
-    rows = db(f"SELECT {REQUEST_COLS} FROM requests {where} ORDER BY \"requestStartDate\" DESC NULLS LAST")
+    rows = db(f"SELECT {REQUEST_COLS} FROM requests {where} ORDER BY \"requestStartDate\" DESC NULLS LAST LIMIT %s OFFSET %s",
+              (limit, offset))
     return [_row_to_request(r) for r in rows]
 
 @app.get("/api/requests/{request_id}")
@@ -893,7 +1098,7 @@ async def activity_by_location(customer_id: str, session: dict = Depends(require
 async def list_users(session: dict = Depends(require_session)):
     rows = db("""
         SELECT u.id, u.email, up.role, up.customer_ref
-        FROM auth.users u
+        FROM users u
         LEFT JOIN public.user_profiles up ON up.user_id = u.id
         ORDER BY u.email ASC
     """)
@@ -903,7 +1108,7 @@ async def list_users(session: dict = Depends(require_session)):
 async def get_user(user_id: str, session: dict = Depends(require_session)):
     rows = db("""
         SELECT u.id, u.email, up.role, up.customer_ref
-        FROM auth.users u LEFT JOIN public.user_profiles up ON up.user_id = u.id
+        FROM users u LEFT JOIN public.user_profiles up ON up.user_id = u.id
         WHERE u.id = %s::uuid
     """, (user_id,))
     if not rows: raise HTTPException(404, detail="User not found")
@@ -914,7 +1119,7 @@ async def get_user(user_id: str, session: dict = Depends(require_session)):
 async def list_customer_users(customer_id: str, session: dict = Depends(require_session)):
     rows = db("""
         SELECT u.id, u.email, up.role
-        FROM auth.users u
+        FROM users u
         JOIN public.user_profiles up ON up.user_id = u.id
         JOIN public.profiles p ON p.user_id = u.id
         WHERE p.customer_id = %s::uuid
@@ -1046,15 +1251,28 @@ async def invite_page(token: str):
     raise HTTPException(404)
 
 # ── static file serving ───────────────────────────────────────────────────
+_HASH_RE = re.compile(r'[.-][a-f0-9]{8}\.')
+def _cache_headers(filepath: str):
+    if filepath == "index.html":
+        return {"Cache-Control": "no-cache, must-revalidate"}
+    if _HASH_RE.search(filepath):
+        return {"Cache-Control": "public, max-age=31536000, immutable"}
+    ext = filepath.rsplit(".", 1)[-1].lower() if "." in filepath else ""
+    if ext in ("js", "css", "png", "jpg", "jpeg", "gif", "svg", "webp", "ico", "woff2", "woff", "ttf"):
+        return {"Cache-Control": "public, max-age=86400"}
+    return {"Cache-Control": "no-cache, must-revalidate"}
+
 def _serve_file(filepath: str, build_dir: Path) -> Response:
     if not filepath:
         filepath = "index.html"
     full = build_dir / filepath
     if full.exists() and full.is_file():
-        return FileResponse(str(full), media_type=guess_ct(str(full)))
+        return FileResponse(str(full), media_type=guess_ct(str(full)),
+                            headers=_cache_headers(filepath))
     idx = build_dir / "index.html"
     if idx.exists():
-        return FileResponse(str(idx), media_type="text/html")
+        return FileResponse(str(idx), media_type="text/html",
+                            headers=_cache_headers("index.html"))
     raise HTTPException(404)
 
 @app.get("/assets/{filepath:path}")

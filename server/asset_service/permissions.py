@@ -1,6 +1,11 @@
 from fastapi import Depends, HTTPException, Header
 from typing import Literal
 from asset_service.db import get_conn
+import time
+
+# Session-level permission cache: {uid: {resource: {action: bool}, expires_at}}
+_PERM_CACHE: dict[str, tuple[dict, float]] = {}
+_PERM_CACHE_TTL = 60.0  # seconds
 
 RESOURCES = [
     "dashboard", "assets", "work_orders", "requests",
@@ -23,18 +28,26 @@ ADMIN_PERMISSIONS = {r: {"can_view": True, "can_edit": True} for r in RESOURCES}
 
 
 def has_permission(uid: str, resource: str, action: str) -> bool:
+    now = time.time()
+    if uid in _PERM_CACHE:
+        cache, expires = _PERM_CACHE[uid]
+        if now < expires and resource in cache:
+            return cache[resource].get("can_view" if action == "view" else "can_edit", False)
     conn = get_conn()
     try:
         cur = conn.cursor()
         cur.execute(
-            "SELECT can_view, can_edit FROM user_permissions WHERE user_id = %s::uuid AND resource = %s",
-            (uid, resource)
+            "SELECT resource, can_view, can_edit FROM user_permissions WHERE user_id = %s::uuid",
+            (uid,)
         )
-        row = cur.fetchone()
+        rows = cur.fetchall()
         cur.close()
-        if not row:
+        perms = {r: {"can_view": v, "can_edit": e} for r, v, e in rows}
+        _PERM_CACHE[uid] = (perms, now + _PERM_CACHE_TTL)
+        entry = perms.get(resource)
+        if not entry:
             return False
-        return row[0] if action == "view" else row[1]
+        return entry["can_view"] if action == "view" else entry["can_edit"]
     finally:
         conn.close()
 
@@ -55,6 +68,7 @@ def get_user_permissions(uid: str) -> dict:
 
 
 def seed_manager_defaults(uid: str):
+    _PERM_CACHE.pop(uid, None)
     conn = get_conn()
     try:
         cur = conn.cursor()
@@ -74,7 +88,14 @@ def seed_manager_defaults(uid: str):
         conn.close()
 
 
+def clear_permission_cache(uid: str = None):
+    if uid:
+        _PERM_CACHE.pop(uid, None)
+    else:
+        _PERM_CACHE.clear()
+
 def set_user_permissions(uid: str, permissions: dict):
+    _PERM_CACHE.pop(uid, None)
     conn = get_conn()
     try:
         cur = conn.cursor()

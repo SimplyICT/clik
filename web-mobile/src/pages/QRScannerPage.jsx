@@ -39,23 +39,19 @@ export default function QRScannerPage() {
   function extractAssetId(text) {
     try {
       const url = new URL(text);
-      const match = url.pathname.match(/\/assets?\/(\d+)/i) || url.search.match(/id=(\d+)/);
-      if (match) return match[1];
+      const m = url.pathname.match(/\/assets?\/([a-f0-9-]+)/i) || url.search.match(/id=([a-f0-9-]+)/);
+      if (m) return m[1];
     } catch {}
-    const digits = text.match(/\d+/);
-    return digits ? digits[0] : null;
+    const uuid = text.match(/\b[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\b/i);
+    if (uuid) return uuid[0];
+    return null;
   }
 
   const handleManualLookup = () => {
     const trimmed = manualId.trim();
     if (!trimmed) { setError('Enter an asset ID'); return; }
-    if (/^\d+$/.test(trimmed)) {
-      nav(`/assets/${trimmed}`);
-    } else {
-      const extracted = extractAssetId(trimmed);
-      if (extracted) nav(`/assets/${extracted}`);
-      else setError('Could not parse asset ID from input');
-    }
+    const extracted = extractAssetId(trimmed) || trimmed;
+    nav(`/assets/${extracted}`);
   };
 
   return (

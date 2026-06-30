@@ -42,7 +42,7 @@ export default function JobDetailPage() {
       q('requests', { select: '*', filters: [{ field: 'id', value: id }] }),
       q('request_notes', { select: 'id,display_name,description,added_date', filters: [{ field: 'request_id', value: id }], order: 'added_date.asc' }).catch(() => []),
       q('request_invoices', { select: '*', filters: [{ field: 'request_id', value: id }] }).catch(() => []),
-      q('customerLocations', { filters: [] }).catch(() => []),
+      q('customerLocations', { filters: [], limit: 500 }).catch(() => []),
     ]).then(([r, n, i, l]) => {
       if (Array.isArray(r) && r.length > 0) setJob(r[0]);
       setNotes(Array.isArray(n) ? n : []);

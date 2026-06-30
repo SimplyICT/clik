@@ -21,7 +21,7 @@ export default function WorkOrdersPage() {
     const pid = getItemAny('author_profile_id');
     if (!pid) { setLoading(false); return; }
     const token = getItemAny('token');
-    window.fetch(`/api/asset-management/work-orders?contractor_id=${pid}`, {
+    window.fetch(`/api/asset-management/work-orders?contractor_id=${pid}&limit=200`, {
       headers: token ? { 'Authorization': 'Bearer ' + token } : {},
     })
       .then(r => r.ok ? r.json() : [])

@@ -4,31 +4,53 @@ import pg8000
 from uuid import uuid4
 from . import qr
 from .audit import db as audit_db
+from db_pool import Pool
 
 BASE_URL = os.environ.get("APP_URL", "https://pwa.simplyclik.com")
 
+_pool = None
+
+def _get_main_pool():
+    """Try to get the main pool from fastapi_app; create own only if not available."""
+    import sys
+    if 'fastapi_app' in sys.modules:
+        mod = sys.modules['fastapi_app']
+        if hasattr(mod, '_db_pool'):
+            return mod._db_pool
+    return None
+
+_own_pool = None
+
+def _get_own_pool():
+    global _own_pool
+    if _own_pool is None:
+        host = os.environ.get("SUPABASE_DB_HOST") or os.environ.get("DB_HOST")
+        port = os.environ.get("SUPABASE_DB_PORT") or os.environ.get("DB_PORT")
+        dbname = os.environ.get("SUPABASE_DB_NAME") or os.environ.get("DB_NAME")
+        user = os.environ.get("SUPABASE_DB_USER") or os.environ.get("DB_USER")
+        password = os.environ.get("SUPABASE_DB_PASSWORD") or os.environ.get("DB_PASSWORD", "")
+        if not all([host, port, dbname, user]):
+            raise RuntimeError("Missing database environment variables")
+        use_ssl = host not in ("localhost", "127.0.0.1")
+        _own_pool = Pool(
+            lambda: pg8000.connect(host=host, port=int(port), database=dbname,
+                                   user=user, password=password, ssl_context=use_ssl),
+            size=int(os.environ.get("DB_POOL_SIZE", "8")),
+        )
+    return _own_pool
+
 def get_conn():
-    host = os.environ.get("SUPABASE_DB_HOST") or os.environ.get("DB_HOST")
-    port = os.environ.get("SUPABASE_DB_PORT") or os.environ.get("DB_PORT")
-    dbname = os.environ.get("SUPABASE_DB_NAME") or os.environ.get("DB_NAME")
-    user = os.environ.get("SUPABASE_DB_USER") or os.environ.get("DB_USER")
-    password = os.environ.get("SUPABASE_DB_PASSWORD") or os.environ.get("DB_PASSWORD")
-    if not all([host, port, dbname, user, password]):
-        raise RuntimeError("Missing database environment variables")
-    return pg8000.connect(
-        host=host,
-        port=int(port),
-        database=dbname,
-        user=user,
-        password=password,
-        ssl_context=True,
-    )
+    pool = _get_main_pool()
+    if pool is None:
+        pool = _get_own_pool()
+    return pool.get()
 
 ASSET_V2_COLS = """id, asset_name, asset_code, qr_code, category, sub_category, status,
     lifecycle_status, criticality, manufacturer, model, serial_number,
     customer_id, customer_location_id, assigned_contractor_id, parent_asset_id,
     install_date, purchase_date, warranty_expiry_date, last_service_date, next_service_date,
-    photo_urls, custom_fields, notes, created_at, updated_at, created_by"""
+    photo_urls, custom_fields, notes, created_at, updated_at, created_by,
+    location_name"""
 
 def _row_to_asset_v2(r):
     return {
@@ -59,6 +81,7 @@ def _row_to_asset_v2(r):
         "created_at": r[24].isoformat() if r[24] else None,
         "updated_at": r[25].isoformat() if r[25] else None,
         "created_by": str(r[26]) if r[26] else None,
+        "location": r[27] if r[27] else None,
     }
 
 PART_COLS = "id, asset_id, name, sku, quantity, min_threshold, unit, created_at"
@@ -206,11 +229,13 @@ def get_asset(conn, asset_id):
 def create_asset(conn, data, user_id=None):
     asset_id = str(uuid4())
     qr_code = qr.generate_qr_code(asset_id, BASE_URL)
+    # Map frontend "location" to DB "location_name"
+    location_val = data.get("location") or data.get("location_name")
     cols = ["id", "asset_name", "asset_code", "qr_code", "category", "sub_category",
             "status", "criticality", "manufacturer", "model", "serial_number",
             "customer_id", "customer_location_id", "assigned_contractor_id",
             "parent_asset_id", "install_date", "purchase_date", "warranty_expiry_date",
-            "notes", "custom_fields", "created_by"]
+            "location_name", "notes", "custom_fields", "created_by"]
     ph = ", ".join(["%s"] * len(cols))
     col_str = ", ".join(cols)
     vals = [
@@ -221,7 +246,8 @@ def create_asset(conn, data, user_id=None):
         data.get("customer_id"), data.get("customer_location_id"),
         data.get("assigned_contractor_id"), data.get("parent_asset_id"),
         data.get("install_date"), data.get("purchase_date"),
-        data.get("warranty_expiry_date"), data.get("notes"),
+        data.get("warranty_expiry_date"), location_val,
+        data.get("notes"),
         json.dumps(data.get("custom_fields")) if data.get("custom_fields") else "{}",
         user_id,
     ]
@@ -247,6 +273,9 @@ def update_asset(conn, asset_id, data):
             values.append(json.dumps(val) if val else None)
         elif key in ("photo_urls",):
             fields.append(f"{key} = %s")
+            values.append(val)
+        elif key == "location":
+            fields.append("location_name = %s")
             values.append(val)
         else:
             fields.append(f"{key} = %s")
@@ -385,7 +414,7 @@ def record_part_usage(conn, part_id, request_id, quantity, user_id=None):
     return None
 
 def list_asset_jobs(conn, asset_id):
-    sql = f"SELECT {REQUEST_COLS} FROM requests WHERE asset_id = %s::uuid ORDER BY \"requestStartDate\" DESC NULLS LAST"
+    sql = f"SELECT {REQUEST_COLS} FROM requests WHERE \"assetId\" = %s::uuid ORDER BY \"requestStartDate\" DESC NULLS LAST"
     rows = _exec(conn, sql, (asset_id,))
     return [_row_to_job(r) for r in rows]
 

@@ -12,11 +12,10 @@ export default function ManagerSitesPage() {
   const cid = localStorage.getItem('customer_id') || sessionStorage.getItem('customer_id') || '';
 
   useEffect(() => {
-    const timeout = setTimeout(() => setLoading(false), 8000);
     Promise.all([
-      q('customerLocations', { select: 'id,companyName,contactName,contactEmail,contactPhoneNumber,addressJson,reference,customerId', filters: cid ? [{ field: 'customerId', value: cid }] : [] }),
-      q('requests', { select: 'id,title,status,serviceType,customerLocationProfileId', filters: cid ? [{ field: 'customerId', value: cid }] : [] }),
-    ]).then(([l, r]) => { clearTimeout(timeout); setSites(Array.isArray(l)?l:[]); setReqs(Array.isArray(r)?r:[]); setLoading(false); }).catch(() => { clearTimeout(timeout); setLoading(false); });
+      q('customerLocations', { select: 'id,companyName,contactName,contactEmail,contactPhoneNumber,addressJson,reference,customerId', filters: cid ? [{ field: 'customerId', value: cid }] : [] }).catch(() => []),
+      q('requests', { select: 'id,title,status,serviceType,customerLocationProfileId', filters: cid ? [{ field: 'customerId', value: cid }] : [] }).catch(() => []),
+    ]).then(([l, r]) => { setSites(Array.isArray(l)?l:[]); setReqs(Array.isArray(r)?r:[]); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
   if (loading) return <Centered>Loading...</Centered>;

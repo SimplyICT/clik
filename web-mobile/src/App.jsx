@@ -1,55 +1,54 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { getUser, logout, canView } from './api/client';
-import { setItem, getItemAny } from './api/storage';
+import { setItem, getItem } from './api/storage';
 import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import JobsPage from './pages/JobsPage';
-import JobDetailPage from './pages/JobDetailPage';
-import ManagerSitesPage from './pages/ManagerSitesPage';
-import ManagerRequestsPage from './pages/ManagerRequestsPage';
-import ProfilePage from './pages/ProfilePage';
 import PwaInstall from './pages/PwaInstall';
-import AssetsPage from './pages/AssetsPage';
-import AssetDetailPage from './pages/AssetDetailPage';
-import AssetFormPage from './pages/AssetFormPage';
-import QRScannerPage from './pages/QRScannerPage';
-import CreateJobPage from './pages/CreateJobPage';
-import RecordPartsPage from './pages/RecordPartsPage';
-import OnboardingPage from './pages/OnboardingPage';
-import WorkOrdersPage from './pages/WorkOrdersPage';
-import WorkOrderDetailPage from './pages/WorkOrderDetailPage';
 
-const CACHE_NAME = 'simplyclik-m-v2';
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const JobsPage = lazy(() => import('./pages/JobsPage'));
+const JobDetailPage = lazy(() => import('./pages/JobDetailPage'));
+const ManagerSitesPage = lazy(() => import('./pages/ManagerSitesPage'));
+const ManagerRequestsPage = lazy(() => import('./pages/ManagerRequestsPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const AssetsPage = lazy(() => import('./pages/AssetsPage'));
+const AssetDetailPage = lazy(() => import('./pages/AssetDetailPage'));
+const AssetFormPage = lazy(() => import('./pages/AssetFormPage'));
+const QRScannerPage = lazy(() => import('./pages/QRScannerPage'));
+const CreateJobPage = lazy(() => import('./pages/CreateJobPage'));
+const RecordPartsPage = lazy(() => import('./pages/RecordPartsPage'));
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
+const WorkOrdersPage = lazy(() => import('./pages/WorkOrdersPage'));
+const WorkOrderDetailPage = lazy(() => import('./pages/WorkOrderDetailPage'));
 
-function cacheToken(t) {
-  try {
-    caches.open(CACHE_NAME).then(c => c.put('/mobile/.auth-token', new Response(t)));
-  } catch {}
+const CACHE = 'simplyclik-mobile-auth';
+
+function authFromCache() {
+  return caches.open(CACHE).then(c =>
+    c.match('/mobile/.auth').then(r => r ? r.json() : null)
+  ).catch(() => null);
 }
 
-async function getCachedToken() {
+function saveAuthToCache(d) {
   try {
-    const c = await caches.open(CACHE_NAME);
-    const r = await c.match('/mobile/.auth-token');
-    if (r) return await r.text();
+    caches.open(CACHE).then(c =>
+      c.put('/mobile/.auth', new Response(JSON.stringify(d)))
+    );
   } catch {}
-  return null;
 }
 
 function AuthGate({ children }) {
   const [ready, setReady] = useState(false);
+  const [msg, setMsg] = useState('Checking session...');
   const nav = useNavigate();
   const loc = useLocation();
   useEffect(() => {
-    // Safety timeout: render after 5s no matter what
     const timer = setTimeout(() => setReady(true), 5000);
     const params = new URLSearchParams(loc.search);
     const t = params.get('token');
     if (t) {
       clearTimeout(timer);
       setItem('token', t);
-      cacheToken(t);
       setItem('_remember', 'true');
       const inviteUser = sessionStorage.getItem('invite_user');
       if (inviteUser) {
@@ -64,43 +63,43 @@ function AuthGate({ children }) {
       clearTimeout(timer);
       setReady(true);
     } else {
-      // Try Cache API bridge (iOS PWA shares cache with Safari)
-      getCachedToken().then(async cachedToken => {
-        if (cachedToken) {
-          try {
-            setItem('token', cachedToken);
-            const c = await caches.open(CACHE_NAME);
-            const userResp = await c.match('/mobile/.auth-user');
-            if (userResp) {
-              const userData = await userResp.text();
-              if (userData) setItem('user', userData);
-            }
-          } catch {}
-          if (getUser() || getItemAny('user')) {
+      setMsg('Restoring session...');
+      // Try Cache API first (most persistent on iOS)
+      authFromCache().then(cached => {
+        if (cached && cached.token) {
+          setItem('token', cached.token);
+          if (cached.user) setItem('user', JSON.stringify(cached.user));
+          if (cached.permissions) setItem('permissions', JSON.stringify(cached.permissions));
+          if (cached.author_profile_id) setItem('author_profile_id', cached.author_profile_id);
+          if (cached.customer_id) setItem('customer_id', cached.customer_id);
+          if (cached.customer_name) setItem('customer_name', cached.customer_name);
+          if (cached.role) setItem('role', cached.role);
+          if (getUser()) {
             clearTimeout(timer);
             setReady(true);
             return;
           }
         }
         // Fallback: cookie bridge
-        fetch('/api/auth/cookie', { credentials: 'include', signal: AbortSignal.timeout(5000) })
+        return fetch('/api/auth/cookie', { credentials: 'include', signal: AbortSignal.timeout(4000) })
           .then(r => r.ok ? r.json() : null)
           .then(d => {
             if (d && d.token) {
               setItem('token', d.token);
-              cacheToken(d.token);
               setItem('user', JSON.stringify(d.user));
-              localStorage.setItem('_remember', 'true');
-              sessionStorage.setItem('_remember', 'true');
+              saveAuthToCache(d);
+              if (d.permissions) setItem('permissions', JSON.stringify(d.permissions));
+              if (d.author_profile_id) setItem('author_profile_id', d.author_profile_id);
+              if (d.customer_id) setItem('customer_id', d.customer_id);
+              if (d.customer_name) setItem('customer_name', d.customer_name);
+              if (d.role) setItem('role', d.role);
             }
-          })
-          .catch(() => {})
-          .finally(() => { clearTimeout(timer); setReady(true); });
-      });
+          });
+      }).catch(() => {}).finally(() => { clearTimeout(timer); setReady(true); });
     }
     return () => clearTimeout(timer);
   }, []);
-  if (!ready) return <div style={{ padding: 40, textAlign: 'center', color: '#888', background: '#1a1a2e', minHeight: '100vh' }}>Loading...</div>;
+  if (!ready) return <div style={{ padding: 40, textAlign: 'center', color: '#888', background: '#1a1a2e', minHeight: '100vh' }}>{msg}</div>;
   return children;
 }
 
@@ -109,66 +108,38 @@ function RequireAuth({ children }) {
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    // Safety timeout: render after 5s no matter what
-    const timer = setTimeout(() => setChecked(true), 5000);
-    fetch('/api/auth/cookie', { credentials: 'include', signal: AbortSignal.timeout(5000) })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => {
-        if (d && d.token) {
-          setItem('token', d.token);
-          cacheToken(d.token);
-          setItem('user', JSON.stringify(d.user));
-          if (d.permissions) setItem('permissions', JSON.stringify(d.permissions));
-          if (d.author_profile_id) setItem('author_profile_id', d.author_profile_id);
-          if (d.customer_id) setItem('customer_id', d.customer_id);
-          if (d.customer_name) setItem('customer_name', d.customer_name);
-          if (d.role) setItem('role', d.role);
-        } else {
-          getCachedToken().then(async cachedToken => {
-            if (cachedToken) {
-              try {
-                setItem('token', cachedToken);
-                const c = await caches.open(CACHE_NAME);
-                const cacheKeys = [
-                  ['/mobile/.auth-user', 'user'],
-                  ['/mobile/.auth-permissions', 'permissions'],
-                  ['/mobile/.auth-profile-id', 'author_profile_id'],
-                  ['/mobile/.auth-customer-id', 'customer_id'],
-                  ['/mobile/.auth-customer-name', 'customer_name'],
-                  ['/mobile/.auth-role', 'role'],
-                ];
-                for (const [url, key] of cacheKeys) {
-                  const resp = await c.match(url);
-                  if (resp) {
-                    const val = await resp.text();
-                    if (val) setItem(key, val);
-                  }
-                }
-              } catch {}
-            }
-          });
-        }
-      })
-      .catch(() => {
-        getCachedToken().then(async cachedToken => {
-          if (cachedToken) {
-            try {
-              setItem('token', cachedToken);
-              const c = await caches.open(CACHE_NAME);
-              const userResp = await c.match('/mobile/.auth-user');
-              if (userResp) {
-                const userData = await userResp.text();
-                if (userData) setItem('user', userData);
-              }
-            } catch {}
+    if (getUser()) { setChecked(true); return; }
+    const timer = setTimeout(() => setChecked(true), 3000);
+    authFromCache().then(cached => {
+      if (cached && cached.token) {
+        setItem('token', cached.token);
+        if (cached.user) setItem('user', JSON.stringify(cached.user));
+        if (cached.permissions) setItem('permissions', JSON.stringify(cached.permissions));
+        if (cached.author_profile_id) setItem('author_profile_id', cached.author_profile_id);
+        if (cached.customer_id) setItem('customer_id', cached.customer_id);
+        if (cached.customer_name) setItem('customer_name', cached.customer_name);
+        if (cached.role) setItem('role', cached.role);
+        if (getUser()) { clearTimeout(timer); setChecked(true); return; }
+      }
+      return fetch('/api/auth/cookie', { credentials: 'include', signal: AbortSignal.timeout(3000) })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d && d.token) {
+            setItem('token', d.token);
+            setItem('user', JSON.stringify(d.user));
+            saveAuthToCache(d);
+            if (d.permissions) setItem('permissions', JSON.stringify(d.permissions));
+            if (d.author_profile_id) setItem('author_profile_id', d.author_profile_id);
+            if (d.customer_id) setItem('customer_id', d.customer_id);
+            if (d.customer_name) setItem('customer_name', d.customer_name);
+            if (d.role) setItem('role', d.role);
           }
         });
-      })
-      .finally(() => { clearTimeout(timer); setChecked(true); });
+    }).catch(() => {}).finally(() => { clearTimeout(timer); setChecked(true); });
     return () => clearTimeout(timer);
   }, []);
 
-  if (!checked) return <div style={{ padding: 40, textAlign: 'center', color: '#888', background: '#1a1a2e', minHeight: '100vh' }}>Loading...</div>;
+  if (!checked) return <div style={{ padding: 40, textAlign: 'center', color: '#888', background: '#1a1a2e', minHeight: '100vh' }}>Restoring session...</div>;
   if (!getUser()) return <Navigate to="/login" replace />;
   const showOnboarding = sessionStorage.getItem('show_onboarding');
   if (showOnboarding && loc.pathname !== '/onboarding') {
@@ -179,7 +150,7 @@ function RequireAuth({ children }) {
 
 function Nav() {
   const loc = useLocation().pathname;
-  const role = localStorage.getItem('role');
+  const role = getItem('role');
   const isContractor = role === 'contractor';
   const allTabs = isContractor
     ? [{ p: '/', l: 'Jobs' }, { p: '/work-orders', l: 'Work' }, { p: '/assets', l: 'Assets' }, { p: '/profile', l: 'Profile' }]
@@ -229,6 +200,7 @@ export default function App() {
   return (
     <BrowserRouter basename="/mobile">
       <AuthGate>
+      <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#888', background: '#f5f5f5', minHeight: '100vh' }}>Loading...</div>}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
@@ -249,6 +221,7 @@ export default function App() {
         <Route path="/qr-scanner" element={<RequireAuth><Layout title="Scan QR"><QRScannerPage /></Layout></RequireAuth>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
       </AuthGate>
     </BrowserRouter>
   );

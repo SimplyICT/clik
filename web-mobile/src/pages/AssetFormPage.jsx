@@ -83,7 +83,14 @@ export default function AssetFormPage() {
       if (photos.length > 0) {
         photoUrls = await uploadImages(photos, `assets/${Date.now()}`);
       }
-      const body = { ...form, photo_urls: photoUrls, custom_fields: customFields.length > 0 ? customValues : undefined };
+      let body = { ...form, photo_urls: photoUrls, custom_fields: customFields.length > 0 ? customValues : undefined };
+      // Map frontend field names to API field names
+      body.warranty_expiry_date = body.warranty_expiry;
+      delete body.warranty_expiry;
+      // Strip empty strings and undefined values (Pydantic rejects '' for date fields)
+      for (const k of Object.keys(body)) {
+        if (body[k] === '' || body[k] === undefined) delete body[k];
+      }
       if (isEdit) {
         await apiPatch(`/assets/${id}`, body);
         nav(`/assets/${id}`);

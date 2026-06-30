@@ -28,7 +28,7 @@ export default function AssetsPage() {
   const fetch = useCallback(async () => {
     try {
       setError(null);
-      const data = await apiGet('/assets');
+      const data = await apiGet('/assets?limit=500');
       setAssets(Array.isArray(data) ? data : []);
     } catch (e) {
       setError(e.message);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login, getUser, cacheToken } from '../api/client';
+import { login, getUser } from '../api/client';
 import { setItem } from '../api/storage';
 
 export default function LoginPage() {
